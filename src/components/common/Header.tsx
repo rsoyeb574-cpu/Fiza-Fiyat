@@ -67,8 +67,8 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       scrolled 
-        ? 'bg-neutral-950/80 dark:bg-neutral-950/85 backdrop-blur-md border-b border-white/10 shadow-2xl py-3' 
-        : 'bg-transparent py-5'
+        ? 'bg-[#020408]/85 backdrop-blur-xl border-b border-white/10 shadow-2xl py-3' 
+        : 'bg-white/5 backdrop-blur-md border-b border-white/10 py-4'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
@@ -78,8 +78,8 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => handleNavClick('home')}
             className="flex items-center space-x-3 text-left group cursor-pointer focus:outline-none"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-600 p-[1px] shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-              <div className="w-full h-full bg-neutral-950 rounded-[11px] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-600 p-[1px] shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
+              <div className="w-full h-full bg-[#020408] rounded-[11px] flex items-center justify-center">
                 <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300 text-lg tracking-wider">
                   FH
                 </span>
@@ -97,15 +97,15 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center space-x-1 bg-neutral-900/60 p-1.5 rounded-full border border-white/10 backdrop-blur-md">
+          <nav className="hidden md:flex items-center space-x-1 bg-white/5 p-1.5 rounded-full border border-white/10 backdrop-blur-xl shadow-inner">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
                 className={`px-4 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all ${
                   activePage === item.id
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                    : 'text-neutral-300 hover:text-white hover:bg-white/5'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/40'
+                    : 'text-neutral-300 hover:text-white hover:bg-white/10'
                 }`}
               >
                 {item.label}
@@ -119,12 +119,12 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Search Trigger */}
             <button
               onClick={onOpenSearch}
-              className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-neutral-900 border border-white/10 text-neutral-400 hover:text-white hover:border-blue-500/50 text-xs transition-all cursor-pointer"
+              className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-neutral-300 hover:text-white hover:bg-white/10 hover:border-blue-500/50 text-xs transition-all cursor-pointer"
               title="Search Projects & Services (Cmd + K)"
             >
               <Search className="w-3.5 h-3.5 text-blue-400" />
               <span>Search</span>
-              <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-400 rounded border border-neutral-700">
+              <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] bg-white/10 text-neutral-300 rounded border border-white/10">
                 ⌘K
               </kbd>
             </button>
@@ -132,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Cost Calculator Button */}
             <button
               onClick={onOpenCalculator}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 border border-white/10 text-blue-400 hover:text-blue-300 text-xs font-medium transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-white/5 backdrop-blur-md hover:bg-white/10 border border-white/10 text-blue-400 hover:text-blue-300 text-xs font-medium transition-all cursor-pointer"
             >
               <Calculator className="w-3.5 h-3.5" />
               <span>Cost Estimator</span>
@@ -141,7 +141,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Favorites Drawer Trigger */}
             <button
               onClick={onOpenFavorites}
-              className="relative p-2 rounded-xl bg-neutral-900 border border-white/10 text-neutral-300 hover:text-red-400 transition-all cursor-pointer"
+              className="relative p-2 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-neutral-300 hover:text-red-400 hover:bg-white/10 transition-all cursor-pointer"
               title="Favorite Projects"
             >
               <Heart className={`w-4 h-4 ${favoritesCount > 0 ? 'fill-red-500 text-red-500' : ''}`} />
@@ -155,7 +155,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl bg-neutral-900 border border-white/10 text-neutral-300 hover:text-amber-400 transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-neutral-300 hover:text-amber-400 hover:bg-white/10 transition-all cursor-pointer"
               title="Toggle Theme"
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -164,10 +164,10 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Admin Hub Link */}
             <button
               onClick={() => handleNavClick('admin')}
-              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+              className={`p-2 rounded-xl border backdrop-blur-md transition-all cursor-pointer ${
                 activePage === 'admin' 
                   ? 'bg-blue-600 border-blue-500 text-white' 
-                  : 'bg-neutral-900 border-white/10 text-neutral-300 hover:text-blue-400'
+                  : 'bg-white/5 border-white/10 text-neutral-300 hover:text-blue-400 hover:bg-white/10'
               }`}
               title="Admin Panel"
             >
@@ -177,7 +177,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Contact CTA */}
             <button
               onClick={() => handleNavClick('contact')}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-lg shadow-blue-600/25 transition-all cursor-pointer flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center space-x-1.5"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Get Quote</span>

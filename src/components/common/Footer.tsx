@@ -51,7 +51,7 @@ export const Footer: React.FC<FooterProps> = ({ settings, setActivePage }) => {
   };
 
   return (
-    <footer className="relative bg-neutral-950 border-t border-white/10 text-neutral-300 pt-16 pb-12 overflow-hidden">
+    <footer className="relative bg-[#020408]/90 backdrop-blur-2xl border-t border-white/10 text-neutral-300 pt-16 pb-12 overflow-hidden z-10">
       {/* Background Subtle Gradient Lights */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -59,7 +59,7 @@ export const Footer: React.FC<FooterProps> = ({ settings, setActivePage }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Top Newsletter CTA Banner */}
-        <div className="mb-16 p-8 rounded-3xl bg-gradient-to-r from-neutral-900 via-blue-950/40 to-neutral-900 border border-blue-500/20 backdrop-blur-xl relative overflow-hidden">
+        <div className="mb-16 p-8 rounded-3xl bg-white/5 border border-blue-500/30 backdrop-blur-2xl relative overflow-hidden shadow-2xl">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-3">
@@ -76,7 +76,7 @@ export const Footer: React.FC<FooterProps> = ({ settings, setActivePage }) => {
 
             <div>
               {subscribed ? (
-                <div className="flex items-center space-x-2 text-green-400 text-sm font-semibold bg-green-950/50 p-4 rounded-2xl border border-green-500/30">
+                <div className="flex items-center space-x-2 text-green-400 text-sm font-semibold bg-green-950/50 p-4 rounded-2xl border border-green-500/30 backdrop-blur-md">
                   <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
                   <span>Thank you for subscribing to Fiza Hayat Updates!</span>
                 </div>
@@ -88,7 +88,7 @@ export const Footer: React.FC<FooterProps> = ({ settings, setActivePage }) => {
                     placeholder="Enter your corporate email..."
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className="flex-1 px-4 py-3 rounded-xl bg-neutral-900/90 border border-white/10 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-blue-500 transition-colors"
+                    className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-blue-500 transition-colors backdrop-blur-md"
                   />
                   <button
                     type="submit"

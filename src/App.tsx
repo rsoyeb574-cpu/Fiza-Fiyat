@@ -146,8 +146,13 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-blue-600 selection:text-white flex flex-col justify-between">
+        <div className="min-h-screen bg-[#020408] text-neutral-100 font-sans selection:bg-blue-600 selection:text-white flex flex-col justify-between relative overflow-hidden">
           
+          {/* Ambient Glass Glow Orbs */}
+          <div className="fixed top-0 left-1/4 -translate-x-1/2 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[140px] pointer-events-none z-0"></div>
+          <div className="fixed top-1/3 right-10 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[130px] pointer-events-none z-0"></div>
+          <div className="fixed bottom-0 left-1/3 w-[700px] h-[500px] bg-blue-900/10 rounded-full blur-[160px] pointer-events-none z-0"></div>
+
           {/* Header Navigation */}
           <Header
             activePage={activePage}
@@ -163,7 +168,7 @@ export default function App() {
           />
 
           {/* Main Content Pages */}
-          <main className="flex-1">
+          <main className="flex-1 relative z-10">
             {activePage === 'home' && (
               <HomePage
                 settings={settings}

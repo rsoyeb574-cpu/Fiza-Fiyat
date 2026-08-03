@@ -89,11 +89,11 @@ export const HomePage: React.FC<HomePageProps> = ({
     <div className="space-y-24 pb-20">
       
       {/* HERO SECTION */}
-      <section className="relative min-h-screen pt-28 pb-16 flex items-center justify-center overflow-hidden bg-neutral-950">
+      <section className="relative min-h-screen pt-28 pb-16 flex items-center justify-center overflow-hidden bg-[#020408]">
         
         {/* Animated Background Canvas & Glow Orbs */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-neutral-950 to-neutral-950"></div>
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-tr from-blue-600/15 via-indigo-600/15 to-purple-600/10 rounded-full blur-[140px] pointer-events-none animate-pulse"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/30 via-[#020408] to-[#020408]"></div>
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[750px] h-[550px] bg-gradient-to-tr from-blue-600/20 via-indigo-600/20 to-purple-600/10 rounded-full blur-[140px] pointer-events-none animate-pulse"></div>
 
         {/* Subtle Grid Overlay */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
@@ -101,7 +101,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-8">
           
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neutral-900/90 border border-blue-500/30 text-blue-400 text-xs font-semibold backdrop-blur-xl shadow-xl shadow-blue-500/10">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-blue-500/30 text-blue-400 text-xs font-semibold backdrop-blur-xl shadow-xl shadow-blue-500/10">
             <Sparkles className="w-4 h-4 text-blue-400" />
             <span>Digital Business Hub & International Studio</span>
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping"></span>
@@ -137,7 +137,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
             <button
               onClick={onOpenCalculator}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-neutral-900/90 hover:bg-neutral-800 border border-white/10 hover:border-blue-500/50 text-blue-400 font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center space-x-2 text-sm backdrop-blur-md"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/15 hover:border-blue-500/50 text-blue-400 font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center space-x-2 text-sm backdrop-blur-xl"
             >
               <Calculator className="w-4 h-4" />
               <span>Construction & Interior Calculator</span>
@@ -145,13 +145,13 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
 
           {/* Key Accreditations / Software Pill Ticker */}
-          <div className="pt-12 border-t border-white/5 max-w-4xl mx-auto">
-            <p className="text-[11px] uppercase tracking-widest text-neutral-500 font-bold mb-4">
+          <div className="pt-12 border-t border-white/10 max-w-4xl mx-auto">
+            <p className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold mb-4">
               POWERED BY ENTERPRISE SOFTWARE & HARDWARE
             </p>
-            <div className="flex flex-wrap justify-center gap-3 text-xs text-neutral-400">
+            <div className="flex flex-wrap justify-center gap-3 text-xs text-neutral-300">
               {['Autodesk Revit BIM', 'AutoCAD 2026', '3ds Max & V-Ray', 'Unreal Engine 5', 'Rhino 3D', 'Midjourney AI', 'Adobe Creative Cloud', 'Figma Systems'].map((sw) => (
-                <span key={sw} className="px-3 py-1.5 rounded-xl bg-neutral-900/80 border border-white/5 font-medium">
+                <span key={sw} className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md font-medium">
                   {sw}
                 </span>
               ))}
@@ -163,7 +163,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* STATISTICS COUNTER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-8 rounded-3xl bg-neutral-900/60 border border-white/10 backdrop-blur-xl grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+        <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-2xl shadow-2xl grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
           <div>
             <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
               {settings.statsProjects || 145}+
@@ -216,10 +216,10 @@ export const HomePage: React.FC<HomePageProps> = ({
             <div
               key={srv.id}
               onClick={() => setActivePage('services')}
-              className="p-6 rounded-3xl bg-neutral-900/60 border border-white/10 hover:border-blue-500/40 transition-all hover:-translate-y-1 cursor-pointer group space-y-4 flex flex-col justify-between"
+              className="p-6 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 hover:border-blue-500/50 hover:bg-white/[0.08] transition-all hover:-translate-y-1 cursor-pointer group space-y-4 flex flex-col justify-between shadow-xl"
             >
               <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/15 border border-blue-500/30 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Sparkles className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">
@@ -230,7 +230,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-white/5 space-y-2">
+              <div className="pt-4 border-t border-white/10 space-y-2">
                 {srv.features?.slice(0, 3).map((f) => (
                   <div key={f} className="text-[11px] text-neutral-300 flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
@@ -288,7 +288,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           {filteredProjects.map((proj) => (
             <div
               key={proj.id}
-              className="group rounded-3xl bg-neutral-900/80 border border-white/10 overflow-hidden hover:border-blue-500/40 transition-all hover:-translate-y-1 flex flex-col justify-between"
+              className="group rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 overflow-hidden hover:border-blue-500/50 hover:bg-white/[0.08] transition-all hover:-translate-y-1 flex flex-col justify-between shadow-xl"
             >
               <div className="relative h-60 overflow-hidden cursor-pointer" onClick={() => onSelectProject(proj.id)}>
                 <img
@@ -296,15 +296,15 @@ export const HomePage: React.FC<HomePageProps> = ({
                   alt={proj.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#020408] via-transparent to-transparent"></div>
                 
-                <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-neutral-950/80 backdrop-blur-md text-blue-400 text-[10px] font-bold border border-blue-500/30">
+                <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#020408]/80 backdrop-blur-md text-blue-400 text-[10px] font-bold border border-blue-500/30">
                   {proj.categoryName}
                 </span>
 
                 <button
                   onClick={(e) => { e.stopPropagation(); onToggleFavorite(proj); }}
-                  className="absolute top-3 right-3 p-2 rounded-full bg-neutral-950/80 backdrop-blur-md text-white hover:text-red-400 transition-colors cursor-pointer"
+                  className="absolute top-3 right-3 p-2 rounded-full bg-[#020408]/80 backdrop-blur-md text-white hover:text-red-400 transition-colors cursor-pointer"
                 >
                   <Heart className={`w-4 h-4 ${isFavorite(proj.id) ? 'fill-red-500 text-red-500' : ''}`} />
                 </button>
@@ -323,7 +323,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-neutral-400">
+                <div className="pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-neutral-400">
                   <span>Client: <strong className="text-neutral-200">{proj.clientName}</strong></span>
                   <button
                     onClick={() => onSelectProject(proj.id)}
@@ -377,7 +377,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           {testimonials.map((t) => (
             <div
               key={t.id}
-              className="p-6 rounded-3xl bg-neutral-900/60 border border-white/10 space-y-4 flex flex-col justify-between"
+              className="p-6 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 space-y-4 flex flex-col justify-between shadow-xl hover:bg-white/[0.08] transition-all"
             >
               <div className="space-y-3">
                 <div className="flex text-amber-400 space-x-1">
@@ -390,8 +390,8 @@ export const HomePage: React.FC<HomePageProps> = ({
                 </p>
               </div>
 
-              <div className="flex items-center space-x-3 pt-4 border-t border-white/5">
-                <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
+              <div className="flex items-center space-x-3 pt-4 border-t border-white/10">
+                <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-white/10" />
                 <div>
                   <div className="text-white font-bold text-xs">{t.name}</div>
                   <div className="text-neutral-400 text-[10px]">{t.role}, {t.company}</div>
@@ -404,7 +404,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* CONTACT CTA BANNER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-10 rounded-3xl bg-gradient-to-r from-blue-950 via-neutral-900 to-indigo-950 border border-blue-500/30 text-center space-y-6 relative overflow-hidden shadow-2xl">
+        <div className="p-10 rounded-3xl bg-gradient-to-r from-blue-950/60 via-white/5 to-indigo-950/60 border border-blue-500/30 backdrop-blur-2xl text-center space-y-6 relative overflow-hidden shadow-2xl">
           <div className="max-w-2xl mx-auto space-y-3 relative z-10">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
               Ready to Bring Your Vision to Life?
@@ -415,13 +415,13 @@ export const HomePage: React.FC<HomePageProps> = ({
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 onClick={() => setActivePage('contact')}
-                className="px-8 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xl transition-all cursor-pointer"
+                className="px-8 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xl shadow-blue-600/30 transition-all cursor-pointer"
               >
                 Schedule Consultation Call
               </button>
               <button
                 onClick={onOpenCalculator}
-                className="px-8 py-3.5 rounded-2xl bg-neutral-900 border border-white/10 hover:border-blue-500/50 text-blue-400 font-semibold text-xs transition-all cursor-pointer"
+                className="px-8 py-3.5 rounded-2xl bg-white/5 border border-white/15 hover:bg-white/10 text-blue-400 font-semibold text-xs transition-all cursor-pointer backdrop-blur-md"
               >
                 Try Cost Calculator
               </button>
