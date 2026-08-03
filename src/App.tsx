@@ -22,6 +22,7 @@ import { GalleryPage } from './pages/GalleryPage';
 import { ContactPage } from './pages/ContactPage';
 import { PrivacyTermsPage } from './pages/PrivacyTermsPage';
 import { AdminPage } from './pages/AdminPage';
+import { ConstructionIntelligencePage } from './pages/ConstructionIntelligencePage';
 
 import { 
   Project, 
@@ -186,6 +187,10 @@ export default function App() {
 
             {activePage === 'about' && (
               <AboutPage settings={settings} setActivePage={setActivePage} />
+            )}
+
+            {activePage === 'construction-intelligence' && (
+              <ConstructionIntelligencePage />
             )}
 
             {activePage === 'services' && (

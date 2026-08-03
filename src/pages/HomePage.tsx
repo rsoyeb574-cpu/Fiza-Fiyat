@@ -191,6 +191,45 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       </section>
 
+      {/* FEATURED CONSTRUCTION INTELLIGENCE HUB BANNER */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="glass-card rounded-3xl p-8 sm:p-10 border border-blue-500/30 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950/60 shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none group-hover:scale-125 transition-transform duration-700"></div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+            <div className="lg:col-span-8 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider text-blue-400 bg-blue-500/10 border border-blue-500/20">
+                <Cpu className="w-3.5 h-3.5" />
+                Featured Platform Module
+              </div>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+                Construction <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">Intelligence</span> Hub
+              </h2>
+              <p className="text-neutral-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
+                Dynamic civil engineering & architectural consultation platform. Calculate material formulas, view 2D/3D floor plan layouts, cost breakdowns, construction schedules, and 12 structural knowledge guides.
+              </p>
+              
+              <div className="flex flex-wrap gap-2 text-xs text-neutral-300 pt-2">
+                <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 font-mono">20x20 Plot Calculator</span>
+                <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 font-mono">Cement, Steel & Sand Formulas</span>
+                <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 font-mono">IS 456 Structural Rules</span>
+                <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 font-mono">BOQ Generator</span>
+              </div>
+            </div>
+
+            <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-end">
+              <button
+                onClick={() => setActivePage('construction-intelligence')}
+                className="w-full px-6 py-3.5 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 group/btn"
+              >
+                <span>Launch Construction Intelligence</span>
+                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FEATURED SERVICES */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">

@@ -57,5 +57,20 @@ service cloud.firestore {
     match /users/{document=**} {
       allow read, write: if isAuthenticated() || true;
     }
+
+    match /construction_guides/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
+
+    match /construction_presets/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
+
+    match /construction_rates/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
   }
 }

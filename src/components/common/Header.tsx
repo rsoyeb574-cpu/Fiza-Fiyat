@@ -50,6 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navItems = [
     { id: 'home', label: 'Home' },
+    { id: 'construction-intelligence', label: 'Construction Intelligence', featured: true },
     { id: 'about', label: 'About' },
     { id: 'services', label: 'Services' },
     { id: 'portfolio', label: 'Portfolio' },
@@ -102,13 +103,20 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all relative ${
                   activePage === item.id
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/40'
+                    : item.featured
+                    ? 'text-blue-300 hover:text-white bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30'
                     : 'text-neutral-300 hover:text-white hover:bg-white/10'
                 }`}
               >
                 {item.label}
+                {item.featured && (
+                  <span className="ml-1.5 px-1.5 py-0.2 text-[9px] font-bold uppercase rounded-full bg-cyan-400 text-slate-950 font-mono">
+                    HUB
+                  </span>
+                )}
               </button>
             ))}
           </nav>

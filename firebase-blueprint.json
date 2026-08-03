@@ -133,6 +133,52 @@
         "createdAt": { "type": "string" }
       },
       "required": ["email"]
+    },
+    "construction_guides": {
+      "title": "Construction Guides & Engineering Knowledge",
+      "description": "Detailed construction guides including structural, MEP, materials, pros/cons, life expectancy, maintenance, and budget options",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "category": { "type": "string" },
+        "summary": { "type": "string" },
+        "whyUsed": { "type": "string" },
+        "whyRecommended": { "type": "string" },
+        "advantages": { "type": "array", "items": { "type": "string" } },
+        "disadvantages": { "type": "array", "items": { "type": "string" } },
+        "lifeExpectancy": { "type": "string" },
+        "maintenance": { "type": "string" },
+        "costSavingTips": { "type": "array", "items": { "type": "string" } },
+        "premiumOption": { "type": "string" },
+        "budgetOption": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "slug", "category"]
+    },
+    "construction_presets": {
+      "title": "Plot & Floor Plan Presets",
+      "description": "Presets for plot size, location, budget, floor plan, 3D exterior specs, and recommendations",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "plotWidthFt": { "type": "number" },
+        "plotLengthFt": { "type": "number" },
+        "location": { "type": "string" },
+        "floors": { "type": "string" },
+        "budgetINR": { "type": "number" }
+      },
+      "required": ["name", "plotWidthFt", "plotLengthFt"]
+    },
+    "construction_rates": {
+      "title": "Material & Regional Construction Rates",
+      "description": "Unit prices and labor rates for material estimation and costing",
+      "type": "object",
+      "properties": {
+        "region": { "type": "string" },
+        "materialRates": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      }
     }
   }
 }

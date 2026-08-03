@@ -23,6 +23,11 @@ import {
   WebsiteSettings, 
   Inquiry 
 } from '../types';
+import {
+  ConstructionGuideItem,
+  ConstructionPlotPlan,
+  RegionalRate
+} from '../types/construction';
 import { 
   initialCategories, 
   initialProjects, 
@@ -32,6 +37,11 @@ import {
   initialGallery, 
   initialSettings 
 } from './seedData';
+import {
+  initialConstructionGuides,
+  initialConstructionPlotPlans,
+  initialRegionalRates
+} from './constructionSeedData';
 
 // Storage keys for offline or instant local cache fallback
 const CACHE_KEYS = {
@@ -42,7 +52,10 @@ const CACHE_KEYS = {
   GALLERY: 'fh_cache_gallery',
   TESTIMONIALS: 'fh_cache_testimonials',
   SETTINGS: 'fh_cache_settings',
-  INQUIRIES: 'fh_cache_inquiries'
+  INQUIRIES: 'fh_cache_inquiries',
+  CONSTRUCTION_GUIDES: 'fh_cache_construction_guides',
+  CONSTRUCTION_PLANS: 'fh_cache_construction_plans',
+  REGIONAL_RATES: 'fh_cache_regional_rates'
 };
 
 // Helper for local caching
@@ -118,6 +131,30 @@ export async function seedDatabaseIfEmpty() {
     if (!settingsDoc.exists()) {
       console.log('Seeding initial settings...');
       await setDoc(doc(db, 'settings', 'website'), initialSettings);
+    }
+
+    const guidesSnap = await getDocs(collection(db, 'construction_guides'));
+    if (guidesSnap.empty) {
+      console.log('Seeding initial construction guides...');
+      for (const guide of initialConstructionGuides) {
+        await setDoc(doc(db, 'construction_guides', guide.id), guide);
+      }
+    }
+
+    const plansSnap = await getDocs(collection(db, 'construction_presets'));
+    if (plansSnap.empty) {
+      console.log('Seeding initial construction plot plans...');
+      for (const plan of initialConstructionPlotPlans) {
+        await setDoc(doc(db, 'construction_presets', plan.id), plan);
+      }
+    }
+
+    const ratesSnap = await getDocs(collection(db, 'construction_rates'));
+    if (ratesSnap.empty) {
+      console.log('Seeding initial regional rates...');
+      for (const rate of initialRegionalRates) {
+        await setDoc(doc(db, 'construction_rates', rate.id), rate);
+      }
     }
 
     console.log('Database seeding complete!');
@@ -446,4 +483,101 @@ export async function getInquiries(): Promise<Inquiry[]> {
     }
   } catch (e) {}
   return getLocalCache<Inquiry[]>(CACHE_KEYS.INQUIRIES) || [];
+}
+
+// =========================================
+// CONSTRUCTION INTELLIGENCE DATA SERVICES
+// =========================================
+
+export async function getConstructionGuides(): Promise<ConstructionGuideItem[]> {
+  try {
+    const snap = await getDocs(collection(db, 'construction_guides'));
+    if (!snap.empty) {
+      const guides = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ConstructionGuideItem));
+      setLocalCache(CACHE_KEYS.CONSTRUCTION_GUIDES, guides);
+      return guides;
+    }
+  } catch (e) {
+    console.warn('Error fetching construction guides from Firestore, fallback to cache/seed:', e);
+  }
+  const cached = getLocalCache<ConstructionGuideItem[]>(CACHE_KEYS.CONSTRUCTION_GUIDES);
+  return cached && cached.length > 0 ? cached : initialConstructionGuides;
+}
+
+export async function saveConstructionGuide(guide: ConstructionGuideItem): Promise<void> {
+  try {
+    await setDoc(doc(db, 'construction_guides', guide.id), guide);
+  } catch (e) {
+    console.error('Error saving construction guide to Firestore:', e);
+  }
+  const current = await getConstructionGuides();
+  const idx = current.findIndex(g => g.id === guide.id);
+  if (idx >= 0) {
+    current[idx] = guide;
+  } else {
+    current.push(guide);
+  }
+  setLocalCache(CACHE_KEYS.CONSTRUCTION_GUIDES, current);
+}
+
+export async function getConstructionPlotPlans(): Promise<ConstructionPlotPlan[]> {
+  try {
+    const snap = await getDocs(collection(db, 'construction_presets'));
+    if (!snap.empty) {
+      const plans = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ConstructionPlotPlan));
+      setLocalCache(CACHE_KEYS.CONSTRUCTION_PLANS, plans);
+      return plans;
+    }
+  } catch (e) {
+    console.warn('Error fetching construction plans from Firestore, fallback to cache/seed:', e);
+  }
+  const cached = getLocalCache<ConstructionPlotPlan[]>(CACHE_KEYS.CONSTRUCTION_PLANS);
+  return cached && cached.length > 0 ? cached : initialConstructionPlotPlans;
+}
+
+export async function saveConstructionPlotPlan(plan: ConstructionPlotPlan): Promise<void> {
+  try {
+    await setDoc(doc(db, 'construction_presets', plan.id), plan);
+  } catch (e) {
+    console.error('Error saving construction plan to Firestore:', e);
+  }
+  const current = await getConstructionPlotPlans();
+  const idx = current.findIndex(p => p.id === plan.id);
+  if (idx >= 0) {
+    current[idx] = plan;
+  } else {
+    current.push(plan);
+  }
+  setLocalCache(CACHE_KEYS.CONSTRUCTION_PLANS, current);
+}
+
+export async function getRegionalRates(): Promise<RegionalRate[]> {
+  try {
+    const snap = await getDocs(collection(db, 'construction_rates'));
+    if (!snap.empty) {
+      const rates = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as RegionalRate));
+      setLocalCache(CACHE_KEYS.REGIONAL_RATES, rates);
+      return rates;
+    }
+  } catch (e) {
+    console.warn('Error fetching regional rates from Firestore, fallback to cache/seed:', e);
+  }
+  const cached = getLocalCache<RegionalRate[]>(CACHE_KEYS.REGIONAL_RATES);
+  return cached && cached.length > 0 ? cached : initialRegionalRates;
+}
+
+export async function saveRegionalRate(rate: RegionalRate): Promise<void> {
+  try {
+    await setDoc(doc(db, 'construction_rates', rate.id), rate);
+  } catch (e) {
+    console.error('Error saving regional rate to Firestore:', e);
+  }
+  const current = await getRegionalRates();
+  const idx = current.findIndex(r => r.id === rate.id);
+  if (idx >= 0) {
+    current[idx] = rate;
+  } else {
+    current.push(rate);
+  }
+  setLocalCache(CACHE_KEYS.REGIONAL_RATES, current);
 }
