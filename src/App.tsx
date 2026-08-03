@@ -1,0 +1,315 @@
+import React, { useState, useEffect } from 'react';
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { Header } from './components/common/Header';
+import { Footer } from './components/common/Footer';
+import { FloatingContact } from './components/common/FloatingContact';
+import { SearchModal } from './components/common/SearchModal';
+import { ShareModal } from './components/common/ShareModal';
+import { FavoritesDrawer } from './components/common/FavoritesDrawer';
+import { CookieConsent } from './components/common/CookieConsent';
+import { CostCalculatorModal } from './components/calculators/CostCalculatorModal';
+import { AIChatbot } from './components/ai/AIChatbot';
+
+import { HomePage } from './pages/HomePage';
+import { AboutPage } from './pages/AboutPage';
+import { ServicesPage } from './pages/ServicesPage';
+import { PortfolioPage } from './pages/PortfolioPage';
+import { ProjectDetailPage } from './pages/ProjectDetailPage';
+import { BlogPage } from './pages/BlogPage';
+import { BlogPostPage } from './pages/BlogPostPage';
+import { GalleryPage } from './pages/GalleryPage';
+import { ContactPage } from './pages/ContactPage';
+import { PrivacyTermsPage } from './pages/PrivacyTermsPage';
+import { AdminPage } from './pages/AdminPage';
+
+import { 
+  Project, 
+  Category, 
+  Service, 
+  BlogArticle, 
+  Testimonial, 
+  GalleryItem, 
+  WebsiteSettings 
+} from './types';
+import { 
+  getProjects, 
+  getCategories, 
+  getServices, 
+  getBlogs, 
+  getTestimonials, 
+  getGalleryItems, 
+  getWebsiteSettings, 
+  seedDatabaseIfEmpty 
+} from './services/db';
+
+export default function App() {
+  const [activePage, setActivePage] = useState<string>('home');
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedBlogId, setSelectedBlogId] = useState<string | null>(null);
+
+  // Modals state
+  const [searchModalOpen, setSearchModalOpen] = useState<boolean>(false);
+  const [favoritesDrawerOpen, setFavoritesDrawerOpen] = useState<boolean>(false);
+  const [costCalculatorOpen, setCostCalculatorOpen] = useState<boolean>(false);
+  const [aiChatOpen, setAiChatOpen] = useState<boolean>(false);
+  const [shareProject, setShareProject] = useState<Project | null>(null);
+
+  // Favorites state
+  const [favorites, setFavorites] = useState<Project[]>(() => {
+    try {
+      const saved = localStorage.getItem('fh_favorites');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // DB State
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [blogs, setBlogs] = useState<BlogArticle[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [settings, setSettings] = useState<WebsiteSettings>({
+    heroTitle: 'Building the Future with Design, Creativity & AI',
+    heroSubtitle: 'World-Class Digital Business Hub showcasing architectural engineering, luxury interiors, 3D BIM rendering, AI generative media, and bespoke web platforms.',
+    heroTypingTexts: ['Architectural Design & Planning', '3D Rendering & Walkthroughs', 'AutoCAD & Revit BIM', 'AI Generative Production'],
+    companyStory: 'Fiza Hayat was founded to bridge physical architectural craftsmanship, advanced BIM engineering, and cutting-edge generative AI technology.',
+    mission: 'To deliver flawless design, engineering, and digital solutions.',
+    vision: 'To set global benchmarks in architectural intelligence.',
+    companyEmail: 'contact@fizahayat.com',
+    companyPhone: '+1 (800) 555-FIZA',
+    whatsappNumber: '+18005553492',
+    address: 'Executive Tower 4, Business Bay Dubai / Geneva',
+    googleMapsEmbed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3610.17851002432!2d55.2721877!3d25.1868882!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3e5f682def22a275%3A0x6b772b1684c3e395!2sBusiness%20Bay%20Dubai!5e0!3m2!1sen!2sae!4v1700000000000',
+    statsProjects: 145,
+    statsClients: 82,
+    statsCountries: 24,
+    statsYears: 10,
+    socialLinks: {}
+  });
+
+  const loadData = async () => {
+    await seedDatabaseIfEmpty();
+    const p = await getProjects();
+    const c = await getCategories();
+    const s = await getServices();
+    const b = await getBlogs();
+    const t = await getTestimonials();
+    const g = await getGalleryItems();
+    const st = await getWebsiteSettings();
+
+    setProjects(p);
+    setCategories(c);
+    setServices(s);
+    setBlogs(b);
+    setTestimonials(t);
+    setGallery(g);
+    setSettings(st);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('fh_favorites', JSON.stringify(favorites));
+  }, [favorites]);
+
+  const toggleFavorite = (project: Project) => {
+    setFavorites(prev => {
+      const exists = prev.some(p => p.id === project.id);
+      if (exists) return prev.filter(p => p.id !== project.id);
+      return [...prev, project];
+    });
+  };
+
+  const isFavorite = (id: string) => favorites.some(p => p.id === id);
+
+  const handleSelectProject = (id: string) => {
+    setSelectedProjectId(id);
+    setActivePage('project-detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSelectBlog = (id: string) => {
+    setSelectedBlogId(id);
+    setActivePage('blog-detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const activeProject = projects.find(p => p.id === selectedProjectId) || projects[0];
+  const activeBlog = blogs.find(b => b.id === selectedBlogId) || blogs[0];
+
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-blue-600 selection:text-white flex flex-col justify-between">
+          
+          {/* Header Navigation */}
+          <Header
+            activePage={activePage}
+            setActivePage={(page) => {
+              setActivePage(page);
+              setSelectedProjectId(null);
+              setSelectedBlogId(null);
+            }}
+            onOpenSearch={() => setSearchModalOpen(true)}
+            onOpenFavorites={() => setFavoritesDrawerOpen(true)}
+            onOpenCalculator={() => setCostCalculatorOpen(true)}
+            favoritesCount={favorites.length}
+          />
+
+          {/* Main Content Pages */}
+          <main className="flex-1">
+            {activePage === 'home' && (
+              <HomePage
+                settings={settings}
+                projects={projects}
+                services={services}
+                testimonials={testimonials}
+                categories={categories}
+                setActivePage={setActivePage}
+                onSelectProject={handleSelectProject}
+                onOpenCalculator={() => setCostCalculatorOpen(true)}
+                onToggleFavorite={toggleFavorite}
+                isFavorite={isFavorite}
+              />
+            )}
+
+            {activePage === 'about' && (
+              <AboutPage settings={settings} setActivePage={setActivePage} />
+            )}
+
+            {activePage === 'services' && (
+              <ServicesPage
+                services={services}
+                setActivePage={setActivePage}
+                onOpenCalculator={() => setCostCalculatorOpen(true)}
+              />
+            )}
+
+            {activePage === 'portfolio' && (
+              <PortfolioPage
+                projects={projects}
+                categories={categories}
+                onSelectProject={handleSelectProject}
+                onToggleFavorite={toggleFavorite}
+                isFavorite={isFavorite}
+              />
+            )}
+
+            {activePage === 'project-detail' && activeProject && (
+              <ProjectDetailPage
+                project={activeProject}
+                relatedProjects={projects.filter(p => p.id !== activeProject.id)}
+                onBack={() => setActivePage('portfolio')}
+                onSelectProject={handleSelectProject}
+                onOpenShare={(p) => setShareProject(p)}
+                onToggleFavorite={toggleFavorite}
+                isFavorite={isFavorite}
+              />
+            )}
+
+            {activePage === 'blog' && (
+              <BlogPage blogs={blogs} onSelectBlog={handleSelectBlog} />
+            )}
+
+            {activePage === 'blog-detail' && activeBlog && (
+              <BlogPostPage
+                blog={activeBlog}
+                onBack={() => setActivePage('blog')}
+                onSelectBlog={handleSelectBlog}
+              />
+            )}
+
+            {activePage === 'gallery' && (
+              <GalleryPage items={gallery} />
+            )}
+
+            {activePage === 'contact' && (
+              <ContactPage settings={settings} />
+            )}
+
+            {activePage === 'privacy' && (
+              <PrivacyTermsPage mode="privacy" />
+            )}
+
+            {activePage === 'terms' && (
+              <PrivacyTermsPage mode="terms" />
+            )}
+
+            {activePage === 'admin' && (
+              <AdminPage
+                projects={projects}
+                categories={categories}
+                services={services}
+                blogs={blogs}
+                settings={settings}
+                onDataChange={loadData}
+              />
+            )}
+          </main>
+
+          {/* Footer */}
+          <Footer settings={settings} setActivePage={setActivePage} />
+
+          {/* Floating Actions */}
+          <FloatingContact
+            settings={settings}
+            onOpenCalculator={() => setCostCalculatorOpen(true)}
+            onOpenAIChat={() => setAiChatOpen(true)}
+          />
+
+          {/* Global Search Modal */}
+          <SearchModal
+            isOpen={searchModalOpen}
+            onClose={() => setSearchModalOpen(false)}
+            projects={projects}
+            services={services}
+            blogs={blogs}
+            onSelectProject={handleSelectProject}
+            onSelectService={() => setActivePage('services')}
+            onSelectBlog={handleSelectBlog}
+          />
+
+          {/* Favorites Drawer */}
+          <FavoritesDrawer
+            isOpen={favoritesDrawerOpen}
+            onClose={() => setFavoritesDrawerOpen(false)}
+            favorites={favorites}
+            onRemoveFavorite={(id) => setFavorites(prev => prev.filter(p => p.id !== id))}
+            onSelectProject={handleSelectProject}
+          />
+
+          {/* Cost Calculator Modal */}
+          <CostCalculatorModal
+            isOpen={costCalculatorOpen}
+            onClose={() => setCostCalculatorOpen(false)}
+          />
+
+          {/* Fiza AI Assistant Chatbot */}
+          <AIChatbot
+            isOpen={aiChatOpen}
+            onClose={() => setAiChatOpen(false)}
+            services={services}
+            projects={projects}
+          />
+
+          {/* Share Modal */}
+          <ShareModal
+            project={shareProject}
+            isOpen={!!shareProject}
+            onClose={() => setShareProject(null)}
+          />
+
+          {/* Cookie Banner */}
+          <CookieConsent />
+
+        </div>
+      </ThemeProvider>
+    </AuthProvider>
+  );
+}

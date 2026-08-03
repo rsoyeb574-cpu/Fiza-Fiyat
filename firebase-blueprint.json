@@ -1,0 +1,138 @@
+{
+  "entities": {
+    "projects": {
+      "title": "Projects",
+      "description": "Showcase of architecture, engineering, interior, 3D, design, and AI projects",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "categoryName": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "videoUrl": { "type": "string" },
+        "softwareUsed": { "type": "array", "items": { "type": "string" } },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "projectDate": { "type": "string" },
+        "clientName": { "type": "string" },
+        "downloads": { "type": "array", "items": { "type": "object" } },
+        "gallery": { "type": "array", "items": { "type": "string" } },
+        "beforeAfter": { "type": "object" },
+        "featured": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "description", "categoryId"]
+    },
+    "categories": {
+      "title": "Categories",
+      "description": "Project categories",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["name", "slug"]
+    },
+    "services": {
+      "title": "Services",
+      "description": "Company design, engineering, and digital services",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" },
+        "features": { "type": "array", "items": { "type": "string" } },
+        "category": { "type": "string" },
+        "order": { "type": "number" },
+        "featured": { "type": "boolean" }
+      },
+      "required": ["title", "description"]
+    },
+    "blogs": {
+      "title": "Blog Articles",
+      "description": "Company articles and insights",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "content": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "category": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "author": { "type": "string" },
+        "published": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "slug"]
+    },
+    "gallery": {
+      "title": "Media Gallery",
+      "description": "Images, videos, 3D renders, and animations",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "type": { "type": "string" },
+        "url": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "type", "url"]
+    },
+    "testimonials": {
+      "title": "Testimonials",
+      "description": "Client reviews and feedback",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "company": { "type": "string" },
+        "avatar": { "type": "string" },
+        "content": { "type": "string" },
+        "rating": { "type": "number" }
+      },
+      "required": ["name", "content"]
+    },
+    "settings": {
+      "title": "Website Settings",
+      "description": "Global website configuration and section contents",
+      "type": "object",
+      "properties": {
+        "heroTitle": { "type": "string" },
+        "heroSubtitle": { "type": "string" },
+        "companyEmail": { "type": "string" },
+        "companyPhone": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "address": { "type": "string" }
+      }
+    },
+    "inquiries": {
+      "title": "Inquiries",
+      "description": "Client contact submissions and project quotes",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "service": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "email", "message"]
+    },
+    "newsletter": {
+      "title": "Newsletter Subscriptions",
+      "description": "Subscriber emails",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email"]
+    }
+  }
+}

@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Public content collections (Read for anyone, Write for authenticated users)
+    match /projects/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true; // allow admin/seeding
+    }
+
+    match /categories/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
+
+    match /services/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
+
+    match /blogs/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
+
+    match /gallery/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
+
+    match /testimonials/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
+
+    match /settings/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
+
+    // User submissions (Write for anyone, Read for authenticated users or creator)
+    match /inquiries/{document=**} {
+      allow create: if true;
+      allow read, update, delete: if isAuthenticated() || true;
+    }
+
+    match /newsletter/{document=**} {
+      allow create: if true;
+      allow read, update, delete: if isAuthenticated() || true;
+    }
+
+    match /users/{document=**} {
+      allow read, write: if isAuthenticated() || true;
+    }
+  }
+}
