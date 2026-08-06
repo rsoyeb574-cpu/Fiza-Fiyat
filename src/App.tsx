@@ -53,7 +53,13 @@ import {
   getTestimonials, 
   getGalleryItems, 
   getWebsiteSettings, 
-  seedDatabaseIfEmpty 
+  seedDatabaseIfEmpty,
+  subscribeProjects,
+  subscribeCategories,
+  subscribeServices,
+  subscribeBlogs,
+  subscribeTestimonials,
+  subscribeWebsiteSettings
 } from './services/db';
 
 export default function App() {
@@ -104,27 +110,27 @@ export default function App() {
     socialLinks: {}
   });
 
-  const loadData = async () => {
-    await seedDatabaseIfEmpty();
-    const p = await getProjects();
-    const c = await getCategories();
-    const s = await getServices();
-    const b = await getBlogs();
-    const t = await getTestimonials();
-    const g = await getGalleryItems();
-    const st = await getWebsiteSettings();
-
-    setProjects(p);
-    setCategories(c);
-    setServices(s);
-    setBlogs(b);
-    setTestimonials(t);
-    setGallery(g);
-    setSettings(st);
-  };
-
   useEffect(() => {
-    loadData();
+    // Seed DB if empty then establish real-time snapshot subscribers
+    seedDatabaseIfEmpty();
+
+    const unsubProjects = subscribeProjects(setProjects);
+    const unsubCategories = subscribeCategories(setCategories);
+    const unsubServices = subscribeServices(setServices);
+    const unsubBlogs = subscribeBlogs(setBlogs);
+    const unsubTestimonials = subscribeTestimonials(setTestimonials);
+    const unsubSettings = subscribeWebsiteSettings(setSettings);
+
+    getGalleryItems().then(setGallery);
+
+    return () => {
+      unsubProjects();
+      unsubCategories();
+      unsubServices();
+      unsubBlogs();
+      unsubTestimonials();
+      unsubSettings();
+    };
   }, []);
 
   useEffect(() => {
@@ -305,7 +311,7 @@ export default function App() {
                 services={services}
                 blogs={blogs}
                 settings={settings}
-                onDataChange={loadData}
+                onDataChange={() => {}}
               />
             )}
           </main>

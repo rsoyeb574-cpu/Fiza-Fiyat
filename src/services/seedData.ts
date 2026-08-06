@@ -1,4 +1,4 @@
-import { Category, Project, Service, BlogArticle, Testimonial, GalleryItem, WebsiteSettings } from '../types';
+import { Category, Project, Service, BlogArticle, Testimonial, GalleryItem, WebsiteSettings, TeamMember, MediaAsset } from '../types';
 
 export const initialCategories: Category[] = [
   {
@@ -571,6 +571,77 @@ export const initialGallery: GalleryItem[] = [
     thumbnailUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80',
     category: 'AI Media',
     createdAt: '2026-04-22'
+  }
+];
+
+export const initialTeamMembers: TeamMember[] = [
+  {
+    id: 'team-1',
+    name: 'Fiza Hayat',
+    role: 'Principal Architect & Creative Director',
+    bio: 'Lead architect with over 10 years of experience in luxury parametric residential design, urban master planning, and AI creative workflows.',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80',
+    email: 'fiza@fizahayat.com',
+    specialization: 'Parametric Architecture & Luxury Estates',
+    experienceYears: 10,
+    order: 1
+  },
+  {
+    id: 'team-2',
+    name: 'Tariq Al-Mansoor',
+    role: 'Chief Structural Engineer & BIM Lead',
+    bio: 'Specialist in high-rise earthquake resistance, LOD 500 Revit BIM coordination, and steel facade engineering.',
+    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=80',
+    email: 'tariq@fizahayat.com',
+    specialization: 'Revit BIM LOD 500 & Structural Steel',
+    experienceYears: 12,
+    order: 2
+  },
+  {
+    id: 'team-3',
+    name: 'Elena Rostova',
+    role: 'Senior 3D Visualizer & AI Media Director',
+    bio: 'Unreal Engine 5 specialist crafting 8K ray-traced walkthroughs and generative AI concept synthesis pipelines.',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=80',
+    email: 'elena@fizahayat.com',
+    specialization: '3D CGI Rendering & Generative AI',
+    experienceYears: 8,
+    order: 3
+  }
+];
+
+export const initialMediaAssets: MediaAsset[] = [
+  {
+    id: 'media-1',
+    title: 'Obsidian Villa Blueprint - Full Structural PDF',
+    type: 'pdf',
+    url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    fileSize: '14.2 MB',
+    category: 'Blueprints & Drawings',
+    description: 'Complete architectural floor plans, elevation sheets, and structural foundation specifications.',
+    createdAt: '2026-03-20'
+  },
+  {
+    id: 'media-2',
+    title: 'Glass Pavilion Sunset Lighting 8K Render',
+    type: 'image',
+    url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1600&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=600&q=80',
+    fileSize: '8.4 MB',
+    category: 'Architecture Renders',
+    description: 'High-resolution exterior render showcasing twilight lighting and glass reflection.',
+    createdAt: '2026-03-20'
+  },
+  {
+    id: 'media-3',
+    title: 'Modern Villa Walkthrough Flyover Video',
+    type: 'video',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-modern-villa-surrounded-by-a-garden-42611-large.mp4',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
+    fileSize: '32.1 MB',
+    category: 'Video Walkthroughs',
+    description: '4K cinematic drone walkthrough video of estate property.',
+    createdAt: '2026-03-22'
   }
 ];
 

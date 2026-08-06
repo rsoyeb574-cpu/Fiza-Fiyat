@@ -10,7 +10,8 @@ import {
   query, 
   orderBy, 
   limit, 
-  where 
+  where,
+  onSnapshot
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { 
@@ -21,7 +22,9 @@ import {
   Testimonial, 
   GalleryItem, 
   WebsiteSettings, 
-  Inquiry 
+  Inquiry,
+  TeamMember,
+  MediaAsset
 } from '../types';
 import {
   ConstructionGuideItem,
@@ -35,7 +38,9 @@ import {
   initialBlogs, 
   initialTestimonials, 
   initialGallery, 
-  initialSettings 
+  initialSettings,
+  initialTeamMembers,
+  initialMediaAssets
 } from './seedData';
 import {
   initialConstructionGuides,
@@ -51,6 +56,8 @@ const CACHE_KEYS = {
   BLOGS: 'fh_cache_blogs',
   GALLERY: 'fh_cache_gallery',
   TESTIMONIALS: 'fh_cache_testimonials',
+  TEAM: 'fh_cache_team',
+  MEDIA: 'fh_cache_media',
   SETTINGS: 'fh_cache_settings',
   INQUIRIES: 'fh_cache_inquiries',
   CONSTRUCTION_GUIDES: 'fh_cache_construction_guides',
@@ -116,6 +123,22 @@ export async function seedDatabaseIfEmpty() {
       console.log('Seeding initial testimonials...');
       for (const t of initialTestimonials) {
         await setDoc(doc(db, 'testimonials', t.id), t);
+      }
+    }
+
+    const teamSnap = await getDocs(collection(db, 'team'));
+    if (teamSnap.empty) {
+      console.log('Seeding initial team...');
+      for (const tm of initialTeamMembers) {
+        await setDoc(doc(db, 'team', tm.id), tm);
+      }
+    }
+
+    const mediaSnap = await getDocs(collection(db, 'media'));
+    if (mediaSnap.empty) {
+      console.log('Seeding initial media assets...');
+      for (const ma of initialMediaAssets) {
+        await setDoc(doc(db, 'media', ma.id), ma);
       }
     }
 
@@ -418,6 +441,141 @@ export async function getTestimonials(): Promise<Testimonial[]> {
   return getLocalCache<Testimonial[]>(CACHE_KEYS.TESTIMONIALS) || initialTestimonials;
 }
 
+export async function saveTestimonial(testData: Partial<Testimonial>): Promise<string> {
+  const id = testData.id || `test-${Date.now()}`;
+  const fullData: Testimonial = {
+    id,
+    name: testData.name || 'Client Reviewer',
+    role: testData.role || 'Client',
+    company: testData.company || '',
+    avatar: testData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    content: testData.content || '',
+    rating: testData.rating || 5,
+    location: testData.location || ''
+  };
+
+  try {
+    await setDoc(doc(db, 'testimonials', id), fullData, { merge: true });
+  } catch (e) {}
+
+  const cached = getLocalCache<Testimonial[]>(CACHE_KEYS.TESTIMONIALS) || initialTestimonials;
+  const idx = cached.findIndex(t => t.id === id);
+  if (idx >= 0) cached[idx] = fullData;
+  else cached.unshift(fullData);
+  setLocalCache(CACHE_KEYS.TESTIMONIALS, cached);
+
+  return id;
+}
+
+export async function deleteTestimonial(id: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'testimonials', id));
+  } catch (e) {}
+  const cached = getLocalCache<Testimonial[]>(CACHE_KEYS.TESTIMONIALS) || initialTestimonials;
+  setLocalCache(CACHE_KEYS.TESTIMONIALS, cached.filter(t => t.id !== id));
+}
+
+// ---------------- TEAM MEMBERS ----------------
+export async function getTeamMembers(): Promise<TeamMember[]> {
+  try {
+    const q = query(collection(db, 'team'), orderBy('order', 'asc'));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const team = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamMember));
+      setLocalCache(CACHE_KEYS.TEAM, team);
+      return team;
+    }
+  } catch (e) {}
+  return getLocalCache<TeamMember[]>(CACHE_KEYS.TEAM) || initialTeamMembers;
+}
+
+export async function saveTeamMember(teamData: Partial<TeamMember>): Promise<string> {
+  const id = teamData.id || `team-${Date.now()}`;
+  const fullData: TeamMember = {
+    id,
+    name: teamData.name || 'Team Member',
+    role: teamData.role || 'Design Specialist',
+    bio: teamData.bio || '',
+    avatar: teamData.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80',
+    email: teamData.email || '',
+    phone: teamData.phone || '',
+    specialization: teamData.specialization || '',
+    experienceYears: teamData.experienceYears || 5,
+    order: teamData.order || 99
+  };
+
+  try {
+    await setDoc(doc(db, 'team', id), fullData, { merge: true });
+  } catch (e) {}
+
+  const cached = getLocalCache<TeamMember[]>(CACHE_KEYS.TEAM) || initialTeamMembers;
+  const idx = cached.findIndex(tm => tm.id === id);
+  if (idx >= 0) cached[idx] = fullData;
+  else cached.push(fullData);
+  setLocalCache(CACHE_KEYS.TEAM, cached);
+
+  return id;
+}
+
+export async function deleteTeamMember(id: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'team', id));
+  } catch (e) {}
+  const cached = getLocalCache<TeamMember[]>(CACHE_KEYS.TEAM) || initialTeamMembers;
+  setLocalCache(CACHE_KEYS.TEAM, cached.filter(tm => tm.id !== id));
+}
+
+// ---------------- MEDIA ASSETS (IMAGES, VIDEOS, PDFS) ----------------
+export async function getMediaAssets(): Promise<MediaAsset[]> {
+  try {
+    const q = query(collection(db, 'media'), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const media = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as MediaAsset));
+      setLocalCache(CACHE_KEYS.MEDIA, media);
+      return media;
+    }
+  } catch (e) {}
+  return getLocalCache<MediaAsset[]>(CACHE_KEYS.MEDIA) || initialMediaAssets;
+}
+
+export async function saveMediaAsset(mediaData: Partial<MediaAsset>): Promise<string> {
+  const id = mediaData.id || `media-${Date.now()}`;
+  const now = new Date().toISOString();
+  const fullData: MediaAsset = {
+    id,
+    title: mediaData.title || 'Untitled Asset',
+    type: mediaData.type || 'image',
+    url: mediaData.url || '',
+    thumbnailUrl: mediaData.thumbnailUrl || mediaData.url || '',
+    fileSize: mediaData.fileSize || '1.2 MB',
+    category: mediaData.category || 'General',
+    projectId: mediaData.projectId || '',
+    description: mediaData.description || '',
+    createdAt: mediaData.createdAt || now
+  };
+
+  try {
+    await setDoc(doc(db, 'media', id), fullData, { merge: true });
+  } catch (e) {}
+
+  const cached = getLocalCache<MediaAsset[]>(CACHE_KEYS.MEDIA) || initialMediaAssets;
+  const idx = cached.findIndex(m => m.id === id);
+  if (idx >= 0) cached[idx] = fullData;
+  else cached.unshift(fullData);
+  setLocalCache(CACHE_KEYS.MEDIA, cached);
+
+  return id;
+}
+
+export async function deleteMediaAsset(id: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'media', id));
+  } catch (e) {}
+  const cached = getLocalCache<MediaAsset[]>(CACHE_KEYS.MEDIA) || initialMediaAssets;
+  setLocalCache(CACHE_KEYS.MEDIA, cached.filter(m => m.id !== id));
+}
+
 // ---------------- GALLERY ----------------
 export async function getGalleryItems(): Promise<GalleryItem[]> {
   try {
@@ -483,6 +641,166 @@ export async function getInquiries(): Promise<Inquiry[]> {
     }
   } catch (e) {}
   return getLocalCache<Inquiry[]>(CACHE_KEYS.INQUIRIES) || [];
+}
+
+export async function deleteInquiry(id: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'inquiries', id));
+  } catch (e) {}
+  const cached = getLocalCache<Inquiry[]>(CACHE_KEYS.INQUIRIES) || [];
+  setLocalCache(CACHE_KEYS.INQUIRIES, cached.filter(i => i.id !== id));
+}
+
+// =========================================
+// REAL-TIME FIRESTORE SUBSCRIPTIONS
+// =========================================
+
+export function subscribeProjects(callback: (projects: Project[]) => void) {
+  try {
+    const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+      setLocalCache(CACHE_KEYS.PROJECTS, items);
+      callback(items);
+    }, (error) => {
+      console.warn('Projects onSnapshot error:', error);
+      callback(getLocalCache<Project[]>(CACHE_KEYS.PROJECTS) || initialProjects);
+    });
+  } catch (e) {
+    callback(getLocalCache<Project[]>(CACHE_KEYS.PROJECTS) || initialProjects);
+    return () => {};
+  }
+}
+
+export function subscribeCategories(callback: (categories: Category[]) => void) {
+  try {
+    const q = query(collection(db, 'categories'), orderBy('order', 'asc'));
+    return onSnapshot(q, (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+      setLocalCache(CACHE_KEYS.CATEGORIES, items);
+      callback(items);
+    }, (error) => {
+      console.warn('Categories onSnapshot error:', error);
+      callback(getLocalCache<Category[]>(CACHE_KEYS.CATEGORIES) || initialCategories);
+    });
+  } catch (e) {
+    callback(getLocalCache<Category[]>(CACHE_KEYS.CATEGORIES) || initialCategories);
+    return () => {};
+  }
+}
+
+export function subscribeServices(callback: (services: Service[]) => void) {
+  try {
+    const q = query(collection(db, 'services'), orderBy('order', 'asc'));
+    return onSnapshot(q, (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
+      setLocalCache(CACHE_KEYS.SERVICES, items);
+      callback(items);
+    }, (error) => {
+      console.warn('Services onSnapshot error:', error);
+      callback(getLocalCache<Service[]>(CACHE_KEYS.SERVICES) || initialServices);
+    });
+  } catch (e) {
+    callback(getLocalCache<Service[]>(CACHE_KEYS.SERVICES) || initialServices);
+    return () => {};
+  }
+}
+
+export function subscribeBlogs(callback: (blogs: BlogArticle[]) => void) {
+  try {
+    const q = query(collection(db, 'blogs'), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogArticle));
+      setLocalCache(CACHE_KEYS.BLOGS, items);
+      callback(items);
+    }, (error) => {
+      console.warn('Blogs onSnapshot error:', error);
+      callback(getLocalCache<BlogArticle[]>(CACHE_KEYS.BLOGS) || initialBlogs);
+    });
+  } catch (e) {
+    callback(getLocalCache<BlogArticle[]>(CACHE_KEYS.BLOGS) || initialBlogs);
+    return () => {};
+  }
+}
+
+export function subscribeTestimonials(callback: (testimonials: Testimonial[]) => void) {
+  try {
+    return onSnapshot(collection(db, 'testimonials'), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Testimonial));
+      setLocalCache(CACHE_KEYS.TESTIMONIALS, items);
+      callback(items);
+    }, (error) => {
+      callback(getLocalCache<Testimonial[]>(CACHE_KEYS.TESTIMONIALS) || initialTestimonials);
+    });
+  } catch (e) {
+    callback(getLocalCache<Testimonial[]>(CACHE_KEYS.TESTIMONIALS) || initialTestimonials);
+    return () => {};
+  }
+}
+
+export function subscribeTeamMembers(callback: (team: TeamMember[]) => void) {
+  try {
+    const q = query(collection(db, 'team'), orderBy('order', 'asc'));
+    return onSnapshot(q, (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamMember));
+      setLocalCache(CACHE_KEYS.TEAM, items);
+      callback(items);
+    }, (error) => {
+      callback(getLocalCache<TeamMember[]>(CACHE_KEYS.TEAM) || initialTeamMembers);
+    });
+  } catch (e) {
+    callback(getLocalCache<TeamMember[]>(CACHE_KEYS.TEAM) || initialTeamMembers);
+    return () => {};
+  }
+}
+
+export function subscribeMediaAssets(callback: (assets: MediaAsset[]) => void) {
+  try {
+    const q = query(collection(db, 'media'), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MediaAsset));
+      setLocalCache(CACHE_KEYS.MEDIA, items);
+      callback(items);
+    }, (error) => {
+      callback(getLocalCache<MediaAsset[]>(CACHE_KEYS.MEDIA) || initialMediaAssets);
+    });
+  } catch (e) {
+    callback(getLocalCache<MediaAsset[]>(CACHE_KEYS.MEDIA) || initialMediaAssets);
+    return () => {};
+  }
+}
+
+export function subscribeWebsiteSettings(callback: (settings: WebsiteSettings) => void) {
+  try {
+    return onSnapshot(doc(db, 'settings', 'website'), (snapshot) => {
+      if (snapshot.exists()) {
+        const settings = snapshot.data() as WebsiteSettings;
+        setLocalCache(CACHE_KEYS.SETTINGS, settings);
+        callback(settings);
+      }
+    }, (error) => {
+      callback(getLocalCache<WebsiteSettings>(CACHE_KEYS.SETTINGS) || initialSettings);
+    });
+  } catch (e) {
+    callback(getLocalCache<WebsiteSettings>(CACHE_KEYS.SETTINGS) || initialSettings);
+    return () => {};
+  }
+}
+
+export function subscribeInquiries(callback: (inquiries: Inquiry[]) => void) {
+  try {
+    const q = query(collection(db, 'inquiries'), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Inquiry));
+      setLocalCache(CACHE_KEYS.INQUIRIES, items);
+      callback(items);
+    }, (error) => {
+      callback(getLocalCache<Inquiry[]>(CACHE_KEYS.INQUIRIES) || []);
+    });
+  } catch (e) {
+    callback(getLocalCache<Inquiry[]>(CACHE_KEYS.INQUIRIES) || []);
+    return () => {};
+  }
 }
 
 // =========================================

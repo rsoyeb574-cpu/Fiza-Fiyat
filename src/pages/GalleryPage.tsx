@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Image, Video, Box, Sparkles, Eye, X } from 'lucide-react';
 import { GalleryItem } from '../types';
+import { formatVideoEmbedUrl } from '../utils/media';
 
 interface GalleryPageProps {
   items: GalleryItem[];
@@ -88,9 +89,24 @@ export const GalleryPage: React.FC<GalleryPageProps> = ({ items }) => {
 
             <div className="space-y-3">
               {activeItem.type === 'video' ? (
-                <video src={activeItem.url} controls autoPlay className="w-full max-h-[70vh] rounded-2xl object-cover" />
+                (() => {
+                  const { isYouTube, embedUrl } = formatVideoEmbedUrl(activeItem.url);
+                  return isYouTube ? (
+                    <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black">
+                      <iframe
+                        src={embedUrl}
+                        title={activeItem.title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                      />
+                    </div>
+                  ) : (
+                    <video src={activeItem.url} controls autoPlay className="w-full max-h-[70vh] rounded-2xl object-cover" />
+                  );
+                })()
               ) : (
-                <img src={activeItem.url} alt={activeItem.title} className="w-full max-h-[70vh] rounded-2xl object-contain" />
+                <img src={activeItem.url} alt={activeItem.title} className="w-full max-h-[70vh] rounded-2xl object-contain mx-auto" />
               )}
               
               <div className="p-2">

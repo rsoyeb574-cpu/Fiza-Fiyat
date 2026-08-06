@@ -38,6 +38,16 @@ service cloud.firestore {
       allow write: if isAuthenticated() || true;
     }
 
+    match /team/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
+
+    match /media/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
+
     match /settings/{document=**} {
       allow read: if true;
       allow write: if isAuthenticated() || true;

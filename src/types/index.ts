@@ -97,6 +97,37 @@ export interface Inquiry {
   createdAt: string;
 }
 
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  avatar: string;
+  email?: string;
+  phone?: string;
+  specialization?: string;
+  experienceYears?: number;
+  socials?: {
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+  };
+  order?: number;
+}
+
+export interface MediaAsset {
+  id: string;
+  title: string;
+  type: 'image' | 'video' | 'pdf' | '3d';
+  url: string;
+  thumbnailUrl?: string;
+  fileSize?: string;
+  category?: string;
+  projectId?: string;
+  description?: string;
+  createdAt: string;
+}
+
 export interface WebsiteSettings {
   id?: string;
   heroTitle: string;
