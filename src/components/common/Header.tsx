@@ -50,13 +50,16 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navItems = [
     { id: 'home', label: 'Home' },
-    { id: 'construction-intelligence', label: 'Construction Intelligence', featured: true },
-    { id: 'about', label: 'About' },
+    { id: 'marketplace', label: 'Marketplace', featured: true },
+    { id: 'client-portal', label: 'Client Portal' },
+    { id: 'community', label: 'Community' },
+    { id: 'courses', label: 'Academy' },
+    { id: 'jobs', label: 'Jobs' },
+    { id: 'directory', label: 'Directory' },
+    { id: 'construction-intelligence', label: 'Intelligence' },
     { id: 'services', label: 'Services' },
     { id: 'portfolio', label: 'Portfolio' },
-    { id: 'blog', label: 'Blog' },
-    { id: 'gallery', label: 'Gallery' },
-    { id: 'contact', label: 'Contact' }
+    { id: 'blog', label: 'Blog' }
   ];
 
   const handleNavClick = (id: string) => {

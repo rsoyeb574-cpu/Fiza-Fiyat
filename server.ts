@@ -42,7 +42,50 @@ async function startServer() {
     }
   });
 
-  // Vite middleware for development vs static serve for production
+  // Construction Intelligence AI Route using Gemini
+  app.post('/api/construction-ai', async (req, res) => {
+    try {
+      const { type, location, qualityLevel, budgetINR, promptExtra } = req.body;
+      const apiKey = process.env.GEMINI_API_KEY;
+
+      if (!apiKey) {
+        return res.status(200).json({ status: 'fallback' });
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      const promptText = `You are the lead AI Structural Engineer and Interior Design Specialist for Fiza Hayat Construction Intelligence Platform.
+User Request Type: ${type}
+Location: ${location || 'India'}
+Quality Level: ${qualityLevel || 'Standard'}
+Budget: ${budgetINR ? '₹' + budgetINR : 'Standard'}
+Additional Context: ${promptExtra || 'None'}
+
+Return a structured JSON with:
+{
+  "title": "Clear Title",
+  "summary": "1-2 sentence engineering summary",
+  "recommendations": ["4 bullet points"],
+  "suggestedMaterials": ["3-5 recommended material names"],
+  "estimatedCostImpact": "1 sentence cost impact"
+}`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: promptText,
+      });
+
+      const rawText = response.text || '';
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return res.json(parsed);
+      }
+      return res.status(200).json({ status: 'fallback' });
+    } catch (error) {
+      console.error('Gemini Construction AI error:', error);
+      return res.status(200).json({ status: 'fallback' });
+    }
+  });
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },

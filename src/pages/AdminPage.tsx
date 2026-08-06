@@ -17,7 +17,8 @@ import {
   X, 
   Database,
   ArrowRight,
-  LogOut
+  LogOut,
+  Cpu
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -41,6 +42,15 @@ import {
   saveWebsiteSettings, 
   seedDatabaseIfEmpty 
 } from '../services/db';
+
+import { ConstructionMaterialsAdmin } from '../components/admin/ConstructionMaterialsAdmin';
+import { ConstructionLaborAdmin } from '../components/admin/ConstructionLaborAdmin';
+import { ConstructionAIRulesAdmin } from '../components/admin/ConstructionAIRulesAdmin';
+import { ProjectManagementAdmin } from '../components/admin/ProjectManagementAdmin';
+import { QuotationInvoiceAdmin } from '../components/admin/QuotationInvoiceAdmin';
+import { EmployeeTaskAdmin } from '../components/admin/EmployeeTaskAdmin';
+import { FileVaultAdmin } from '../components/admin/FileVaultAdmin';
+import { CRMAnalyticsAdmin } from '../components/admin/CRMAnalyticsAdmin';
 
 interface AdminPageProps {
   projects: Project[];
@@ -66,7 +76,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'categories' | 'services' | 'blogs' | 'inquiries' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'project-mgmt' | 'quotations' | 'employees' | 'vault' | 'crm' | 'materials' | 'labor' | 'airules' | 'projects' | 'categories' | 'services' | 'blogs' | 'inquiries' | 'settings'>('project-mgmt');
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
 
   // Editing Project Modal State
@@ -308,13 +318,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       {/* Navigation Tabs */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-2 border-b border-white/10 text-xs">
         {[
-          { id: 'dashboard', label: 'Dashboard Stats', icon: ShieldCheck },
-          { id: 'projects', label: `Projects (${projects.length})`, icon: Building2 },
-          { id: 'categories', label: `Categories (${categories.length})`, icon: Folder },
-          { id: 'services', label: `Services (${services.length})`, icon: Sparkles },
-          { id: 'blogs', label: `Blogs (${blogs.length})`, icon: BookOpen },
+          { id: 'project-mgmt', label: 'Project Management', icon: Building2 },
+          { id: 'quotations', label: 'Quotations & Invoices', icon: Sparkles },
+          { id: 'employees', label: 'Employees & Kanban Tasks', icon: Cpu },
+          { id: 'vault', label: 'Cloud File Vault', icon: Folder },
+          { id: 'crm', label: 'CRM & Pipeline Analytics', icon: ShieldCheck },
+          { id: 'dashboard', label: 'Dashboard Overview', icon: ShieldCheck },
+          { id: 'materials', label: 'Materials DB', icon: Database },
+          { id: 'labor', label: 'Labor Directory', icon: Sparkles },
+          { id: 'airules', label: 'AI House Rules', icon: Cpu },
+          { id: 'projects', label: `Public Projects (${projects.length})`, icon: Building2 },
           { id: 'inquiries', label: `Inquiries (${inquiries.length})`, icon: Mail },
-          { id: 'settings', label: 'Homepage Settings', icon: Settings }
+          { id: 'settings', label: 'Website Settings', icon: Settings }
         ].map((tab) => {
           const Icon = tab.icon;
           return (
@@ -333,6 +348,22 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           );
         })}
       </div>
+
+      {/* ENTERPRISE MODULE TABS */}
+      {activeTab === 'project-mgmt' && <ProjectManagementAdmin />}
+      {activeTab === 'quotations' && <QuotationInvoiceAdmin />}
+      {activeTab === 'employees' && <EmployeeTaskAdmin />}
+      {activeTab === 'vault' && <FileVaultAdmin />}
+      {activeTab === 'crm' && <CRMAnalyticsAdmin />}
+
+      {/* MATERIALS TAB */}
+      {activeTab === 'materials' && <ConstructionMaterialsAdmin />}
+
+      {/* LABOR TAB */}
+      {activeTab === 'labor' && <ConstructionLaborAdmin />}
+
+      {/* AI RULES TAB */}
+      {activeTab === 'airules' && <ConstructionAIRulesAdmin />}
 
       {/* TAB 1: DASHBOARD STATS */}
       {activeTab === 'dashboard' && (

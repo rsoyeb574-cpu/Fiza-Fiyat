@@ -51,9 +51,49 @@ import {
 } from '../services/db';
 import { calculateConstructionPlan } from '../utils/constructionCalculator';
 
+import { ConstructionGlobalSearchModal } from '../components/construction/ConstructionGlobalSearchModal';
+import { generateConstructionAISuggestion, AISuggestionResponse } from '../services/constructionAI';
+import { Search } from 'lucide-react';
+
+import { AIHousePlannerForm } from '../components/construction/AIHousePlannerForm';
+import { AIPlanningReportView } from '../components/construction/AIPlanningReportView';
+import { AIHousePlannerInput, AIPlanningReport } from '../types/aiPlanning';
+import { generateAIConstructionPlanningReport } from '../services/aiPlanningEngine';
+
+import { AIArchitectAdvisor } from '../components/ai/AIArchitectAdvisor';
+import { AIInteriorAdvisor } from '../components/ai/AIInteriorAdvisor';
+import { AIExteriorAdvisor } from '../components/ai/AIExteriorAdvisor';
+import { AIMaterialAdvisor } from '../components/ai/AIMaterialAdvisor';
+import { AICostAdvisor } from '../components/ai/AICostAdvisor';
+import { AIProjectAdvisor } from '../components/ai/AIProjectAdvisor';
+import { AIContentAssistant } from '../components/ai/AIContentAssistant';
+import { AIImageOrganizer } from '../components/ai/AIImageOrganizer';
+
 export const ConstructionIntelligencePage: React.FC = () => {
   // Navigation active tab
   const [activeTab, setActiveTab] = useState<string>('calculator');
+
+  // AI House Planner State
+  const [aiReport, setAiReport] = useState<AIPlanningReport | null>(null);
+  const [aiPlannerLoading, setAiPlannerLoading] = useState<boolean>(false);
+
+  const handleAIPlannerSubmit = async (input: AIHousePlannerInput) => {
+    setAiPlannerLoading(true);
+    try {
+      const report = await generateAIConstructionPlanningReport(input);
+      setAiReport(report);
+    } catch (err) {
+      console.error('Failed to generate AI report:', err);
+    } finally {
+      setAiPlannerLoading(false);
+    }
+  };
+
+  // Search & AI Modal State
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiResponse, setAiResponse] = useState<AISuggestionResponse | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   // Input State for Plot Calculator
   const [plotWidth, setPlotWidth] = useState<number>(20);
@@ -117,14 +157,20 @@ export const ConstructionIntelligencePage: React.FC = () => {
   // Nav Items definition
   const mainNavItems = [
     { id: 'calculator', label: 'Construction Calculator', icon: Calculator, desc: 'Smart Plot Plan & Estimate Generator' },
+    { id: 'ai-architect', label: 'AI Architect Assistant', icon: Compass, desc: 'Conceptual Spatial & Floor Plan Guidance' },
+    { id: 'ai-interior', label: 'AI Interior Designer', icon: Sofa, desc: 'Mood Boards, Color Schemes & Furniture' },
+    { id: 'ai-exterior', label: 'AI Exterior Designer', icon: Building2, desc: '8 Architectural Facade Elevation Styles' },
+    { id: 'ai-material', label: 'AI Material Advisor', icon: Package, desc: 'Head-to-Head Material Comparison' },
+    { id: 'ai-cost', label: 'AI Cost Advisor', icon: DollarSign, desc: 'Budget Ranges & Quality Tier Breakdowns' },
+    { id: 'ai-project', label: 'AI Project Execution', icon: Calendar, desc: 'Phase Sequence, IS Standards & NOCs' },
+    { id: 'ai-content', label: 'AI Marketing Copy', icon: Sparkles, desc: 'Project Copy, Blogs & SEO Meta' },
+    { id: 'ai-organizer', label: 'AI Image Organizer', icon: ImageIcon, desc: 'Computer Vision Media Categorization' },
     { id: 'house-planning', label: 'House Planning & 2D/3D', icon: Compass, desc: '2D Floor Plans & 3D Renderings' },
     { id: 'material-estimator', label: 'Material Estimator', icon: Package, desc: 'Cement, Steel, Bricks & Sand Formulas' },
     { id: 'cost-estimator', label: 'Construction Cost Estimator', icon: DollarSign, desc: 'Detailed Cost Distribution' },
     { id: 'building-knowledge', label: 'Building Knowledge Hub', icon: BookOpen, desc: 'Engineering Rationale & Standards' },
     { id: 'timeline', label: 'Construction Timeline', icon: Calendar, desc: 'Phase-by-Phase Execution Schedule' },
     { id: 'boq-generator', label: 'BOQ Generator', icon: FileText, desc: 'Bill of Quantities Detailed PDF/Print' },
-    { id: 'interior-cost', label: 'Interior Cost Estimator', icon: Sofa, desc: 'Kitchen, Wardrobes & Lighting' },
-    { id: 'exterior-cost', label: 'Exterior Cost Estimator', icon: Building2, desc: 'Elevation, Cladding & Gate' },
     { id: 'design-gallery', label: 'Modern Design Gallery', icon: ImageIcon, desc: '3D Renderings & Floor Plan Archive' }
   ];
 
@@ -184,18 +230,38 @@ export const ConstructionIntelligencePage: React.FC = () => {
             {/* Quick Action Badges */}
             <div className="flex flex-wrap items-center gap-3">
               <button 
+                onClick={() => setIsSearchOpen(true)}
+                className="px-4 py-3 rounded-xl font-medium text-sm text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Search className="w-4 h-4 text-cyan-400" />
+                Global DB Search
+              </button>
+
+              <button 
+                onClick={async () => {
+                  setAiLoading(true);
+                  setAiModalOpen(true);
+                  const res = await generateConstructionAISuggestion({
+                    type: 'materials',
+                    location,
+                    budgetINR: budget,
+                    qualityLevel: 'Standard'
+                  });
+                  setAiResponse(res);
+                  setAiLoading(false);
+                }}
+                className="px-4 py-3 rounded-xl font-medium text-sm text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                AI Engineering Consultant
+              </button>
+
+              <button 
                 onClick={() => setActiveTab('calculator')}
-                className="px-5 py-3 rounded-xl font-medium text-sm text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/25 transition-all flex items-center gap-2"
+                className="px-5 py-3 rounded-xl font-medium text-sm text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/25 transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Calculator className="w-4 h-4" />
                 Plot Calculator
-              </button>
-              <button 
-                onClick={() => setActiveTab('building-knowledge')}
-                className="px-5 py-3 rounded-xl font-medium text-sm text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-2"
-              >
-                <BookOpen className="w-4 h-4 text-blue-400" />
-                Knowledge Base
               </button>
             </div>
           </div>
@@ -299,7 +365,63 @@ export const ConstructionIntelligencePage: React.FC = () => {
 
         {/* MAIN TAB CONTENT RENDERER */}
         <AnimatePresence mode="wait">
-          
+
+          {/* AI ARCHITECT ASSISTANT */}
+          {activeTab === 'ai-architect' && (
+            <motion.div key="ai-architect" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <AIArchitectAdvisor />
+            </motion.div>
+          )}
+
+          {/* AI INTERIOR DESIGNER */}
+          {activeTab === 'ai-interior' && (
+            <motion.div key="ai-interior" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <AIInteriorAdvisor />
+            </motion.div>
+          )}
+
+          {/* AI EXTERIOR DESIGNER */}
+          {activeTab === 'ai-exterior' && (
+            <motion.div key="ai-exterior" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <AIExteriorAdvisor />
+            </motion.div>
+          )}
+
+          {/* AI MATERIAL ADVISOR */}
+          {activeTab === 'ai-material' && (
+            <motion.div key="ai-material" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <AIMaterialAdvisor />
+            </motion.div>
+          )}
+
+          {/* AI COST ADVISOR */}
+          {activeTab === 'ai-cost' && (
+            <motion.div key="ai-cost" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <AICostAdvisor />
+            </motion.div>
+          )}
+
+          {/* AI PROJECT ADVISOR */}
+          {activeTab === 'ai-project' && (
+            <motion.div key="ai-project" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <AIProjectAdvisor />
+            </motion.div>
+          )}
+
+          {/* AI MARKETING COPY */}
+          {activeTab === 'ai-content' && (
+            <motion.div key="ai-content" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <AIContentAssistant />
+            </motion.div>
+          )}
+
+          {/* AI IMAGE ORGANIZER */}
+          {activeTab === 'ai-organizer' && (
+            <motion.div key="ai-organizer" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <AIImageOrganizer />
+            </motion.div>
+          )}
+
           {/* TAB 1: CONSTRUCTION CALCULATOR */}
           {activeTab === 'calculator' && (
             <motion.div
@@ -479,7 +601,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
                           <text x="200" y="25" fill="#94a3b8" fontSize="10" textAnchor="middle" fontFamily="monospace">NORTH FACING (ENTRY ROAD)</text>
 
                           {/* Rooms */}
-                          {currentPlan.floorPlan2DData?.rooms.map((rm, idx) => (
+                          {currentPlan.floorPlan2DData?.rooms?.map((rm, idx) => (
                             <g key={idx}>
                               <rect 
                                 x={rm.x} 
@@ -561,7 +683,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                      {currentPlan.interiorImages.map((item, idx) => (
+                      {(currentPlan.interiorImages || []).map((item, idx) => (
                         <div key={idx} className="glass-card rounded-2xl overflow-hidden border border-white/10 bg-slate-950/60 hover:border-blue-500/40 transition-all">
                           <div className="h-44 overflow-hidden relative">
                             <img src={item.imageUrl} alt={item.room} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
@@ -604,7 +726,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                          {currentPlan.materials.map(mat => (
+                          {(currentPlan.materials || []).map(mat => (
                             <tr key={mat.id} className="hover:bg-white/5 transition-colors cursor-pointer" onClick={() => setSelectedMaterial(mat)}>
                               <td className="p-3.5 font-semibold text-white flex items-center gap-2">
                                 <Box className="w-4 h-4 text-blue-400" />
@@ -714,7 +836,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
                     </div>
 
                     <div className="space-y-4">
-                      {currentPlan.timeline.map((phase, idx) => (
+                      {(currentPlan.timeline || []).map((phase, idx) => (
                         <div key={phase.id} className="p-5 rounded-2xl bg-slate-950/80 border border-white/10 hover:border-cyan-500/30 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="flex items-start gap-4">
                             <div className="w-8 h-8 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-mono text-xs font-bold shrink-0">
@@ -724,7 +846,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
                               <h4 className="text-sm font-bold text-white mb-1">{phase.phaseName}</h4>
                               <p className="text-xs text-slate-300 mb-2">{phase.description}</p>
                               <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                                {phase.qualityChecklist.map((chk, i) => (
+                                {(phase.qualityChecklist || []).map((chk, i) => (
                                   <span key={i} className="px-2.5 py-0.5 rounded-md bg-white/5 text-slate-300 border border-white/10 flex items-center gap-1">
                                     <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                                     {chk}
@@ -748,7 +870,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
           )}
 
           {/* TAB: HOUSE PLANNING & 2D/3D */}
-          {activeTab === 'house-planning' && currentPlan && (
+          {activeTab === 'house-planning' && (
             <motion.div
               key="house-planning"
               initial={{ opacity: 0, y: 10 }}
@@ -757,48 +879,17 @@ export const ConstructionIntelligencePage: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="space-y-8"
             >
-              <div className="glass-card rounded-3xl p-8 border border-white/10 bg-slate-900/80">
-                <h2 className="text-2xl font-bold text-white mb-2">Architectural House Planning & Spatial Layout</h2>
-                <p className="text-xs text-slate-400 mb-6">In-depth spatial layout breakdown with Vastu guidelines, door-window clearances, and plumbing shaft positioning.</p>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Detailed 2D Blueprint */}
-                  <div className="p-6 rounded-2xl bg-slate-950 border border-white/10">
-                    <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                      <Compass className="w-4 h-4 text-blue-400" /> 2D Vector CAD Plan ({currentPlan.plotWidthFt}′ × {currentPlan.plotLengthFt}′)
-                    </h3>
-                    <div className="bg-slate-900 rounded-xl p-4 border border-white/10 min-h-[300px] flex items-center justify-center">
-                      <svg viewBox="0 0 400 300" className="w-full h-auto">
-                        <rect x="5" y="5" width="390" height="290" fill="none" stroke="#3b82f6" strokeWidth="2" strokeDasharray="4,4" />
-                        {currentPlan.floorPlan2DData?.rooms.map((rm, i) => (
-                          <g key={i}>
-                            <rect x={rm.x} y={rm.y} width={rm.w} height={rm.h} fill={rm.color} stroke="#60a5fa" strokeWidth="1.5" rx="3" />
-                            <text x={rm.x + rm.w/2} y={rm.y + rm.h/2} fill="#ffffff" fontSize="10" fontWeight="bold" textAnchor="middle">{rm.name}</text>
-                          </g>
-                        ))}
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Spatial Principles */}
-                  <div className="space-y-4">
-                    <div className="p-5 rounded-2xl bg-slate-950 border border-white/10">
-                      <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">North-East Vastu Compliance</h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">Entrance placed in North/North-East quadrant to capture positive early morning sunlight. Kitchen anchored in South-East (Agni corner) and Master Bedroom in South-West (Nairutya corner).</p>
-                    </div>
-
-                    <div className="p-5 rounded-2xl bg-slate-950 border border-white/10">
-                      <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">Clearance Passage Loops</h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">3-foot clear walkway passage maintained along primary room axis. Furniture placed to eliminate awkward door swings or obstructed window access.</p>
-                    </div>
-
-                    <div className="p-5 rounded-2xl bg-slate-950 border border-white/10">
-                      <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">Plumbing Shaft Alignment</h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">Bathroom and kitchen aligned along same vertical wall shaft to isolate noise and streamline drainage piping directly to septic tank.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {aiReport ? (
+                <AIPlanningReportView 
+                  report={aiReport} 
+                  onReset={() => setAiReport(null)} 
+                />
+              ) : (
+                <AIHousePlannerForm 
+                  onSubmit={handleAIPlannerSubmit} 
+                  isLoading={aiPlannerLoading} 
+                />
+              )}
             </motion.div>
           )}
 
@@ -817,7 +908,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
                 <p className="text-xs text-slate-400 mb-6">Material quantities calculated using IS code consumption constants per sq.ft of built-up area.</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {currentPlan.materials.map(mat => (
+                  {(currentPlan.materials || []).map(mat => (
                     <div key={mat.id} className="p-6 rounded-2xl bg-slate-950/80 border border-white/10 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-white">{mat.name}</span>
@@ -854,7 +945,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
-                    {currentPlan.costBreakdown.map((cat, idx) => (
+                    {(currentPlan.costBreakdown || []).map((cat, idx) => (
                       <div key={idx} className="p-5 rounded-2xl bg-slate-950 border border-white/10 space-y-2">
                         <div className="flex items-center justify-between text-sm font-bold text-white">
                           <span>{cat.category}</span>
@@ -947,7 +1038,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
                 <p className="text-xs text-slate-400 mb-6">Sequential project timeline with quality control checklists for each phase.</p>
 
                 <div className="space-y-6">
-                  {currentPlan.timeline.map((phase, idx) => (
+                  {(currentPlan.timeline || []).map((phase, idx) => (
                     <div key={phase.id} className="p-6 rounded-2xl bg-slate-950 border border-white/10 space-y-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-3">
@@ -966,7 +1057,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
 
                       <div className="pt-2 border-t border-white/10 flex flex-wrap items-center gap-2">
                         <span className="text-xs font-bold text-emerald-400">Quality Checks:</span>
-                        {phase.qualityChecklist.map((chk, i) => (
+                        {(phase.qualityChecklist || []).map((chk, i) => (
                           <span key={i} className="text-xs px-2.5 py-1 rounded-md bg-white/5 text-slate-200 border border-white/10 flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3 text-emerald-400" /> {chk}
                           </span>
@@ -1020,7 +1111,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
-                        {currentPlan.materials.map((m, idx) => (
+                        {(currentPlan.materials || []).map((m, idx) => (
                           <tr key={m.id}>
                             <td className="p-3 font-mono">{idx + 1}</td>
                             <td className="p-3 font-medium text-white">{m.name}</td>
@@ -1218,7 +1309,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
                       <CheckCircle2 className="w-4 h-4" /> Key Advantages
                     </h3>
                     <ul className="text-xs text-slate-300 space-y-2">
-                      {currentGuide.advantages.map((adv, i) => (
+                      {(currentGuide.advantages || []).map((adv, i) => (
                         <li key={i} className="flex items-start gap-2">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
                           <span>{adv}</span>
@@ -1233,7 +1324,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
                       <AlertTriangle className="w-4 h-4" /> Disadvantages & Limitations
                     </h3>
                     <ul className="text-xs text-slate-300 space-y-2">
-                      {currentGuide.disadvantages.map((dis, i) => (
+                      {(currentGuide.disadvantages || []).map((dis, i) => (
                         <li key={i} className="flex items-start gap-2">
                           <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
                           <span>{dis}</span>
@@ -1290,6 +1381,79 @@ export const ConstructionIntelligencePage: React.FC = () => {
               <div className="pt-4 border-t border-white/10 text-right">
                 <button onClick={() => setSelectedMaterial(null)} className="px-5 py-2.5 rounded-xl font-medium text-xs text-white bg-blue-600 hover:bg-blue-500">
                   Close Details
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* GLOBAL SEARCH MODAL */}
+        <ConstructionGlobalSearchModal
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+        />
+
+        {/* AI CONSULTANT MODAL */}
+        {aiModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setAiModalOpen(false)}>
+            <div className="glass-card rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-white/10 bg-slate-900 space-y-4 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="w-5 h-5 text-amber-400" />
+                  <h3 className="text-lg font-bold text-white">Fiza AI Construction Consultant</h3>
+                </div>
+                <button onClick={() => setAiModalOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800">✕</button>
+              </div>
+
+              {aiLoading ? (
+                <div className="py-12 text-center space-y-3">
+                  <RefreshCw className="w-8 h-8 text-blue-400 animate-spin mx-auto" />
+                  <p className="text-xs text-slate-400">Analyzing soil, structural load factors & local material rates...</p>
+                </div>
+              ) : aiResponse ? (
+                <div className="space-y-4 text-xs">
+                  <div>
+                    <h4 className="text-sm font-bold text-blue-400 mb-1">{aiResponse.title}</h4>
+                    <p className="text-slate-300 leading-relaxed bg-slate-950/80 p-3 rounded-2xl border border-white/5">{aiResponse.summary}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <strong className="text-amber-400 uppercase tracking-wider block text-[11px]">AI Recommendations:</strong>
+                    <ul className="space-y-1.5 text-slate-300 list-disc list-inside">
+                      {(aiResponse.recommendations || []).map((rec, i) => (
+                        <li key={i}>{rec}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {aiResponse.colorPalette && (
+                    <div className="space-y-2 pt-2">
+                      <strong className="text-cyan-400 uppercase tracking-wider block text-[11px]">Recommended Palette:</strong>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {(aiResponse.colorPalette || []).map((col, idx) => (
+                          <div key={idx} className="p-2.5 rounded-xl bg-slate-950 border border-white/10 flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-lg border border-white/20 shrink-0" style={{ backgroundColor: col.hex }}></span>
+                            <div>
+                              <div className="text-white font-bold text-[11px]">{col.name}</div>
+                              <div className="text-slate-400 text-[9px]">{col.usage}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {aiResponse.estimatedCostImpact && (
+                    <div className="p-3 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 font-bold">
+                      Cost Impact: {aiResponse.estimatedCostImpact}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              <div className="pt-4 border-t border-white/10 flex justify-end">
+                <button onClick={() => setAiModalOpen(false)} className="px-5 py-2.5 rounded-xl font-medium text-xs text-white bg-blue-600 hover:bg-blue-500">
+                  Got It
                 </button>
               </div>
             </div>

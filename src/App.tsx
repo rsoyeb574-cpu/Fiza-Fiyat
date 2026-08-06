@@ -10,6 +10,9 @@ import { FavoritesDrawer } from './components/common/FavoritesDrawer';
 import { CookieConsent } from './components/common/CookieConsent';
 import { CostCalculatorModal } from './components/calculators/CostCalculatorModal';
 import { AIChatbot } from './components/ai/AIChatbot';
+import { GlobalAIAssistantWidget } from './components/ai/GlobalAIAssistantWidget';
+import { GlobalSearchModal } from './components/common/GlobalSearchModal';
+import { UserExperienceDashboard } from './components/common/UserExperienceDashboard';
 
 import { HomePage } from './pages/HomePage';
 import { AboutPage } from './pages/AboutPage';
@@ -23,6 +26,15 @@ import { ContactPage } from './pages/ContactPage';
 import { PrivacyTermsPage } from './pages/PrivacyTermsPage';
 import { AdminPage } from './pages/AdminPage';
 import { ConstructionIntelligencePage } from './pages/ConstructionIntelligencePage';
+import { ClientPortalPage } from './pages/ClientPortalPage';
+
+import { MarketplacePage } from './pages/MarketplacePage';
+import { SellerDashboardPage } from './pages/SellerDashboardPage';
+import { BuyerDashboardPage } from './pages/BuyerDashboardPage';
+import { CommunityPage } from './pages/CommunityPage';
+import { CoursePlatformPage } from './pages/CoursePlatformPage';
+import { JobBoardPage } from './pages/JobBoardPage';
+import { DirectoryPage } from './pages/DirectoryPage';
 
 import { 
   Project, 
@@ -189,6 +201,41 @@ export default function App() {
               <AboutPage settings={settings} setActivePage={setActivePage} />
             )}
 
+            {activePage === 'marketplace' && (
+              <MarketplacePage
+                onNavigateToSeller={() => setActivePage('seller-dashboard')}
+                onNavigateToBuyer={() => setActivePage('buyer-dashboard')}
+              />
+            )}
+
+            {activePage === 'seller-dashboard' && (
+              <SellerDashboardPage />
+            )}
+
+            {activePage === 'buyer-dashboard' && (
+              <BuyerDashboardPage />
+            )}
+
+            {activePage === 'community' && (
+              <CommunityPage />
+            )}
+
+            {activePage === 'courses' && (
+              <CoursePlatformPage />
+            )}
+
+            {activePage === 'jobs' && (
+              <JobBoardPage />
+            )}
+
+            {activePage === 'directory' && (
+              <DirectoryPage />
+            )}
+
+            {activePage === 'client-portal' && (
+              <ClientPortalPage />
+            )}
+
             {activePage === 'construction-intelligence' && (
               <ConstructionIntelligencePage />
             )}
@@ -273,8 +320,11 @@ export default function App() {
             onOpenAIChat={() => setAiChatOpen(true)}
           />
 
+          {/* Global AI Assistant Floating Widget */}
+          <GlobalAIAssistantWidget activePage={activePage} />
+
           {/* Global Search Modal */}
-          <SearchModal
+          <GlobalSearchModal
             isOpen={searchModalOpen}
             onClose={() => setSearchModalOpen(false)}
             projects={projects}
@@ -285,8 +335,8 @@ export default function App() {
             onSelectBlog={handleSelectBlog}
           />
 
-          {/* Favorites Drawer */}
-          <FavoritesDrawer
+          {/* Personal User Experience Dashboard */}
+          <UserExperienceDashboard
             isOpen={favoritesDrawerOpen}
             onClose={() => setFavoritesDrawerOpen(false)}
             favorites={favorites}

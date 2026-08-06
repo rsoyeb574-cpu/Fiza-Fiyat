@@ -72,5 +72,46 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAuthenticated() || true;
     }
+
+    // Comprehensive Construction Database Collections
+    match /cities/{document=**} { allow read: if true; allow write: if true; }
+    match /states/{document=**} { allow read: if true; allow write: if true; }
+    match /countries/{document=**} { allow read: if true; allow write: if true; }
+    match /materials/{document=**} { allow read: if true; allow write: if true; }
+    match /material_categories/{document=**} { allow read: if true; allow write: if true; }
+    match /labor_rates/{document=**} { allow read: if true; allow write: if true; }
+    match /foundation_types/{document=**} { allow read: if true; allow write: if true; }
+    match /column_types/{document=**} { allow read: if true; allow write: if true; }
+    match /beam_types/{document=**} { allow read: if true; allow write: if true; }
+    match /roof_types/{document=**} { allow read: if true; allow write: if true; }
+    match /slab_types/{document=**} { allow read: if true; allow write: if true; }
+    match /wall_types/{document=**} { allow read: if true; allow write: if true; }
+    match /brick_types/{document=**} { allow read: if true; allow write: if true; }
+    match /block_types/{document=**} { allow read: if true; allow write: if true; }
+    match /door_types/{document=**} { allow read: if true; allow write: if true; }
+    match /window_types/{document=**} { allow read: if true; allow write: if true; }
+    match /house_plans/{document=**} { allow read: if true; allow write: if true; }
+    match /models_3d/{document=**} { allow read: if true; allow write: if true; }
+    match /construction_tips/{document=**} { allow read: if true; allow write: if true; }
+    match /construction_videos/{document=**} { allow read: if true; allow write: if true; }
+    match /project_gallery/{document=**} { allow read: if true; allow write: if true; }
+    match /customer_reviews/{document=**} { allow read: if true; allow write: if true; }
+    match /faqs/{document=**} { allow read: if true; allow write: if true; }
+    match /sliders/{document=**} { allow read: if true; allow write: if true; }
+    match /notifications/{document=**} { allow read: if true; allow write: if true; }
+    match /seo/{document=**} { allow read: if true; allow write: if true; }
+
+    // Enterprise Digital Business Platform Collections
+    match /enterprise_projects/{document=**} { allow read: if true; allow write: if true; }
+    match /quotations/{document=**} { allow read: if true; allow write: if true; }
+    match /invoices/{document=**} { allow read: if true; allow write: if true; }
+    match /payments/{document=**} { allow read: if true; allow write: if true; }
+    match /employees/{document=**} { allow read: if true; allow write: if true; }
+    match /tasks/{document=**} { allow read: if true; allow write: if true; }
+    match /crm_leads/{document=**} { allow read: if true; allow write: if true; }
+    match /storage_files/{document=**} { allow read: if true; allow write: if true; }
+    match /calendar_events/{document=**} { allow read: if true; allow write: if true; }
+    match /chat_messages/{document=**} { allow read: if true; allow write: if true; }
+    match /audit_logs/{document=**} { allow read: if true; allow write: if true; }
   }
 }
