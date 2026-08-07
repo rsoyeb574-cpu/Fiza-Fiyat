@@ -10,11 +10,14 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        request.auth.token.email in [
-          'rsoyeb574@gmail.com',
-          'admin@fizahayatresearch.com',
-          'admin@fiza-hayat-buildcom.iam.gserviceaccount.com'
-        ]
+        (
+          request.auth.token.email != null &&
+          (
+            request.auth.token.email == 'rsoyeb574@gmail.com' ||
+            request.auth.token.email == 'admin@fizahayatresearch.com' ||
+            request.auth.token.email == 'admin@fiza-hayat-buildcom.iam.gserviceaccount.com'
+          )
+        )
       );
     }
 
@@ -22,7 +25,7 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Default catch-all
+    // Default catch-all: Deny everything by default
     match /{document=**} {
       allow read, write: if false;
     }
@@ -33,81 +36,20 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Public content collections (Read for public, Write for Admins only)
-    match /projects/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
+    // =======================================================
+    // 1. PUBLIC CATALOG & READ-ONLY CONTENT COLLECTIONS
+    // =======================================================
+    match /projects/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /categories/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /services/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /blogs/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /gallery/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /testimonials/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /team/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /media/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /settings/{document=**} { allow read: if true; allow write: if isAdmin(); }
 
-    match /categories/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /services/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /blogs/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /gallery/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /testimonials/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /team/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /media/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /settings/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // User submissions (Public create, Admin read/manage)
-    match /inquiries/{document=**} {
-      allow create: if true;
-      allow read, update, delete: if isAdmin();
-    }
-
-    match /newsletter/{document=**} {
-      allow create: if true;
-      allow read, update, delete: if isAdmin();
-    }
-
-    match /customer_reviews/{document=**} {
-      allow create: if true;
-      allow read: if true;
-      allow update, delete: if isAdmin();
-    }
-
-    // User accounts
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId) || isAdmin();
-    }
-
-    match /notifications/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    // Construction Database & Catalog Collections (Public read, Admin write)
+    // Construction Database & Catalog
     match /construction_guides/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /construction_presets/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /construction_rates/{document=**} { allow read: if true; allow write: if isAdmin(); }
@@ -136,17 +78,203 @@ service cloud.firestore {
     match /sliders/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /seo/{document=**} { allow read: if true; allow write: if isAdmin(); }
 
-    // Enterprise Digital Business Platform Collections (Admin access)
-    match /enterprise_projects/{document=**} { allow read, write: if isAdmin(); }
-    match /quotations/{document=**} { allow read, write: if isAdmin(); }
-    match /invoices/{document=**} { allow read, write: if isAdmin(); }
-    match /payments/{document=**} { allow read, write: if isAdmin(); }
-    match /employees/{document=**} { allow read, write: if isAdmin(); }
-    match /tasks/{document=**} { allow read, write: if isAdmin(); }
-    match /crm_leads/{document=**} { allow read, write: if isAdmin(); }
-    match /storage_files/{document=**} { allow read, write: if isAdmin(); }
-    match /calendar_events/{document=**} { allow read, write: if isAdmin(); }
-    match /chat_messages/{document=**} { allow read, write: if isAuthenticated(); }
-    match /audit_logs/{document=**} { allow read, write: if isAdmin(); }
+    // Marketplace Catalogs
+    match /digital_products/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /seller_stores/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /courses/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /job_listings/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /professional_directory/{document=**} { allow read: if true; allow write: if isAdmin(); }
+
+    // =======================================================
+    // 2. PUBLIC USER SUBMISSIONS & INQUIRIES
+    // =======================================================
+    match /inquiries/{inquiryId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /newsletter/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /customer_reviews/{reviewId} {
+      allow create: if true;
+      allow read: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    match /job_applications/{appId} {
+      allow create: if true;
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.applicantEmail == request.auth.token.email ||
+          resource.data.userId == request.auth.uid
+        )
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    // =======================================================
+    // 3. USER ACCOUNTS & PROFILES
+    // =======================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && (
+        !('role' in request.resource.data) || 
+        request.resource.data.role != 'admin' || 
+        isAdmin()
+      );
+      allow update: if isAdmin() || (
+        isOwner(userId) && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isAdmin'])
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notifId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // =======================================================
+    // 4. ENTERPRISE FINANCIAL & BUSINESS DATA (STRICT PROTECTED)
+    // =======================================================
+    match /enterprise_projects/{projectId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.clientUid == request.auth.uid ||
+          resource.data.clientEmail == request.auth.token.email
+        )
+      );
+      allow write: if isAdmin();
+    }
+
+    match /quotations/{quoteId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.clientUid == request.auth.uid ||
+          resource.data.clientEmail == request.auth.token.email
+        )
+      );
+      allow write: if isAdmin();
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.clientUid == request.auth.uid ||
+          resource.data.clientEmail == request.auth.token.email
+        )
+      );
+      allow write: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.clientUid == request.auth.uid ||
+          resource.data.clientEmail == request.auth.token.email
+        )
+      );
+      allow write: if isAdmin();
+    }
+
+    match /employees/{employeeId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    match /crm_leads/{leadId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /storage_files/{fileId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /calendar_events/{eventId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.assigneeUid == request.auth.uid ||
+          resource.data.clientUid == request.auth.uid
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // AUDIT LOGS: Read by Admin only; NEVER writable by clients!
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // =======================================================
+    // 5. INTERACTIVE & USER DATA COLLECTIONS
+    // =======================================================
+    match /chat_messages/{msgId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.senderId == request.auth.uid ||
+          resource.data.receiverId == request.auth.uid ||
+          resource.data.clientUid == request.auth.uid
+        )
+      );
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.senderId == request.auth.uid);
+    }
+
+    match /marketplace_orders/{orderId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.buyerUid == request.auth.uid ||
+          resource.data.sellerUid == request.auth.uid
+        )
+      );
+      allow create: if isAuthenticated() && request.resource.data.buyerUid == request.auth.uid;
+      allow update: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.buyerUid == request.auth.uid ||
+          resource.data.sellerUid == request.auth.uid
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /product_reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+
+    match /community_posts/{postId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.authorUid == request.auth.uid;
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.authorUid == request.auth.uid);
+    }
+
+    match /student_progress/{progressId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.studentUserId == request.auth.uid ||
+          progressId.startsWith(request.auth.uid)
+        )
+      );
+      allow write: if isAdmin() || (
+        isAuthenticated() && (
+          request.resource.data.studentUserId == request.auth.uid ||
+          progressId.startsWith(request.auth.uid)
+        )
+      );
+    }
   }
 }
