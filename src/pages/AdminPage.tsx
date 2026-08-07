@@ -190,17 +190,19 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
+
+    if (!emailInput || !passInput) {
+      setLoginError('Please enter your email and password.');
+      return;
+    }
+
     setLoginLoading(true);
 
     try {
-      if (emailInput && passInput) {
-        await loginWithEmail(emailInput, passInput);
-      } else {
-        loginDemoAdmin();
-      }
+      await loginWithEmail(emailInput, passInput);
       showToast('Admin logged in successfully!');
     } catch (err: any) {
-      setLoginError(err.message || 'Login failed.');
+      setLoginError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoginLoading(false);
     }

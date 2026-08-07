@@ -138,7 +138,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
 
       {/* EXPANDED CHAT DRAWER */}
       {isOpen && (
-        <div className="w-[360px] sm:w-[420px] h-[550px] rounded-3xl bg-slate-900 border border-white/10 shadow-2xl flex flex-col overflow-hidden animate-fadeIn">
+        <div className="w-[calc(100vw-2rem)] max-w-[360px] sm:max-w-[420px] h-[550px] max-h-[85vh] rounded-3xl bg-slate-900 border border-white/10 shadow-2xl flex flex-col overflow-hidden animate-fadeIn">
           {/* HEADER */}
           <div className="p-4 bg-gradient-to-r from-purple-950/80 via-blue-950/80 to-slate-900 border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center space-x-3">

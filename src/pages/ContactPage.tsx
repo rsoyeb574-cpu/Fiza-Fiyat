@@ -18,11 +18,13 @@ export const ContactPage: React.FC<ContactPageProps> = ({ settings }) => {
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) return;
     setLoading(true);
+    setErrorMessage('');
 
     try {
       await sendInquiry({
@@ -42,8 +44,9 @@ export const ContactPage: React.FC<ContactPageProps> = ({ settings }) => {
         budget: '$50,000 - $100,000',
         message: ''
       });
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setErrorMessage(e?.message || 'Failed to submit inquiry. Please try again or contact us directly on WhatsApp.');
     } finally {
       setLoading(false);
     }
@@ -135,6 +138,12 @@ export const ContactPage: React.FC<ContactPageProps> = ({ settings }) => {
             <h3 className="text-xl font-bold text-white">Send a Project Proposal Inquiry</h3>
             <p className="text-neutral-400 text-xs">Fill out the form below to receive a custom proposal and fee estimate.</p>
           </div>
+
+          {errorMessage && (
+            <div className="p-4 rounded-xl bg-red-950/80 border border-red-500/30 text-red-300 text-xs">
+              {errorMessage}
+            </div>
+          )}
 
           {submitted ? (
             <div className="p-6 rounded-2xl bg-green-950/80 border border-green-500/30 text-green-300 space-y-2">

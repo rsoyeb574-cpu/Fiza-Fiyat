@@ -19,7 +19,7 @@ export const FloatingContact: React.FC<FloatingContactProps> = ({
   const whatsappUrl = `https://wa.me/${whatsappNum}?text=${encodeURIComponent('Hello Fiza Hayat Team, I would like to inquire about your architectural/design/AI services.')}`;
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end space-y-3">
+    <div className="fixed bottom-20 right-5 z-40 flex flex-col items-end space-y-3">
       {/* Expanded Quick Options */}
       {open && (
         <div className="flex flex-col items-end space-y-2 mb-2 animate-fadeIn">

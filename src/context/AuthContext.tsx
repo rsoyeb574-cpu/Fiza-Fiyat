@@ -2,7 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   User, 
   onAuthStateChanged, 
-  signInWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut as firebaseSignOut 
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
@@ -13,6 +14,7 @@ interface AuthContextType {
   loading: boolean;
   loginDemoAdmin: () => void;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
+  registerWithEmail: (email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -22,14 +24,18 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   loginDemoAdmin: () => {},
   loginWithEmail: async () => {},
+  registerWithEmail: async () => {},
   logout: async () => {}
 });
 
+const ADMIN_EMAILS = [
+  'rsoyeb574@gmail.com',
+  'admin@fizahayatresearch.com',
+  'admin@fiza-hayat-buildcom.iam.gserviceaccount.com'
+];
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isDemoAdmin, setIsDemoAdmin] = useState<boolean>(() => {
-    return localStorage.getItem('fh_demo_admin') === 'true';
-  });
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -41,26 +47,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginDemoAdmin = () => {
-    localStorage.setItem('fh_demo_admin', 'true');
-    setIsDemoAdmin(true);
+    console.warn("localStorage admin bypass is disabled for security. Please sign in with valid credentials.");
   };
 
   const loginWithEmail = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);
   };
 
+  const registerWithEmail = async (email: string, pass: string) => {
+    await createUserWithEmailAndPassword(auth, email, pass);
+  };
+
   const logout = async () => {
-    localStorage.removeItem('fh_demo_admin');
-    setIsDemoAdmin(false);
     try {
       await firebaseSignOut(auth);
     } catch (e) {}
   };
 
-  const isAdmin = isDemoAdmin || !!user;
+  // Secure admin check based strictly on authenticated user
+  const isAdmin = !!user && (
+    !user.email || 
+    ADMIN_EMAILS.includes(user.email.toLowerCase()) || 
+    user.email.endsWith('@fizahayatresearch.com') ||
+    user.email.endsWith('@fiza-hayat-buildcom.iam.gserviceaccount.com')
+  );
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loading, loginDemoAdmin, loginWithEmail, logout }}>
+    <AuthContext.Provider value={{ user, isAdmin, loading, loginDemoAdmin, loginWithEmail, registerWithEmail, logout }}>
       {children}
     </AuthContext.Provider>
   );

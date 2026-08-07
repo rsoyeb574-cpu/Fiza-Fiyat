@@ -7,121 +7,146 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Public content collections (Read for anyone, Write for authenticated users)
+    function isAdmin() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email in [
+          'rsoyeb574@gmail.com',
+          'admin@fizahayatresearch.com',
+          'admin@fiza-hayat-buildcom.iam.gserviceaccount.com'
+        ]
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Default catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Admins metadata collection
+    match /admins/{adminId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Public content collections (Read for public, Write for Admins only)
     match /projects/{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated() || true; // allow admin/seeding
+      allow write: if isAdmin();
     }
 
     match /categories/{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated() || true;
+      allow write: if isAdmin();
     }
 
     match /services/{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated() || true;
+      allow write: if isAdmin();
     }
 
     match /blogs/{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated() || true;
+      allow write: if isAdmin();
     }
 
     match /gallery/{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated() || true;
+      allow write: if isAdmin();
     }
 
     match /testimonials/{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated() || true;
+      allow write: if isAdmin();
     }
 
     match /team/{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated() || true;
+      allow write: if isAdmin();
     }
 
     match /media/{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated() || true;
+      allow write: if isAdmin();
     }
 
     match /settings/{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated() || true;
+      allow write: if isAdmin();
     }
 
-    // User submissions (Write for anyone, Read for authenticated users or creator)
+    // User submissions (Public create, Admin read/manage)
     match /inquiries/{document=**} {
       allow create: if true;
-      allow read, update, delete: if isAuthenticated() || true;
+      allow read, update, delete: if isAdmin();
     }
 
     match /newsletter/{document=**} {
       allow create: if true;
-      allow read, update, delete: if isAuthenticated() || true;
+      allow read, update, delete: if isAdmin();
     }
 
-    match /users/{document=**} {
-      allow read, write: if isAuthenticated() || true;
-    }
-
-    match /construction_guides/{document=**} {
+    match /customer_reviews/{document=**} {
+      allow create: if true;
       allow read: if true;
-      allow write: if isAuthenticated() || true;
+      allow update, delete: if isAdmin();
     }
 
-    match /construction_presets/{document=**} {
-      allow read: if true;
-      allow write: if isAuthenticated() || true;
+    // User accounts
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) || isAdmin();
     }
 
-    match /construction_rates/{document=**} {
-      allow read: if true;
-      allow write: if isAuthenticated() || true;
+    match /notifications/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
-    // Comprehensive Construction Database Collections
-    match /cities/{document=**} { allow read: if true; allow write: if true; }
-    match /states/{document=**} { allow read: if true; allow write: if true; }
-    match /countries/{document=**} { allow read: if true; allow write: if true; }
-    match /materials/{document=**} { allow read: if true; allow write: if true; }
-    match /material_categories/{document=**} { allow read: if true; allow write: if true; }
-    match /labor_rates/{document=**} { allow read: if true; allow write: if true; }
-    match /foundation_types/{document=**} { allow read: if true; allow write: if true; }
-    match /column_types/{document=**} { allow read: if true; allow write: if true; }
-    match /beam_types/{document=**} { allow read: if true; allow write: if true; }
-    match /roof_types/{document=**} { allow read: if true; allow write: if true; }
-    match /slab_types/{document=**} { allow read: if true; allow write: if true; }
-    match /wall_types/{document=**} { allow read: if true; allow write: if true; }
-    match /brick_types/{document=**} { allow read: if true; allow write: if true; }
-    match /block_types/{document=**} { allow read: if true; allow write: if true; }
-    match /door_types/{document=**} { allow read: if true; allow write: if true; }
-    match /window_types/{document=**} { allow read: if true; allow write: if true; }
-    match /house_plans/{document=**} { allow read: if true; allow write: if true; }
-    match /models_3d/{document=**} { allow read: if true; allow write: if true; }
-    match /construction_tips/{document=**} { allow read: if true; allow write: if true; }
-    match /construction_videos/{document=**} { allow read: if true; allow write: if true; }
-    match /project_gallery/{document=**} { allow read: if true; allow write: if true; }
-    match /customer_reviews/{document=**} { allow read: if true; allow write: if true; }
-    match /faqs/{document=**} { allow read: if true; allow write: if true; }
-    match /sliders/{document=**} { allow read: if true; allow write: if true; }
-    match /notifications/{document=**} { allow read: if true; allow write: if true; }
-    match /seo/{document=**} { allow read: if true; allow write: if true; }
+    // Construction Database & Catalog Collections (Public read, Admin write)
+    match /construction_guides/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /construction_presets/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /construction_rates/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /cities/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /states/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /countries/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /materials/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /material_categories/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /labor_rates/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /foundation_types/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /column_types/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /beam_types/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /roof_types/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /slab_types/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /wall_types/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /brick_types/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /block_types/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /door_types/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /window_types/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /house_plans/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /models_3d/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /construction_tips/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /construction_videos/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /project_gallery/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /faqs/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /sliders/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /seo/{document=**} { allow read: if true; allow write: if isAdmin(); }
 
-    // Enterprise Digital Business Platform Collections
-    match /enterprise_projects/{document=**} { allow read: if true; allow write: if true; }
-    match /quotations/{document=**} { allow read: if true; allow write: if true; }
-    match /invoices/{document=**} { allow read: if true; allow write: if true; }
-    match /payments/{document=**} { allow read: if true; allow write: if true; }
-    match /employees/{document=**} { allow read: if true; allow write: if true; }
-    match /tasks/{document=**} { allow read: if true; allow write: if true; }
-    match /crm_leads/{document=**} { allow read: if true; allow write: if true; }
-    match /storage_files/{document=**} { allow read: if true; allow write: if true; }
-    match /calendar_events/{document=**} { allow read: if true; allow write: if true; }
-    match /chat_messages/{document=**} { allow read: if true; allow write: if true; }
-    match /audit_logs/{document=**} { allow read: if true; allow write: if true; }
+    // Enterprise Digital Business Platform Collections (Admin access)
+    match /enterprise_projects/{document=**} { allow read, write: if isAdmin(); }
+    match /quotations/{document=**} { allow read, write: if isAdmin(); }
+    match /invoices/{document=**} { allow read, write: if isAdmin(); }
+    match /payments/{document=**} { allow read, write: if isAdmin(); }
+    match /employees/{document=**} { allow read, write: if isAdmin(); }
+    match /tasks/{document=**} { allow read, write: if isAdmin(); }
+    match /crm_leads/{document=**} { allow read, write: if isAdmin(); }
+    match /storage_files/{document=**} { allow read, write: if isAdmin(); }
+    match /calendar_events/{document=**} { allow read, write: if isAdmin(); }
+    match /chat_messages/{document=**} { allow read, write: if isAuthenticated(); }
+    match /audit_logs/{document=**} { allow read, write: if isAdmin(); }
   }
 }

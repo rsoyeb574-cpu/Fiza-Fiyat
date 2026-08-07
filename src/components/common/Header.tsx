@@ -215,7 +215,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-neutral-950/95 backdrop-blur-xl border-b border-white/10 px-4 pt-4 pb-6 space-y-3 mt-3 animate-fadeIn">
+        <div className="lg:hidden bg-neutral-950/95 backdrop-blur-xl border-b border-white/10 px-4 pt-4 pb-6 space-y-3 mt-3 animate-fadeIn max-h-[85vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-2 pb-3 border-b border-white/10">
             {navItems.map((item) => (
               <button

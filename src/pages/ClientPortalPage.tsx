@@ -45,7 +45,7 @@ import {
 } from '../services/enterpriseDb';
 
 export const ClientPortalPage: React.FC = () => {
-  const { user, logout, loginWithEmail } = useAuth();
+  const { user, logout, loginWithEmail, registerWithEmail } = useAuth();
 
   // Auth State
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot'>('login');
@@ -103,8 +103,7 @@ export const ClientPortalPage: React.FC = () => {
       if (authMode === 'login') {
         await loginWithEmail(email, password);
       } else if (authMode === 'register') {
-        // Register simulation or standard auth
-        await loginWithEmail(email, password);
+        await registerWithEmail(email, password);
       } else {
         alert('Password reset link sent to your email address!');
         setAuthMode('login');

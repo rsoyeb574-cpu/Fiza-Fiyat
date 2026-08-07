@@ -46,7 +46,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   ].filter(f => f.q.toLowerCase().includes(lower) || f.a.toLowerCase().includes(lower));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn text-xs">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn text-xs"
+      onClick={onClose}
+    >
       <div 
         className="w-full max-w-3xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
         onClick={e => e.stopPropagation()}

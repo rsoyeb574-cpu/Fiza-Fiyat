@@ -98,7 +98,7 @@ export const FileVaultAdmin: React.FC = () => {
           <div className="space-y-3">
             <h3 className="font-bold text-white text-sm">Files inside /{activeFolder}</h3>
             {filteredFiles.map(file => (
-              <div key={file.id} className="p-4 rounded-2xl bg-slate-950 border border-white/10 flex items-center justify-between">
+              <div key={file.id} className="p-4 rounded-2xl bg-slate-950 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center space-x-3">
                   <div className="p-2.5 rounded-xl bg-amber-950 text-amber-400">
                     <FileCode className="w-5 h-5" />
