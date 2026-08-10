@@ -72,6 +72,25 @@ export async function createRazorpaySubscription(
   userId: string,
   userEmail: string
 ) {
+  // Verify user's current plan in Firestore if userId is available
+  if (userId && userId !== 'anonymous_guest_user') {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        if (userData.plan === planTier && userData.subscriptionStatus === 'active') {
+          throw new Error(`You are already subscribed to the active ${planTier.toUpperCase()} plan.`);
+        }
+      }
+    } catch (err: any) {
+      if (err.message && err.message.includes('already subscribed')) {
+        throw err;
+      }
+      console.warn('Could not verify current user plan in Firestore, proceeding with subscription creation:', err.message);
+    }
+  }
+
   const razorpay = getRazorpayClient();
   const planId = await getOrCreatePlanId(planTier);
 

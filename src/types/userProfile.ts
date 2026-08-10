@@ -17,6 +17,9 @@ export interface UserProfile {
   displayName?: string;
   plan: PlanTier;
   subscriptionStatus: 'active' | 'canceled' | 'past_due';
+  razorpaySubscriptionId?: string;
+  razorpayPaymentId?: string;
+  planUpdatedAt?: string;
   usage: UserUsage;
   createdAt?: string;
   updatedAt?: string;

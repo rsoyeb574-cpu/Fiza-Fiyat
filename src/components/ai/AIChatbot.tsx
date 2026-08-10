@@ -79,7 +79,12 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({
         })
       });
 
-      const data = await response.json();
+      let data: any = {};
+      try {
+        data = await response.json();
+      } catch {
+        data = { error: `Server error (${response.status}): Unable to parse response.` };
+      }
 
       if (response.status === 429 || data.code === 'LIMIT_REACHED') {
         const limitMsg = data.message || `Your ${plan.toUpperCase()} plan limit for AI chat has been reached. Upgrade your plan to continue.`;

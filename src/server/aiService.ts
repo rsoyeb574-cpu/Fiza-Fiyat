@@ -31,28 +31,62 @@ export async function handleChatRequest(
 
   const ai = getAIClient();
 
-  // Format history for Gemini generateContent
-  const contents: any[] = [];
+  const rawContents: { role: 'user' | 'model'; text: string }[] = [];
 
-  if (Array.isArray(history) && history.length > 0) {
+  if (Array.isArray(history)) {
     for (const msg of history) {
-      if (msg.text && msg.text.trim()) {
+      if (msg && msg.text && msg.text.trim()) {
         const role = (msg.sender === 'user' || (msg as any).role === 'user') ? 'user' : 'model';
+        rawContents.push({ role, text: msg.text.trim() });
+      }
+    }
+  }
+
+  // Find index of first 'user' message in history (dropping initial bot greetings)
+  const firstUserIdx = rawContents.findIndex(c => c.role === 'user');
+  const validHistory = firstUserIdx !== -1 ? rawContents.slice(firstUserIdx) : [];
+
+  // Combine consecutive messages with same role to ensure strict alternating sequence
+  const contents: { role: 'user' | 'model'; parts: { text: string }[] }[] = [];
+
+  for (const item of validHistory) {
+    if (contents.length === 0) {
+      contents.push({
+        role: item.role,
+        parts: [{ text: item.text }]
+      });
+    } else {
+      const last = contents[contents.length - 1];
+      if (last.role === item.role) {
+        last.parts[0].text += `\n${item.text}`;
+      } else {
         contents.push({
-          role,
-          parts: [{ text: msg.text }]
+          role: item.role,
+          parts: [{ text: item.text }]
         });
       }
     }
   }
 
-  // Ensure prompt is included as the latest turn
-  const lastMsg = contents[contents.length - 1];
-  if (!lastMsg || lastMsg.parts?.[0]?.text !== prompt) {
+  // Ensure prompt is present in the final turn as 'user'
+  const trimmedPrompt = prompt.trim();
+  if (contents.length === 0) {
     contents.push({
       role: 'user',
-      parts: [{ text: prompt }]
+      parts: [{ text: trimmedPrompt }]
     });
+  } else {
+    const last = contents[contents.length - 1];
+    if (last.role === 'user') {
+      if (!last.parts[0].text.includes(trimmedPrompt)) {
+        last.parts[0].text = trimmedPrompt;
+      }
+    } else {
+      contents.push({
+        role: 'user',
+        parts: [{ text: trimmedPrompt }]
+      });
+    }
   }
 
   const systemInstruction = `You are Fiza AI, the architectural & structural design intelligence assistant for Fiza Hayat — an elite digital business hub specializing in luxury building architecture, interior design, Autodesk Revit BIM modeling (LOD 300 to 500), 8K photorealistic rendering, and AI creative media.

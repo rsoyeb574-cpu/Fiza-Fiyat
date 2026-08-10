@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { useAuth } from './AuthContext';
 import { PlanTier, PlanDefinition, PlanFeatures, getPlanConfig, hasFeatureAccess } from '../config/plans';
 import { UserProfile, UserUsage } from '../types/userProfile';
@@ -8,6 +10,7 @@ import {
   checkActionAllowed, 
   incrementClientUsage, 
   getLocalCachedProfile, 
+  setLocalCachedProfile,
   getDefaultUsage,
   normalizeUsageWithReset
 } from '../services/usageService';
@@ -77,8 +80,57 @@ export const PlanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+    let unsubscribe: (() => void) | undefined;
+
+    if (user && user.uid) {
+      // Initialize profile first
+      fetchOrCreateUserProfile(user.uid, user.email || 'user@fizahayatresearch.com', user.displayName || undefined)
+        .then((profile) => {
+          setUserProfile(profile);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.warn('Error fetching user profile initially:', err);
+          setLoading(false);
+        });
+
+      // Attach real-time snapshot listener on Firestore user document
+      const userRef = doc(db, 'users', user.uid);
+      unsubscribe = onSnapshot(
+        userRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const updatedProfile: UserProfile = {
+              uid: user.uid,
+              email: data.email || user.email || '',
+              displayName: data.displayName || user.displayName || 'Architect User',
+              plan: (data.plan as PlanTier) || 'free',
+              subscriptionStatus: data.subscriptionStatus || 'active',
+              razorpaySubscriptionId: data.razorpaySubscriptionId,
+              razorpayPaymentId: data.razorpayPaymentId,
+              usage: normalizeUsageWithReset(data.usage),
+              createdAt: data.createdAt,
+              updatedAt: data.updatedAt
+            };
+            setUserProfile(updatedProfile);
+            setLocalCachedProfile(updatedProfile);
+          }
+        },
+        (error) => {
+          console.warn('Firestore onSnapshot subscription listener error:', error);
+        }
+      );
+    } else {
+      loadProfile();
+    }
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [user, loadProfile]);
 
   const plan: PlanTier = userProfile?.plan || 'free';
   const planConfig = getPlanConfig(plan);
