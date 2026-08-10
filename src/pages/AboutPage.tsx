@@ -12,6 +12,8 @@ import {
   Globe 
 } from 'lucide-react';
 import { WebsiteSettings } from '../types';
+import { FaqAccordion } from '../components/common/FaqAccordion';
+import { TeamSection } from '../components/common/TeamSection';
 
 interface AboutPageProps {
   settings: WebsiteSettings;
@@ -142,6 +144,12 @@ export const AboutPage: React.FC<AboutPageProps> = ({ settings, setActivePage })
           ))}
         </div>
       </section>
+
+      {/* Project Contributors & Team Specialists */}
+      <TeamSection />
+
+      {/* Frequently Asked Questions */}
+      <FaqAccordion />
 
       {/* CTA */}
       <div className="text-center pt-8">

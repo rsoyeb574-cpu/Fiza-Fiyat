@@ -107,10 +107,13 @@ export interface TeamMember {
   phone?: string;
   specialization?: string;
   experienceYears?: number;
+  expertiseAreas?: string[];
   socials?: {
     linkedin?: string;
     twitter?: string;
     instagram?: string;
+    github?: string;
+    behance?: string;
   };
   order?: number;
 }

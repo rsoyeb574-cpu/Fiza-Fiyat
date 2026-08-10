@@ -1,21 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  Send, 
   Mail, 
   MapPin, 
-  Sparkles, 
-  Instagram, 
-  Linkedin, 
-  Youtube, 
-  Globe, 
-  CheckCircle2, 
-  ArrowUpRight,
-  MessageSquare
+  ArrowUpRight
 } from 'lucide-react';
 import { WebsiteSettings } from '../../types';
-import { sendInquiry } from '../../services/db';
-import { CONTACT_CONFIG } from '../../config/contact';
 import { WhatsAppButton } from './WhatsAppButton';
+import { NewsletterSubscription } from './NewsletterSubscription';
 
 interface FooterProps {
   settings: WebsiteSettings;
@@ -23,30 +14,6 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ settings, setActivePage }) => {
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsletterEmail) return;
-    setLoading(true);
-    try {
-      await sendInquiry({
-        name: 'Newsletter Subscriber',
-        email: newsletterEmail,
-        service: 'Newsletter Subscription',
-        message: `Subscribed to newsletter updates from ${newsletterEmail}`
-      });
-      setSubscribed(true);
-      setNewsletterEmail('');
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const navigateTo = (page: string) => {
     setActivePage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -61,50 +28,7 @@ export const Footer: React.FC<FooterProps> = ({ settings, setActivePage }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Top Newsletter CTA Banner */}
-        <div className="mb-16 p-8 rounded-3xl bg-[#151B2E] border border-indigo-500/30 backdrop-blur-2xl relative overflow-hidden shadow-2xl">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-300 text-xs font-semibold mb-3">
-                <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-                Global Architecture & AI Insights
-              </div>
-              <h3 className="text-2xl font-bold text-white tracking-tight">
-                Subscribe to Fiza-Fiya Industry Reports
-              </h3>
-              <p className="text-slate-400 text-xs mt-1 leading-relaxed">
-                Receive curated monthly architectural briefs, BIM workflow innovations, and generative AI design case studies.
-              </p>
-            </div>
-
-            <div>
-              {subscribed ? (
-                <div className="flex items-center space-x-2 text-green-400 text-sm font-semibold bg-green-950/50 p-4 rounded-2xl border border-green-500/30 backdrop-blur-md">
-                  <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
-                  <span>Thank you for subscribing to Fiza-Fiya Updates!</span>
-                </div>
-              ) : (
-                <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="email"
-                    required
-                    placeholder="Enter your corporate email..."
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className="flex-1 px-4 py-3 rounded-xl bg-[#0B1020]/80 border border-indigo-500/30 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all backdrop-blur-md"
-                  />
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white text-xs font-semibold shadow-lg shadow-purple-600/25 transition-all cursor-pointer flex items-center justify-center space-x-2 shrink-0 hover:-translate-y-0.5"
-                  >
-                    <span>{loading ? 'Subscribing...' : 'Subscribe'}</span>
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
+        <NewsletterSubscription className="mb-16" />
 
         {/* Main Footer Links */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-indigo-500/20">

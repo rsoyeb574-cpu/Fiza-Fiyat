@@ -584,6 +584,13 @@ export const initialTeamMembers: TeamMember[] = [
     email: 'fiza@fizahayat.com',
     specialization: 'Parametric Architecture & Luxury Estates',
     experienceYears: 10,
+    expertiseAreas: ['Architectural Design', 'Parametric Facades', 'Urban Planning', 'AI Design Pipelines'],
+    socials: {
+      linkedin: 'https://linkedin.com',
+      twitter: 'https://twitter.com',
+      instagram: 'https://instagram.com',
+      behance: 'https://behance.net'
+    },
     order: 1
   },
   {
@@ -595,18 +602,46 @@ export const initialTeamMembers: TeamMember[] = [
     email: 'tariq@fizahayat.com',
     specialization: 'Revit BIM LOD 500 & Structural Steel',
     experienceYears: 12,
+    expertiseAreas: ['Revit BIM LOD 500', 'Structural Steel', 'Seismic Analysis', 'Navisworks'],
+    socials: {
+      linkedin: 'https://linkedin.com',
+      github: 'https://github.com'
+    },
     order: 2
   },
   {
     id: 'team-3',
     name: 'Elena Rostova',
-    role: 'Senior 3D Visualizer & AI Media Director',
-    bio: 'Unreal Engine 5 specialist crafting 8K ray-traced walkthroughs and generative AI concept synthesis pipelines.',
+    role: 'Lead Interior Architect & Spatial Designer',
+    bio: 'Bespoke spatial design specialist crafting luxury interior atmospheres, custom millwork, and acoustic lighting schemes.',
     avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=80',
     email: 'elena@fizahayat.com',
-    specialization: '3D CGI Rendering & Generative AI',
+    specialization: 'Luxury Interior Architecture & Millwork',
     experienceYears: 8,
+    expertiseAreas: ['Interior Architecture', 'Custom Millwork', 'Acoustic Lighting', 'Spatial Planning'],
+    socials: {
+      linkedin: 'https://linkedin.com',
+      instagram: 'https://instagram.com',
+      behance: 'https://behance.net'
+    },
     order: 3
+  },
+  {
+    id: 'team-4',
+    name: 'Marcus Vance',
+    role: 'Senior 3D Visualizer & AI Media Director',
+    bio: 'Unreal Engine 5 specialist crafting 8K ray-traced walkthroughs and generative AI concept synthesis pipelines.',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
+    email: 'marcus@fizahayat.com',
+    specialization: '3D CGI Rendering & Generative AI',
+    experienceYears: 9,
+    expertiseAreas: ['Unreal Engine 5', 'V-Ray & 3ds Max', 'Generative AI', '3D Motion Graphics'],
+    socials: {
+      linkedin: 'https://linkedin.com',
+      twitter: 'https://twitter.com',
+      instagram: 'https://instagram.com'
+    },
+    order: 4
   }
 ];
 
