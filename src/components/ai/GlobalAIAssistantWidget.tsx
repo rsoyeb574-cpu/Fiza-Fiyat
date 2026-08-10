@@ -70,6 +70,12 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
       text: m.text
     }));
 
+    console.log('[GlobalAIAssistantWidget] Sending chat payload to /api/chat:', {
+      prompt: textToSend,
+      historyPayload,
+      pageContext: activePage
+    });
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -82,6 +88,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
       });
 
       const data = await res.json();
+      console.log('[GlobalAIAssistantWidget] Received response from /api/chat:', data);
 
       if (res.ok && data.status === 'success' && (data.text || data.reply)) {
         const reply = data.text || data.reply;

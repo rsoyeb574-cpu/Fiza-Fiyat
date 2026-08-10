@@ -65,6 +65,11 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({
       text: m.text
     }));
 
+    console.log('[AIChatbot] Sending chat payload to /api/chat:', {
+      prompt: userMsgText,
+      historyPayload
+    });
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -76,6 +81,7 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({
       });
 
       const data = await response.json();
+      console.log('[AIChatbot] Received response from /api/chat:', data);
 
       if (response.ok && data.status === 'success' && (data.text || data.reply)) {
         const aiText = data.text || data.reply;
