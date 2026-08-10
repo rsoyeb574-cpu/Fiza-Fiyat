@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   Send, 
   Mail, 
-  Phone, 
   MapPin, 
   Sparkles, 
   Instagram, 
@@ -10,10 +9,13 @@ import {
   Youtube, 
   Globe, 
   CheckCircle2, 
-  ArrowUpRight 
+  ArrowUpRight,
+  MessageSquare
 } from 'lucide-react';
 import { WebsiteSettings } from '../../types';
 import { sendInquiry } from '../../services/db';
+import { CONTACT_CONFIG } from '../../config/contact';
+import { WhatsAppButton } from './WhatsAppButton';
 
 interface FooterProps {
   settings: WebsiteSettings;
@@ -132,11 +134,8 @@ export const Footer: React.FC<FooterProps> = ({ settings, setActivePage }) => {
                   {settings.companyEmail || 'contact@fizahayat.com'}
                 </a>
               </div>
-              <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-violet-400 shrink-0" />
-                <a href={`tel:${settings.companyPhone}`} className="hover:text-violet-300 transition-colors">
-                  {settings.companyPhone || '+1 (800) 555-FIZA'}
-                </a>
+              <div className="pt-2">
+                <WhatsAppButton whatsappGroupLink={settings.whatsappGroupLink || settings.socialLinks?.whatsappGroup} />
               </div>
             </div>
           </div>

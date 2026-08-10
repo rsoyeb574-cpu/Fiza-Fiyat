@@ -99,15 +99,18 @@ export default function App() {
     mission: 'To deliver flawless design, engineering, and digital solutions.',
     vision: 'To set global benchmarks in architectural intelligence.',
     companyEmail: 'contact@fizahayat.com',
-    companyPhone: '+1 (800) 555-FIZA',
-    whatsappNumber: '+18005553492',
+    companyPhone: '',
+    whatsappNumber: '',
+    whatsappGroupLink: 'https://chat.whatsapp.com/GsNwCBMQP5zJWbvocLdWg2',
     address: 'Executive Tower 4, Business Bay Dubai / Geneva',
     googleMapsEmbed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3610.17851002432!2d55.2721877!3d25.1868882!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3e5f682def22a275%3A0x6b772b1684c3e395!2sBusiness%20Bay%20Dubai!5e0!3m2!1sen!2sae!4v1700000000000',
     statsProjects: 145,
     statsClients: 82,
     statsCountries: 24,
     statsYears: 10,
-    socialLinks: {}
+    socialLinks: {
+      whatsappGroup: 'https://chat.whatsapp.com/GsNwCBMQP5zJWbvocLdWg2'
+    }
   });
 
   useEffect(() => {

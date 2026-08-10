@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, MessageSquare, Check, Sparkles } from 'lucide-react';
+import { Mail, MapPin, Send, MessageSquare, Check, Sparkles, Users } from 'lucide-react';
 import { WebsiteSettings } from '../types';
 import { sendInquiry } from '../services/db';
+import { CONTACT_CONFIG } from '../config/contact';
+import { WhatsAppButton } from '../components/common/WhatsAppButton';
 
 interface ContactPageProps {
   settings: WebsiteSettings;
@@ -46,28 +48,25 @@ export const ContactPage: React.FC<ContactPageProps> = ({ settings }) => {
       });
     } catch (e: any) {
       console.error(e);
-      setErrorMessage(e?.message || 'Failed to submit inquiry. Please try again or contact us directly on WhatsApp.');
+      setErrorMessage(e?.message || 'Failed to submit inquiry. Please try again or join our WhatsApp Group.');
     } finally {
       setLoading(false);
     }
   };
-
-  const whatsappNum = settings.whatsappNumber ? settings.whatsappNumber.replace(/[^0-9]/g, '') : '18005553492';
-  const whatsappUrl = `https://wa.me/${whatsappNum}?text=${encodeURIComponent('Hello Fiza Hayat Team, I would like to inquire about your architectural/design/AI services.')}`;
 
   return (
     <div className="pt-28 pb-20 space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
       {/* Title */}
       <div className="text-center space-y-4 max-w-3xl mx-auto">
-        <span className="text-blue-400 text-xs font-bold uppercase tracking-widest block">
+        <span className="text-violet-400 text-xs font-bold uppercase tracking-widest block">
           Get in Touch
         </span>
         <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
           Initiate Your Project
         </h1>
-        <p className="text-neutral-400 text-sm leading-relaxed">
-          Contact our international studio offices in Dubai and Zurich. Send an inquiry or schedule a direct consultation call.
+        <p className="text-slate-300 text-sm leading-relaxed">
+          Contact our international studio offices in Dubai and Zurich. Send an inquiry or join our official WhatsApp community.
         </p>
       </div>
 
@@ -75,49 +74,31 @@ export const ContactPage: React.FC<ContactPageProps> = ({ settings }) => {
         
         {/* Contact Details & Direct Channels */}
         <div className="space-y-8">
-          <div className="p-8 rounded-3xl bg-neutral-900/60 border border-white/10 space-y-6">
+          <div className="p-8 rounded-3xl bg-[#151B2E] border border-indigo-500/20 backdrop-blur-2xl space-y-6 shadow-2xl">
             <h3 className="text-xl font-bold text-white">Executive Studio Offices</h3>
             
             <div className="space-y-4 text-xs">
               <div className="flex items-start space-x-3">
-                <MapPin className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                <MapPin className="w-5 h-5 text-violet-400 shrink-0 mt-0.5" />
                 <div>
                   <div className="text-white font-semibold">Primary Address</div>
-                  <div className="text-neutral-400 mt-0.5">{settings.address || 'Executive Tower, Downtown Dubai / Geneva'}</div>
+                  <div className="text-slate-400 mt-0.5">{settings.address || CONTACT_CONFIG.companyAddress}</div>
                 </div>
               </div>
 
               <div className="flex items-start space-x-3">
-                <Mail className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                <Mail className="w-5 h-5 text-violet-400 shrink-0 mt-0.5" />
                 <div>
                   <div className="text-white font-semibold">Email Inquiries</div>
-                  <a href={`mailto:${settings.companyEmail}`} className="text-blue-400 hover:underline mt-0.5 block">
-                    {settings.companyEmail || 'contact@fizahayat.com'}
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Phone className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-white font-semibold">Phone Support</div>
-                  <a href={`tel:${settings.companyPhone}`} className="text-blue-400 hover:underline mt-0.5 block">
-                    {settings.companyPhone || '+1 (800) 555-FIZA'}
+                  <a href={`mailto:${settings.companyEmail || CONTACT_CONFIG.companyEmail}`} className="text-violet-300 hover:underline mt-0.5 block font-medium">
+                    {settings.companyEmail || CONTACT_CONFIG.companyEmail}
                   </a>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-white/10">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center space-x-2 shadow-xl transition-all cursor-pointer"
-              >
-                <MessageSquare className="w-4 h-4 fill-white" />
-                <span>Chat Directly on WhatsApp</span>
-              </a>
+            <div className="pt-4 border-t border-indigo-500/20">
+              <WhatsAppButton whatsappGroupLink={settings.whatsappGroupLink || settings.socialLinks?.whatsappGroup} className="w-full justify-center py-3.5" />
             </div>
           </div>
 

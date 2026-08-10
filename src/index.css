@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+@layer base {
+  h1 {
+    font-size: clamp(2.25rem, 5vw, 3.75rem);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    font-weight: 800;
+  }
+
+  h2 {
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  h3 {
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    font-weight: 600;
+  }
+}
+
 @layer utilities {
   /* Glass card styling */
   .glass-card {
@@ -46,30 +69,88 @@
   }
 
   /* Primary & Secondary Buttons */
+  .btn-primary,
   .btn-purple-primary {
-    background-image: linear-gradient(135deg, #7c3aed 0%, #6d28d9 40%, #2563eb 100%);
+    background-image: linear-gradient(135deg, #6d28d9 0%, #7c3aed 50%, #2563eb 100%);
     color: #ffffff;
+    border-radius: 0.75rem; /* 12px (10-14px range) */
+    font-weight: 600;
+    padding: 0.625rem 1.25rem;
     box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.35);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
   }
 
+  .btn-primary:hover,
   .btn-purple-primary:hover {
-    background-image: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 40%, #3b82f6 100%);
+    background-image: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 50%, #3b82f6 100%);
     box-shadow: 0 15px 30px -5px rgba(124, 58, 237, 0.5);
     transform: translateY(-1px);
   }
 
+  .btn-secondary,
   .btn-purple-secondary {
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(124, 58, 237, 0.35);
     color: #e0e7ff;
+    border-radius: 0.75rem; /* 12px */
+    font-weight: 600;
+    padding: 0.625rem 1.25rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
   }
 
+  .btn-secondary:hover,
   .btn-purple-secondary:hover {
     background-color: rgba(124, 58, 237, 0.15);
     border-color: rgba(124, 58, 237, 0.6);
     color: #ffffff;
+    transform: translateY(-1px);
+  }
+
+  /* Loading state for buttons */
+  .btn-loading {
+    opacity: 0.8;
+    cursor: wait;
+    pointer-events: none;
+    box-shadow: 0 4px 15px -5px rgba(124, 58, 237, 0.3);
+    transform: none !important;
+    filter: saturate(0.85);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-loading:hover {
+    transform: none !important;
+    box-shadow: 0 4px 15px -5px rgba(124, 58, 237, 0.3) !important;
+  }
+
+  .btn-loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.2) 50%,
+      transparent 100%
+    );
+    animation: btn-shimmer 1.8s infinite;
+  }
+}
+
+@keyframes btn-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }
 

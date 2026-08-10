@@ -139,6 +139,7 @@ export interface WebsiteSettings {
   companyEmail: string;
   companyPhone: string;
   whatsappNumber: string;
+  whatsappGroupLink?: string;
   address: string;
   googleMapsEmbed: string;
   statsProjects: number;
@@ -152,5 +153,6 @@ export interface WebsiteSettings {
     behance?: string;
     facebook?: string;
     github?: string;
+    whatsappGroup?: string;
   };
 }

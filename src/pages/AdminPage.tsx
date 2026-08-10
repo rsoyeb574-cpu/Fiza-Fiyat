@@ -34,6 +34,7 @@ import {
   Share2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { CONTACT_CONFIG } from '../config/contact';
 import { 
   Project, 
   Category, 
@@ -1055,11 +1056,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               </div>
 
               <div>
-                <label className="block text-neutral-300 font-semibold mb-1">Company Phone</label>
+                <label className="block text-neutral-300 font-semibold mb-1">WhatsApp Group Invite Link</label>
                 <input
                   type="text"
-                  value={websiteSettingsState.companyPhone || ''}
-                  onChange={(e) => setWebsiteSettingsState({ ...websiteSettingsState, companyPhone: e.target.value })}
+                  value={websiteSettingsState.whatsappGroupLink || CONTACT_CONFIG.whatsappGroupLink}
+                  onChange={(e) => setWebsiteSettingsState({ ...websiteSettingsState, whatsappGroupLink: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl bg-neutral-950 border border-white/10 text-white"
                 />
               </div>

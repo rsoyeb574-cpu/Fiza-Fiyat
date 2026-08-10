@@ -14,10 +14,13 @@ import {
   Calculator,
   ChevronRight,
   Eye,
-  Heart
+  Heart,
+  MessageSquare
 } from 'lucide-react';
 import { Project, Service, Testimonial, WebsiteSettings, Category } from '../types';
 import { BeforeAfterSlider } from '../components/common/BeforeAfterSlider';
+import { CONTACT_CONFIG } from '../config/contact';
+import { WhatsAppButton } from '../components/common/WhatsAppButton';
 
 interface HomePageProps {
   settings: WebsiteSettings;
@@ -452,17 +455,18 @@ export const HomePage: React.FC<HomePageProps> = ({
               Partner with Fiza-Fiya for bespoke architectural design, Revit BIM modeling, AI media campaigns, and digital platforms.
             </p>
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <WhatsAppButton whatsappGroupLink={settings.whatsappGroupLink || settings.socialLinks?.whatsappGroup} className="px-8 py-3.5" />
               <button
                 onClick={() => setActivePage('contact')}
                 className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white font-semibold text-xs shadow-xl shadow-purple-600/30 transition-all cursor-pointer hover:-translate-y-0.5"
               >
-                Schedule Consultation Call
+                Inquire Project
               </button>
               <button
                 onClick={onOpenCalculator}
                 className="px-8 py-3.5 rounded-2xl bg-[#0B1020]/80 border border-indigo-500/30 hover:border-violet-500/50 text-indigo-200 font-semibold text-xs transition-all cursor-pointer backdrop-blur-md"
               >
-                Try Cost Calculator
+                Cost Calculator
               </button>
             </div>
           </div>
