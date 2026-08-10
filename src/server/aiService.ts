@@ -20,6 +20,40 @@ export function getAIClient(): GoogleGenAI {
   });
 }
 
+const PREFERRED_MODELS = [
+  'gemini-3.1-flash-lite',
+  'gemini-3.6-flash',
+  'gemini-2.0-flash'
+];
+
+async function generateWithModelFallback(params: {
+  contents: any;
+  config?: any;
+}): Promise<string> {
+  const ai = getAIClient();
+  let lastError: any = null;
+
+  for (const modelName of PREFERRED_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model: modelName,
+        contents: params.contents,
+        config: params.config
+      });
+
+      const text = response.text;
+      if (text && text.trim()) {
+        return text.trim();
+      }
+    } catch (err: any) {
+      console.warn(`Model ${modelName} failed, trying next fallback:`, err.message || err);
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error('All Gemini AI model attempts failed.');
+}
+
 export async function handleChatRequest(
   prompt: string,
   history: ChatMessageInput[] = [],
@@ -28,8 +62,6 @@ export async function handleChatRequest(
   if (!prompt || !prompt.trim()) {
     throw new Error('Prompt cannot be empty.');
   }
-
-  const ai = getAIClient();
 
   const rawContents: { role: 'user' | 'model'; text: string }[] = [];
 
@@ -98,26 +130,17 @@ Core Directives:
 4. Keep formatting clean with bullet points or numbered lists where appropriate.
 ${pageContext ? `Current Active Page Context: ${pageContext}` : ''}`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.6-flash',
-    contents: contents,
+  return await generateWithModelFallback({
+    contents,
     config: {
       systemInstruction,
       temperature: 0.7,
     }
   });
-
-  const generatedText = response.text;
-  if (!generatedText || !generatedText.trim()) {
-    throw new Error('Gemini API returned an empty response.');
-  }
-
-  return generatedText.trim();
 }
 
 export async function handleConstructionAIRequest(body: any): Promise<any> {
   const { type, location, qualityLevel, budgetINR, promptExtra } = body || {};
-  const ai = getAIClient();
 
   const promptText = `You are the lead AI Structural Engineer and Interior Design Specialist for Fiza Hayat Construction Intelligence Platform.
 
@@ -136,18 +159,17 @@ Return a valid JSON object matching this schema:
   "estimatedCostImpact": "1 sentence cost impact"
 }`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.6-flash',
+  const rawText = await generateWithModelFallback({
     contents: promptText,
     config: {
       responseMimeType: 'application/json'
     }
   });
 
-  const rawText = response.text || '';
   const jsonMatch = rawText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     return JSON.parse(jsonMatch[0]);
   }
   throw new Error('Failed to parse JSON response from Gemini Construction AI.');
 }
+
