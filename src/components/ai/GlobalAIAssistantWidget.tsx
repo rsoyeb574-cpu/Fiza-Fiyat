@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Sparkles, X, Send, User, ChevronUp, AlertTriangle, Building2, Calculator, ShieldCheck, Compass } from 'lucide-react';
+import { Bot, Sparkles, X, Send, User, ChevronUp, AlertTriangle, Building2, Calculator, ShieldCheck, Compass, RefreshCw } from 'lucide-react';
 
 interface GlobalAIAssistantWidgetProps {
   activePage: string;
@@ -199,11 +199,18 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
             ))}
 
             {typing && (
-              <div className="flex space-x-2 justify-start items-center">
-                <div className="w-6 h-6 rounded-lg bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center">
+              <div className="flex space-x-2 justify-start items-center animate-fadeIn">
+                <div className="w-6 h-6 rounded-lg bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center shrink-0">
                   <Bot className="w-3.5 h-3.5" />
                 </div>
-                <div className="bg-slate-950 p-2.5 rounded-2xl text-slate-400 text-[11px]">Fiza AI is thinking...</div>
+                <div className="bg-slate-950 border border-white/10 p-2.5 rounded-2xl rounded-tl-none text-slate-300 text-[11px] flex items-center space-x-2 shadow-md">
+                  <span className="font-medium text-purple-300">Fiza AI is thinking...</span>
+                  <div className="flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce"></span>
+                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                  </div>
+                </div>
               </div>
             )}
             <div ref={endRef} />
@@ -215,8 +222,9 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
               {prompts.map((p, i) => (
                 <button
                   key={i}
+                  disabled={typing}
                   onClick={() => handleSendText(p)}
-                  className="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-blue-600/30 border border-white/10 text-slate-300 hover:text-white text-[10px] font-medium cursor-pointer transition-all shrink-0"
+                  className="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-blue-600/30 border border-white/10 text-slate-300 hover:text-white text-[10px] font-medium cursor-pointer transition-all shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ✨ {p}
                 </button>
@@ -235,15 +243,17 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
             <input
               type="text"
               value={input}
+              disabled={typing}
               onChange={e => setInput(e.target.value)}
-              placeholder={`Ask Fiza AI on /${activePage}...`}
-              className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-[11px] focus:outline-none focus:border-purple-500"
+              placeholder={typing ? "Fiza AI is processing..." : `Ask Fiza AI on /${activePage}...`}
+              className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-[11px] focus:outline-none focus:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               type="submit"
-              className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold cursor-pointer transition-all"
+              disabled={typing || !input.trim()}
+              className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              <Send className="w-3.5 h-3.5" />
+              {typing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             </button>
           </form>
         </div>

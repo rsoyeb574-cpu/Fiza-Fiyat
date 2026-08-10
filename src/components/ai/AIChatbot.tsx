@@ -183,14 +183,17 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({
           ))}
 
           {typing && (
-            <div className="flex space-x-2 justify-start items-center">
-              <div className="w-7 h-7 rounded-lg bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center">
+            <div className="flex space-x-2 justify-start items-center animate-fadeIn">
+              <div className="w-7 h-7 rounded-lg bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center shrink-0">
                 <Bot className="w-3.5 h-3.5" />
               </div>
-              <div className="bg-neutral-800 p-3 rounded-2xl rounded-tl-none text-neutral-400 flex items-center space-x-1">
-                <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce"></span>
-                <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+              <div className="bg-neutral-800/90 border border-white/10 p-3 rounded-2xl rounded-tl-none text-neutral-300 flex items-center space-x-2.5 shadow-lg">
+                <span className="text-[11px] font-medium text-purple-300">Fiza AI is thinking...</span>
+                <div className="flex items-center space-x-1">
+                  <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce"></span>
+                  <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                  <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                </div>
               </div>
             </div>
           )}
@@ -202,16 +205,18 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({
         <form onSubmit={handleSend} className="p-3 bg-neutral-950 border-t border-white/10 flex items-center space-x-2">
           <input
             type="text"
-            placeholder="Ask about BIM, 3D renders, architectural timelines..."
+            placeholder={typing ? "Fiza AI is analyzing your prompt..." : "Ask about BIM, 3D renders, architectural timelines..."}
             value={input}
+            disabled={typing}
             onChange={(e) => setInput(e.target.value)}
-            className="flex-1 px-3 py-2.5 rounded-xl bg-neutral-900 border border-white/10 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-purple-500"
+            className="flex-1 px-3 py-2.5 rounded-xl bg-neutral-900 border border-white/10 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <button
             type="submit"
-            className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white shadow-lg transition-all cursor-pointer"
+            disabled={typing || !input.trim()}
+            className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white shadow-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Send className="w-4 h-4" />
+            {typing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </form>
       </div>
