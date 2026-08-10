@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { handleChatRequest, handleConstructionAIRequest } from './src/server/aiService';
+import { handleChatRequest, handleConstructionAIRequest, sanitizeErrorMessage } from './src/server/aiService';
 import { verifyAndIncrementServerUsage, getUserServerProfile, ActionType } from './src/server/planEnforcer';
 
 async function startServer() {
@@ -117,7 +117,7 @@ async function startServer() {
       console.error('Gemini API error in /api/chat:', error);
       return res.status(500).json({
         status: 'error',
-        error: error.message || 'Failed to generate AI response'
+        error: sanitizeErrorMessage(error) || 'Failed to generate AI response'
       });
     }
   });
@@ -142,7 +142,7 @@ async function startServer() {
       console.error('Gemini Construction AI error:', error);
       return res.status(500).json({
         status: 'error',
-        error: error.message || 'Failed to generate construction AI response'
+        error: sanitizeErrorMessage(error) || 'Failed to generate construction AI response'
       });
     }
   });
