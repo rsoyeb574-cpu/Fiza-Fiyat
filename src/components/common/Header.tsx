@@ -71,8 +71,8 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       scrolled 
-        ? 'bg-[#020408]/85 backdrop-blur-xl border-b border-white/10 shadow-2xl py-3' 
-        : 'bg-white/5 backdrop-blur-md border-b border-white/10 py-4'
+        ? 'bg-[#0B1020]/90 backdrop-blur-xl border-b border-indigo-500/20 shadow-2xl py-3' 
+        : 'bg-[#0B1020]/40 backdrop-blur-md border-b border-indigo-500/10 py-4'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
@@ -82,41 +82,41 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => handleNavClick('home')}
             className="flex items-center space-x-3 text-left group cursor-pointer focus:outline-none"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-600 p-[1px] shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
-              <div className="w-full h-full bg-[#020408] rounded-[11px] flex items-center justify-center">
-                <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300 text-lg tracking-wider">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 p-[1px] shadow-lg shadow-violet-600/30 group-hover:scale-105 transition-transform">
+              <div className="w-full h-full bg-[#0B1020] rounded-[11px] flex items-center justify-center">
+                <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-purple-300 to-blue-400 text-lg tracking-wider">
                   FH
                 </span>
               </div>
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight text-white group-hover:text-blue-400 transition-colors flex items-center gap-1.5">
-                FIZA HAYAT
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-xl font-bold tracking-tight text-white group-hover:text-violet-400 transition-colors flex items-center gap-1.5">
+                FIZA-FIYAT
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>
               </span>
-              <span className="text-[10px] tracking-widest uppercase text-neutral-400 block font-medium">
-                Digital Business Hub
+              <span className="text-[10px] tracking-widest uppercase text-indigo-300/70 block font-medium">
+                AI & Construction Hub
               </span>
             </div>
           </button>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center space-x-1 bg-white/5 p-1.5 rounded-full border border-white/10 backdrop-blur-xl shadow-inner">
+          <nav className="hidden md:flex items-center space-x-1 bg-[#151B2E]/80 p-1.5 rounded-full border border-indigo-500/20 backdrop-blur-xl shadow-inner">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all relative ${
                   activePage === item.id
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/40'
+                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/40'
                     : item.featured
-                    ? 'text-blue-300 hover:text-white bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30'
-                    : 'text-neutral-300 hover:text-white hover:bg-white/10'
+                    ? 'text-violet-300 hover:text-white bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
                 }`}
               >
                 {item.label}
                 {item.featured && (
-                  <span className="ml-1.5 px-1.5 py-0.2 text-[9px] font-bold uppercase rounded-full bg-cyan-400 text-slate-950 font-mono">
+                  <span className="ml-1.5 px-1.5 py-0.2 text-[9px] font-bold uppercase rounded-full bg-violet-500 text-white font-mono">
                     HUB
                   </span>
                 )}
@@ -130,10 +130,10 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Search Trigger */}
             <button
               onClick={onOpenSearch}
-              className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-neutral-300 hover:text-white hover:bg-white/10 hover:border-blue-500/50 text-xs transition-all cursor-pointer"
+              className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-[#151B2E] backdrop-blur-md border border-indigo-500/20 text-slate-300 hover:text-white hover:bg-indigo-900/30 hover:border-violet-500/40 text-xs transition-all cursor-pointer"
               title="Search Projects & Services (Cmd + K)"
             >
-              <Search className="w-3.5 h-3.5 text-blue-400" />
+              <Search className="w-3.5 h-3.5 text-violet-400" />
               <span>Search</span>
               <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] bg-white/10 text-neutral-300 rounded border border-white/10">
                 ⌘K
@@ -143,21 +143,21 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Cost Calculator Button */}
             <button
               onClick={onOpenCalculator}
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-white/5 backdrop-blur-md hover:bg-white/10 border border-white/10 text-blue-400 hover:text-blue-300 text-xs font-medium transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-[#151B2E] backdrop-blur-md hover:bg-indigo-900/30 border border-indigo-500/20 text-violet-300 hover:text-violet-200 text-xs font-medium transition-all cursor-pointer"
             >
-              <Calculator className="w-3.5 h-3.5" />
+              <Calculator className="w-3.5 h-3.5 text-indigo-400" />
               <span>Cost Estimator</span>
             </button>
 
             {/* Favorites Drawer Trigger */}
             <button
               onClick={onOpenFavorites}
-              className="relative p-2 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-neutral-300 hover:text-red-400 hover:bg-white/10 transition-all cursor-pointer"
+              className="relative p-2 rounded-xl bg-[#151B2E] backdrop-blur-md border border-indigo-500/20 text-slate-300 hover:text-purple-400 hover:bg-indigo-900/30 transition-all cursor-pointer"
               title="Favorite Projects"
             >
-              <Heart className={`w-4 h-4 ${favoritesCount > 0 ? 'fill-red-500 text-red-500' : ''}`} />
+              <Heart className={`w-4 h-4 ${favoritesCount > 0 ? 'fill-purple-500 text-purple-500' : ''}`} />
               {favoritesCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-bounce">
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-purple-600 text-white text-[10px] font-bold flex items-center justify-center animate-bounce">
                   {favoritesCount}
                 </span>
               )}
@@ -166,7 +166,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-neutral-300 hover:text-amber-400 hover:bg-white/10 transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-[#151B2E] backdrop-blur-md border border-indigo-500/20 text-slate-300 hover:text-amber-400 hover:bg-indigo-900/30 transition-all cursor-pointer"
               title="Toggle Theme"
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -177,8 +177,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => handleNavClick('admin')}
               className={`p-2 rounded-xl border backdrop-blur-md transition-all cursor-pointer ${
                 activePage === 'admin' 
-                  ? 'bg-blue-600 border-blue-500 text-white' 
-                  : 'bg-white/5 border-white/10 text-neutral-300 hover:text-blue-400 hover:bg-white/10'
+                  ? 'bg-violet-600 border-violet-500 text-white shadow-md shadow-violet-600/30' 
+                  : 'bg-[#151B2E] border-indigo-500/20 text-slate-300 hover:text-violet-400 hover:bg-indigo-900/30'
               }`}
               title="Admin Panel"
             >
@@ -188,7 +188,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Contact CTA */}
             <button
               onClick={() => handleNavClick('contact')}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white text-xs font-semibold shadow-lg shadow-purple-600/30 hover:shadow-purple-500/50 transition-all cursor-pointer flex items-center space-x-1.5 hover:-translate-y-0.5"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Get Quote</span>

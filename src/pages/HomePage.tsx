@@ -89,22 +89,22 @@ export const HomePage: React.FC<HomePageProps> = ({
     <div className="space-y-24 pb-20">
       
       {/* HERO SECTION */}
-      <section className="relative min-h-screen pt-28 pb-16 flex items-center justify-center overflow-hidden bg-[#020408]">
+      <section className="relative min-h-screen pt-28 pb-16 flex items-center justify-center overflow-hidden bg-[#0B1020]">
         
         {/* Animated Background Canvas & Glow Orbs */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/30 via-[#020408] to-[#020408]"></div>
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[750px] h-[550px] bg-gradient-to-tr from-blue-600/20 via-indigo-600/20 to-purple-600/10 rounded-full blur-[140px] pointer-events-none animate-pulse"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/40 via-[#0B1020] to-[#0B1020]"></div>
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[750px] h-[550px] bg-gradient-to-tr from-violet-600/20 via-indigo-600/25 to-blue-600/15 rounded-full blur-[140px] pointer-events-none animate-pulse"></div>
 
         {/* Subtle Grid Overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#7c3aed0a_1px,transparent_1px),linear-gradient(to_bottom,#7c3aed0a_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-8">
           
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-blue-500/30 text-blue-400 text-xs font-semibold backdrop-blur-xl shadow-xl shadow-blue-500/10">
-            <Sparkles className="w-4 h-4 text-blue-400" />
-            <span>Digital Business Hub & International Studio</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping"></span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#151B2E] border border-violet-500/30 text-violet-300 text-xs font-semibold backdrop-blur-xl shadow-xl shadow-violet-600/10">
+            <Sparkles className="w-4 h-4 text-violet-400" />
+            <span>Digital Business Hub & International AI Studio</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-ping"></span>
           </div>
 
           {/* Main Title */}
@@ -114,14 +114,14 @@ export const HomePage: React.FC<HomePageProps> = ({
 
           {/* Dynamic Typing Effect */}
           <div className="h-12 flex items-center justify-center">
-            <p className="text-xl sm:text-2xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-300">
+            <p className="text-xl sm:text-2xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-violet-300 via-indigo-300 to-blue-300">
               {displayedTyping}
-              <span className="inline-block w-0.5 h-6 bg-blue-500 ml-1 animate-pulse"></span>
+              <span className="inline-block w-0.5 h-6 bg-violet-500 ml-1 animate-pulse"></span>
             </p>
           </div>
 
           {/* Hero Subtitle */}
-          <p className="text-neutral-400 text-sm sm:text-base max-w-3xl mx-auto leading-relaxed">
+          <p className="text-slate-300 text-sm sm:text-base max-w-3xl mx-auto leading-relaxed">
             {settings.heroSubtitle}
           </p>
 
@@ -129,7 +129,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <button
               onClick={() => setActivePage('portfolio')}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold shadow-2xl shadow-blue-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center space-x-2 text-sm"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white font-semibold shadow-2xl shadow-purple-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center space-x-2 text-sm"
             >
               <span>Explore Portfolio</span>
               <ArrowRight className="w-4 h-4" />
@@ -137,21 +137,21 @@ export const HomePage: React.FC<HomePageProps> = ({
 
             <button
               onClick={onOpenCalculator}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/15 hover:border-blue-500/50 text-blue-400 font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center space-x-2 text-sm backdrop-blur-xl"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#151B2E] hover:bg-indigo-900/40 border border-indigo-500/30 hover:border-violet-500/50 text-indigo-200 font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center space-x-2 text-sm backdrop-blur-xl"
             >
-              <Calculator className="w-4 h-4" />
+              <Calculator className="w-4 h-4 text-violet-400" />
               <span>Construction & Interior Calculator</span>
             </button>
           </div>
 
           {/* Key Accreditations / Software Pill Ticker */}
-          <div className="pt-12 border-t border-white/10 max-w-4xl mx-auto">
-            <p className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold mb-4">
+          <div className="pt-12 border-t border-indigo-500/20 max-w-4xl mx-auto">
+            <p className="text-[11px] uppercase tracking-widest text-indigo-300/80 font-bold mb-4">
               POWERED BY ENTERPRISE SOFTWARE & HARDWARE
             </p>
-            <div className="flex flex-wrap justify-center gap-3 text-xs text-neutral-300">
+            <div className="flex flex-wrap justify-center gap-3 text-xs text-slate-300">
               {['Autodesk Revit BIM', 'AutoCAD 2026', '3ds Max & V-Ray', 'Unreal Engine 5', 'Rhino 3D', 'Midjourney AI', 'Adobe Creative Cloud', 'Figma Systems'].map((sw) => (
-                <span key={sw} className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md font-medium">
+                <span key={sw} className="px-3.5 py-1.5 rounded-xl bg-[#151B2E] border border-indigo-500/20 backdrop-blur-md font-medium text-slate-300">
                   {sw}
                 </span>
               ))}
@@ -163,64 +163,64 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* STATISTICS COUNTER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-2xl shadow-2xl grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+        <div className="p-8 rounded-3xl bg-[#151B2E] border border-indigo-500/20 backdrop-blur-2xl shadow-2xl grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
           <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-blue-400">
               {settings.statsProjects || 145}+
             </div>
-            <div className="text-neutral-400 text-xs font-medium uppercase tracking-wider mt-1">Delivered Projects</div>
+            <div className="text-slate-400 text-xs font-medium uppercase tracking-wider mt-1">Delivered Projects</div>
           </div>
           <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-blue-400">
               {settings.statsClients || 82}+
             </div>
-            <div className="text-neutral-400 text-xs font-medium uppercase tracking-wider mt-1">Global Clients</div>
+            <div className="text-slate-400 text-xs font-medium uppercase tracking-wider mt-1">Global Clients</div>
           </div>
           <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-blue-400">
               {settings.statsCountries || 24}+
             </div>
-            <div className="text-neutral-400 text-xs font-medium uppercase tracking-wider mt-1">Countries Served</div>
+            <div className="text-slate-400 text-xs font-medium uppercase tracking-wider mt-1">Countries Served</div>
           </div>
           <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
+            <div className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-blue-400">
               {settings.statsYears || 10}+
             </div>
-            <div className="text-neutral-400 text-xs font-medium uppercase tracking-wider mt-1">Years Excellence</div>
+            <div className="text-slate-400 text-xs font-medium uppercase tracking-wider mt-1">Years Excellence</div>
           </div>
         </div>
       </section>
 
       {/* FEATURED CONSTRUCTION INTELLIGENCE HUB BANNER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="glass-card rounded-3xl p-8 sm:p-10 border border-blue-500/30 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950/60 shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none group-hover:scale-125 transition-transform duration-700"></div>
+        <div className="glass-card rounded-3xl p-8 sm:p-10 border border-violet-500/30 bg-gradient-to-r from-[#151B2E] via-indigo-950/80 to-[#151B2E] shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-violet-600/15 rounded-full blur-3xl pointer-events-none group-hover:scale-125 transition-transform duration-700"></div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
             <div className="lg:col-span-8 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider text-blue-400 bg-blue-500/10 border border-blue-500/20">
-                <Cpu className="w-3.5 h-3.5" />
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider text-violet-300 bg-violet-500/10 border border-violet-500/30">
+                <Cpu className="w-3.5 h-3.5 text-violet-400" />
                 Featured Platform Module
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-                Construction <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">Intelligence</span> Hub
+                Construction <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-blue-400 bg-clip-text text-transparent">Intelligence</span> Hub
               </h2>
-              <p className="text-neutral-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
+              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
                 Dynamic civil engineering & architectural consultation platform. Calculate material formulas, view 2D/3D floor plan layouts, cost breakdowns, construction schedules, and 12 structural knowledge guides.
               </p>
               
-              <div className="flex flex-wrap gap-2 text-xs text-neutral-300 pt-2">
-                <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 font-mono">20x20 Plot Calculator</span>
-                <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 font-mono">Cement, Steel & Sand Formulas</span>
-                <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 font-mono">IS 456 Structural Rules</span>
-                <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 font-mono">BOQ Generator</span>
+              <div className="flex flex-wrap gap-2 text-xs text-slate-300 pt-2">
+                <span className="px-3 py-1 rounded-lg bg-[#0B1020]/80 border border-indigo-500/20 font-mono">20x20 Plot Calculator</span>
+                <span className="px-3 py-1 rounded-lg bg-[#0B1020]/80 border border-indigo-500/20 font-mono">Cement, Steel & Sand Formulas</span>
+                <span className="px-3 py-1 rounded-lg bg-[#0B1020]/80 border border-indigo-500/20 font-mono">IS 456 Structural Rules</span>
+                <span className="px-3 py-1 rounded-lg bg-[#0B1020]/80 border border-indigo-500/20 font-mono">BOQ Generator</span>
               </div>
             </div>
 
             <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-end">
               <button
                 onClick={() => setActivePage('construction-intelligence')}
-                className="w-full px-6 py-3.5 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-500 shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 group/btn"
+                className="w-full px-6 py-3.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 shadow-xl shadow-purple-600/30 transition-all flex items-center justify-center gap-2 group/btn cursor-pointer hover:-translate-y-0.5"
               >
                 <span>Launch Construction Intelligence</span>
                 <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
@@ -234,7 +234,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <span className="text-blue-400 text-xs font-bold uppercase tracking-widest block mb-2">
+            <span className="text-violet-400 text-xs font-bold uppercase tracking-widest block mb-2">
               Capabilities
             </span>
             <h2 className="text-3xl font-extrabold text-white tracking-tight">
@@ -243,9 +243,9 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
           <button
             onClick={() => setActivePage('services')}
-            className="text-blue-400 hover:text-blue-300 text-xs font-semibold flex items-center gap-1 group"
+            className="text-violet-400 hover:text-violet-300 text-xs font-semibold flex items-center gap-1 group cursor-pointer"
           >
-            <span>View All 20 Services</span>
+            <span>View All Services</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
@@ -255,24 +255,24 @@ export const HomePage: React.FC<HomePageProps> = ({
             <div
               key={srv.id}
               onClick={() => setActivePage('services')}
-              className="p-6 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 hover:border-blue-500/50 hover:bg-white/[0.08] transition-all hover:-translate-y-1 cursor-pointer group space-y-4 flex flex-col justify-between shadow-xl"
+              className="p-6 rounded-3xl bg-[#151B2E] backdrop-blur-xl border border-indigo-500/20 hover:border-violet-500/40 hover:bg-[#192138] transition-all hover:-translate-y-1 cursor-pointer group space-y-4 flex flex-col justify-between shadow-xl"
             >
               <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-violet-600/20 border border-violet-500/30 text-violet-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Sparkles className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">
+                <h3 className="text-lg font-bold text-white group-hover:text-violet-400 transition-colors">
                   {srv.title}
                 </h3>
-                <p className="text-neutral-400 text-xs leading-relaxed line-clamp-3">
+                <p className="text-slate-400 text-xs leading-relaxed line-clamp-3">
                   {srv.description}
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-white/10 space-y-2">
+              <div className="pt-4 border-t border-indigo-500/20 space-y-2">
                 {srv.features?.slice(0, 3).map((f) => (
-                  <div key={f} className="text-[11px] text-neutral-300 flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <div key={f} className="text-[11px] text-slate-300 flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-violet-400 shrink-0" />
                     <span>{f}</span>
                   </div>
                 ))}
@@ -286,7 +286,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <span className="text-blue-400 text-xs font-bold uppercase tracking-widest block mb-2">
+            <span className="text-violet-400 text-xs font-bold uppercase tracking-widest block mb-2">
               Portfolio
             </span>
             <h2 className="text-3xl font-extrabold text-white tracking-tight">
@@ -298,10 +298,10 @@ export const HomePage: React.FC<HomePageProps> = ({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setCurrentCategory('all')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                 currentCategory === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-neutral-900 text-neutral-400 hover:text-white'
+                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/30'
+                  : 'bg-[#151B2E] border border-indigo-500/20 text-slate-300 hover:text-white hover:border-violet-500/30'
               }`}
             >
               All
@@ -310,10 +310,10 @@ export const HomePage: React.FC<HomePageProps> = ({
               <button
                 key={cat.id}
                 onClick={() => setCurrentCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                   currentCategory === cat.id
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-neutral-900 text-neutral-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/30'
+                    : 'bg-[#151B2E] border border-indigo-500/20 text-slate-300 hover:text-white hover:border-violet-500/30'
                 }`}
               >
                 {cat.name}
@@ -327,7 +327,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           {filteredProjects.map((proj) => (
             <div
               key={proj.id}
-              className="group rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 overflow-hidden hover:border-blue-500/50 hover:bg-white/[0.08] transition-all hover:-translate-y-1 flex flex-col justify-between shadow-xl"
+              className="group rounded-3xl bg-[#151B2E] backdrop-blur-xl border border-indigo-500/20 overflow-hidden hover:border-violet-500/40 hover:bg-[#192138] transition-all hover:-translate-y-1 flex flex-col justify-between shadow-xl"
             >
               <div className="relative h-60 overflow-hidden cursor-pointer" onClick={() => onSelectProject(proj.id)}>
                 <img
@@ -335,17 +335,17 @@ export const HomePage: React.FC<HomePageProps> = ({
                   alt={proj.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#020408] via-transparent to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0B1020] via-transparent to-transparent"></div>
                 
-                <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#020408]/80 backdrop-blur-md text-blue-400 text-[10px] font-bold border border-blue-500/30">
+                <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0B1020]/80 backdrop-blur-md text-violet-300 text-[10px] font-bold border border-violet-500/30">
                   {proj.categoryName}
                 </span>
 
                 <button
                   onClick={(e) => { e.stopPropagation(); onToggleFavorite(proj); }}
-                  className="absolute top-3 right-3 p-2 rounded-full bg-[#020408]/80 backdrop-blur-md text-white hover:text-red-400 transition-colors cursor-pointer"
+                  className="absolute top-3 right-3 p-2 rounded-full bg-[#0B1020]/80 backdrop-blur-md text-white hover:text-purple-400 transition-colors cursor-pointer"
                 >
-                  <Heart className={`w-4 h-4 ${isFavorite(proj.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                  <Heart className={`w-4 h-4 ${isFavorite(proj.id) ? 'fill-purple-500 text-purple-500' : ''}`} />
                 </button>
               </div>
 
@@ -353,20 +353,20 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <div>
                   <h3 
                     onClick={() => onSelectProject(proj.id)}
-                    className="text-base font-bold text-white group-hover:text-blue-400 transition-colors cursor-pointer line-clamp-1"
+                    className="text-base font-bold text-white group-hover:text-violet-400 transition-colors cursor-pointer line-clamp-1"
                   >
                     {proj.title}
                   </h3>
-                  <p className="text-neutral-400 text-xs line-clamp-2 mt-1">
+                  <p className="text-slate-400 text-xs line-clamp-2 mt-1">
                     {proj.description}
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-neutral-400">
-                  <span>Client: <strong className="text-neutral-200">{proj.clientName}</strong></span>
+                <div className="pt-3 border-t border-indigo-500/20 flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Client: <strong className="text-slate-200">{proj.clientName}</strong></span>
                   <button
                     onClick={() => onSelectProject(proj.id)}
-                    className="text-blue-400 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
+                    className="text-violet-400 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
                   >
                     View Details <ChevronRight className="w-3.5 h-3.5" />
                   </button>
@@ -381,13 +381,13 @@ export const HomePage: React.FC<HomePageProps> = ({
       {sampleBeforeAfter && sampleBeforeAfter.beforeAfter && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="text-center space-y-2">
-            <span className="text-blue-400 text-xs font-bold uppercase tracking-widest block">
+            <span className="text-violet-400 text-xs font-bold uppercase tracking-widest block">
               Architectural Craftsmanship
             </span>
             <h2 className="text-3xl font-extrabold text-white tracking-tight">
               Interactive Wireframe to 3D Render Transformation
             </h2>
-            <p className="text-neutral-400 text-xs max-w-xl mx-auto">
+            <p className="text-slate-400 text-xs max-w-xl mx-auto">
               Drag the divider line to observe how raw site layouts and CAD drawings transform into 8K photorealistic renders.
             </p>
           </div>
@@ -404,7 +404,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* TESTIMONIALS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center space-y-2">
-          <span className="text-blue-400 text-xs font-bold uppercase tracking-widest block">
+          <span className="text-violet-400 text-xs font-bold uppercase tracking-widest block">
             Client Feedback
           </span>
           <h2 className="text-3xl font-extrabold text-white tracking-tight">
@@ -416,7 +416,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           {testimonials.map((t) => (
             <div
               key={t.id}
-              className="p-6 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 space-y-4 flex flex-col justify-between shadow-xl hover:bg-white/[0.08] transition-all"
+              className="p-6 rounded-3xl bg-[#151B2E] backdrop-blur-xl border border-indigo-500/20 space-y-4 flex flex-col justify-between shadow-xl hover:border-violet-500/40 hover:bg-[#192138] transition-all"
             >
               <div className="space-y-3">
                 <div className="flex text-amber-400 space-x-1">
@@ -424,16 +424,16 @@ export const HomePage: React.FC<HomePageProps> = ({
                     <Star key={i} className="w-4 h-4 fill-amber-400" />
                   ))}
                 </div>
-                <p className="text-neutral-300 text-xs leading-relaxed italic">
+                <p className="text-slate-300 text-xs leading-relaxed italic">
                   "{t.content}"
                 </p>
               </div>
 
-              <div className="flex items-center space-x-3 pt-4 border-t border-white/10">
-                <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-white/10" />
+              <div className="flex items-center space-x-3 pt-4 border-t border-indigo-500/20">
+                <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-indigo-500/30" />
                 <div>
                   <div className="text-white font-bold text-xs">{t.name}</div>
-                  <div className="text-neutral-400 text-[10px]">{t.role}, {t.company}</div>
+                  <div className="text-slate-400 text-[10px]">{t.role}, {t.company}</div>
                 </div>
               </div>
             </div>
@@ -443,24 +443,24 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* CONTACT CTA BANNER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-10 rounded-3xl bg-gradient-to-r from-blue-950/60 via-white/5 to-indigo-950/60 border border-blue-500/30 backdrop-blur-2xl text-center space-y-6 relative overflow-hidden shadow-2xl">
+        <div className="p-10 rounded-3xl bg-gradient-to-r from-[#151B2E] via-violet-950/40 to-[#151B2E] border border-violet-500/30 backdrop-blur-2xl text-center space-y-6 relative overflow-hidden shadow-2xl">
           <div className="max-w-2xl mx-auto space-y-3 relative z-10">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
               Ready to Bring Your Vision to Life?
             </h2>
-            <p className="text-neutral-300 text-xs leading-relaxed">
-              Partner with Fiza Hayat for bespoke architectural design, Revit BIM modeling, AI media campaigns, and digital platforms.
+            <p className="text-slate-300 text-xs leading-relaxed">
+              Partner with Fiza-Fiya for bespoke architectural design, Revit BIM modeling, AI media campaigns, and digital platforms.
             </p>
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 onClick={() => setActivePage('contact')}
-                className="px-8 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xl shadow-blue-600/30 transition-all cursor-pointer"
+                className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white font-semibold text-xs shadow-xl shadow-purple-600/30 transition-all cursor-pointer hover:-translate-y-0.5"
               >
                 Schedule Consultation Call
               </button>
               <button
                 onClick={onOpenCalculator}
-                className="px-8 py-3.5 rounded-2xl bg-white/5 border border-white/15 hover:bg-white/10 text-blue-400 font-semibold text-xs transition-all cursor-pointer backdrop-blur-md"
+                className="px-8 py-3.5 rounded-2xl bg-[#0B1020]/80 border border-indigo-500/30 hover:border-violet-500/50 text-indigo-200 font-semibold text-xs transition-all cursor-pointer backdrop-blur-md"
               >
                 Try Cost Calculator
               </button>

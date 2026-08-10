@@ -165,12 +165,12 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <div className="min-h-screen bg-[#020408] text-neutral-100 font-sans selection:bg-blue-600 selection:text-white flex flex-col justify-between relative overflow-hidden">
+        <div className="min-h-screen bg-[#0B1020] dark:bg-[#0B1020] light:bg-[#F8FAFC] text-neutral-100 dark:text-neutral-100 light:text-slate-900 font-sans selection:bg-violet-600 selection:text-white flex flex-col justify-between relative overflow-hidden transition-colors duration-300">
           
           {/* Ambient Glass Glow Orbs */}
-          <div className="fixed top-0 left-1/4 -translate-x-1/2 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[140px] pointer-events-none z-0"></div>
-          <div className="fixed top-1/3 right-10 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[130px] pointer-events-none z-0"></div>
-          <div className="fixed bottom-0 left-1/3 w-[700px] h-[500px] bg-blue-900/10 rounded-full blur-[160px] pointer-events-none z-0"></div>
+          <div className="fixed top-0 left-1/4 -translate-x-1/2 w-[650px] h-[650px] bg-violet-600/15 rounded-full blur-[150px] pointer-events-none z-0"></div>
+          <div className="fixed top-1/3 right-10 w-[550px] h-[550px] bg-indigo-600/20 rounded-full blur-[140px] pointer-events-none z-0"></div>
+          <div className="fixed bottom-0 left-1/3 w-[750px] h-[550px] bg-blue-600/15 rounded-full blur-[160px] pointer-events-none z-0"></div>
 
           {/* Header Navigation */}
           <Header
