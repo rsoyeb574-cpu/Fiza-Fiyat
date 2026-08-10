@@ -30,6 +30,7 @@ import { AdminPage } from './pages/AdminPage';
 import { ConstructionIntelligencePage } from './pages/ConstructionIntelligencePage';
 import { ClientPortalPage } from './pages/ClientPortalPage';
 import { PricingPage } from './pages/PricingPage';
+import { AIStudioPage } from './components/ai/AIStudioPage';
 
 import { MarketplacePage } from './pages/MarketplacePage';
 import { SellerDashboardPage } from './pages/SellerDashboardPage';
@@ -212,6 +213,13 @@ export default function App() {
 
               {activePage === 'pricing' && (
                 <PricingPage onNavigate={setActivePage} />
+              )}
+
+              {activePage === 'ai-studio' && (
+                <AIStudioPage
+                  projects={projects}
+                  onNavigateToPricing={() => setActivePage('pricing')}
+                />
               )}
 
             {activePage === 'about' && (

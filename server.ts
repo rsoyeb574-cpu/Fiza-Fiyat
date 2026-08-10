@@ -146,6 +146,127 @@ async function startServer() {
       });
     }
   });
+
+  // AI Image Generation Endpoint
+  app.post('/api/ai/generate-image', async (req, res) => {
+    try {
+      const { generateAIImage } = await import('./src/server/mediaAiService');
+      const result = await generateAIImage(req.body || {});
+      if (result.status === 'error' && (result.code === 'LIMIT_REACHED' || result.error === 'LIMIT_REACHED')) {
+        return res.status(429).json(result);
+      }
+      if (result.status === 'error') {
+        return res.status(400).json(result);
+      }
+      return res.json(result);
+    } catch (error: any) {
+      console.error('API /api/ai/generate-image error:', error);
+      return res.status(500).json({
+        status: 'error',
+        error: 'GENERATION_FAILED',
+        message: error.message || 'Image generation failed.'
+      });
+    }
+  });
+
+  // AI Video Generation Initiation Endpoint
+  app.post('/api/ai/generate-video', async (req, res) => {
+    try {
+      const { startAIVideoGeneration } = await import('./src/server/mediaAiService');
+      const result = await startAIVideoGeneration(req.body || {});
+      if (result.status === 'error' && (result.code === 'LIMIT_REACHED' || result.error === 'LIMIT_REACHED')) {
+        return res.status(429).json(result);
+      }
+      if (result.status === 'error') {
+        return res.status(400).json(result);
+      }
+      return res.json(result);
+    } catch (error: any) {
+      console.error('API /api/ai/generate-video error:', error);
+      return res.status(500).json({
+        status: 'error',
+        error: 'GENERATION_FAILED',
+        message: error.message || 'Video generation failed.'
+      });
+    }
+  });
+
+  // AI Video Generation Status Polling Endpoint
+  app.post('/api/ai/video-status', async (req, res) => {
+    try {
+      const { pollVideoGenerationStatus } = await import('./src/server/mediaAiService');
+      const result = await pollVideoGenerationStatus(req.body || {});
+      return res.json(result);
+    } catch (error: any) {
+      console.error('API /api/ai/video-status error:', error);
+      return res.status(500).json({
+        status: 'error',
+        done: true,
+        message: error.message || 'Video status polling failed.'
+      });
+    }
+  });
+
+  // AI Video Download Stream Proxy Endpoint
+  app.get('/api/ai/video-download', async (req, res) => {
+    try {
+      const operationName = req.query.op as string;
+      if (!operationName) {
+        return res.status(400).send('Missing operation name.');
+      }
+
+      const { GoogleGenAI, GenerateVideosOperation } = await import('@google/genai');
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).send('GEMINI_API_KEY missing.');
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      const op = new GenerateVideosOperation();
+      op.name = operationName;
+
+      const updated = await ai.operations.getVideosOperation({ operation: op });
+      const uri = updated.response?.generatedVideos?.[0]?.video?.uri;
+
+      if (!uri) {
+        return res.status(404).send('Video URI not ready or found.');
+      }
+
+      const videoRes = await fetch(uri, {
+        headers: { 'x-goog-api-key': apiKey }
+      });
+
+      res.setHeader('Content-Type', 'video/mp4');
+      res.setHeader('Content-Disposition', 'inline; filename="fiza_ai_video.mp4"');
+
+      if (videoRes.body) {
+        const reader = videoRes.body.getReader();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          res.write(value);
+        }
+        res.end();
+      } else {
+        res.status(500).send('Failed to read video stream.');
+      }
+    } catch (error: any) {
+      console.error('API /api/ai/video-download error:', error);
+      return res.status(500).send('Video download stream failed.');
+    }
+  });
+
+  // Get AI Generation History Endpoint
+  app.post('/api/ai/generations', async (req, res) => {
+    try {
+      const { userId, projectId } = req.body || {};
+      const { getUserGenerationHistory } = await import('./src/server/mediaAiService');
+      const history = await getUserGenerationHistory(userId, projectId);
+      return res.json({ status: 'success', history });
+    } catch (error: any) {
+      return res.status(500).json({ status: 'error', error: error.message });
+    }
+  });
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },

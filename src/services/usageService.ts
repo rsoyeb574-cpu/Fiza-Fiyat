@@ -21,7 +21,11 @@ export function getDefaultUsage(): UserUsage {
     boqUsed: 0,
     boqLastResetMonth: currentMonth,
     conceptsUsed: 0,
-    conceptsLastResetMonth: currentMonth
+    conceptsLastResetMonth: currentMonth,
+    imageGenerationsUsed: 0,
+    imageGenerationsLastResetMonth: currentMonth,
+    videoGenerationsUsed: 0,
+    videoGenerationsLastResetMonth: currentMonth
   };
 }
 
@@ -54,6 +58,18 @@ export function normalizeUsageWithReset(usage?: Partial<UserUsage>): UserUsage {
   if (current.conceptsLastResetMonth !== currentMonth) {
     current.conceptsUsed = 0;
     current.conceptsLastResetMonth = currentMonth;
+  }
+
+  // Monthly Image Generations reset
+  if (current.imageGenerationsLastResetMonth !== currentMonth) {
+    current.imageGenerationsUsed = 0;
+    current.imageGenerationsLastResetMonth = currentMonth;
+  }
+
+  // Monthly Video Generations reset
+  if (current.videoGenerationsLastResetMonth !== currentMonth) {
+    current.videoGenerationsUsed = 0;
+    current.videoGenerationsLastResetMonth = currentMonth;
   }
 
   return current;

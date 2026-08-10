@@ -9,6 +9,10 @@ export interface UserUsage {
   boqLastResetMonth: string;        // YYYY-MM
   conceptsUsed: number;
   conceptsLastResetMonth: string;   // YYYY-MM
+  imageGenerationsUsed: number;
+  imageGenerationsLastResetMonth: string; // YYYY-MM
+  videoGenerationsUsed: number;
+  videoGenerationsLastResetMonth: string; // YYYY-MM
 }
 
 export interface UserProfile {
@@ -23,4 +27,22 @@ export interface UserProfile {
   usage: UserUsage;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface AIGenerationRecord {
+  id: string;
+  userId: string;
+  projectId: string;
+  projectContext: string;
+  type: 'image' | 'video';
+  prompt: string;
+  style?: string;
+  aspectRatio: string;
+  resolution?: string;
+  model: string;
+  status: 'completed' | 'pending' | 'failed';
+  resultUrl?: string;
+  operationName?: string;
+  creditsUsed: number;
+  createdAt: string;
 }

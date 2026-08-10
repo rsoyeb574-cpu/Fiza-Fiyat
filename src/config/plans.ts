@@ -1,10 +1,22 @@
 export type PlanTier = 'free' | 'medium' | 'pro';
 
+export const MEDIA_COSTS = {
+  IMAGE_STANDARD_COST: 1,
+  IMAGE_HD_COST: 1,
+  IMAGE_4K_COST: 2,
+  VIDEO_STANDARD_COST: 1,
+  VIDEO_AUDIO_COST: 2,
+};
+
 export interface PlanLimits {
   aiQuestionsLimit: number; // Daily
   estimatesLimit: number;   // Monthly
   boqLimit: number;         // Monthly
   conceptsLimit: number;     // Monthly
+  imageGenerationsLimit: number; // Monthly
+  videoGenerationsLimit: number; // Monthly
+  allow4kImage: boolean;
+  allowVideoAudio: boolean;
 }
 
 export interface PlanFeatures {
@@ -40,7 +52,11 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
       aiQuestionsLimit: 10,  // 10 questions/day
       estimatesLimit: 2,     // 2/month
       boqLimit: 1,           // 1/month
-      conceptsLimit: 2       // 2/month
+      conceptsLimit: 2,      // 2/month
+      imageGenerationsLimit: 2, // 2/month
+      videoGenerationsLimit: 0, // 0/month
+      allow4kImage: false,
+      allowVideoAudio: false
     },
     features: {
       pdfExportAllowed: false,
@@ -51,12 +67,12 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
     },
     featureList: [
       'AI Chat: 10 questions / day',
+      'AI Images: 2 / month',
+      'AI Video: 0 / month',
       'Construction Estimates: 2 / month',
       'BOQ Generator: 1 / month',
       'AI Concept Generation: 2 / month',
       'PDF Export: Disabled',
-      'Advanced Engineering Reports: Disabled',
-      'Basic Project Templates',
       'Sponsor Ads Enabled'
     ],
     highlight: false
@@ -72,7 +88,11 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
       aiQuestionsLimit: 100, // 100 questions/day
       estimatesLimit: 20,    // 20/month
       boqLimit: 10,          // 10/month
-      conceptsLimit: 20      // 20/month
+      conceptsLimit: 20,     // 20/month
+      imageGenerationsLimit: 20, // 20/month
+      videoGenerationsLimit: 3,  // 3/month
+      allow4kImage: false,
+      allowVideoAudio: false
     },
     features: {
       pdfExportAllowed: true,
@@ -83,12 +103,13 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
     },
     featureList: [
       'AI Chat: 100 questions / day',
+      'AI Images: 20 / month',
+      'AI Video: 3 / month',
       'Construction Estimates: 20 / month',
       'BOQ Generator: 10 / month',
       'AI Concept Generation: 20 / month',
       'PDF Export: Enabled',
       'Advanced Engineering Reports: Enabled',
-      'Premium Project & Plan Templates',
       'Ad-Free Experience'
     ],
     highlight: true
@@ -104,7 +125,11 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
       aiQuestionsLimit: 300, // 300 questions/day (fair-use protected)
       estimatesLimit: 100,   // 100/month
       boqLimit: 50,          // 50/month
-      conceptsLimit: 100     // 100/month
+      conceptsLimit: 100,    // 100/month
+      imageGenerationsLimit: 100, // 100/month
+      videoGenerationsLimit: 15,  // 15/month
+      allow4kImage: true,
+      allowVideoAudio: true
     },
     features: {
       pdfExportAllowed: true,
@@ -115,13 +140,13 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
     },
     featureList: [
       'AI Chat: 300 questions / day',
+      'AI Images: 100 / month (4K allowed)',
+      'AI Video: 15 / month (Audio allowed)',
       'Construction Estimates: 100 / month',
       'BOQ Generator: 50 / month',
       'AI Concept Generation: 100 / month',
-      'PDF Export: Enabled',
-      'Advanced Engineering Reports: Enabled',
-      'Premium Templates & Priority AI',
-      'Dedicated Priority Queue & Ad-Free'
+      'PDF Export & Advanced Reports',
+      'Priority AI Queue & Ad-Free'
     ],
     highlight: false
   }

@@ -11,6 +11,10 @@ export interface UserServerUsage {
   boqLastResetMonth: string;        // YYYY-MM
   conceptsUsed: number;
   conceptsLastResetMonth: string;   // YYYY-MM
+  imageGenerationsUsed: number;
+  imageGenerationsLastResetMonth: string; // YYYY-MM
+  videoGenerationsUsed: number;
+  videoGenerationsLastResetMonth: string; // YYYY-MM
 }
 
 export interface UserServerProfile {
@@ -32,7 +36,11 @@ function getDefaultServerUsage(): UserServerUsage {
     boqUsed: 0,
     boqLastResetMonth: currentMonth,
     conceptsUsed: 0,
-    conceptsLastResetMonth: currentMonth
+    conceptsLastResetMonth: currentMonth,
+    imageGenerationsUsed: 0,
+    imageGenerationsLastResetMonth: currentMonth,
+    videoGenerationsUsed: 0,
+    videoGenerationsLastResetMonth: currentMonth
   };
 }
 
@@ -61,6 +69,16 @@ function normalizeServerUsage(usage?: Partial<UserServerUsage>): UserServerUsage
   if (current.conceptsLastResetMonth !== currentMonth) {
     current.conceptsUsed = 0;
     current.conceptsLastResetMonth = currentMonth;
+  }
+
+  if (current.imageGenerationsLastResetMonth !== currentMonth) {
+    current.imageGenerationsUsed = 0;
+    current.imageGenerationsLastResetMonth = currentMonth;
+  }
+
+  if (current.videoGenerationsLastResetMonth !== currentMonth) {
+    current.videoGenerationsUsed = 0;
+    current.videoGenerationsLastResetMonth = currentMonth;
   }
 
   return current;
@@ -224,4 +242,101 @@ export async function verifyAndIncrementServerUsage(
     currentUsage: used + 1,
     limit
   };
+}
+
+export async function checkServerMediaLimit(
+  userId: string | null,
+  userEmail: string | null,
+  mediaType: 'image' | 'video',
+  options?: { resolution?: string; includeAudio?: boolean }
+): Promise<{ allowed: boolean; profile: UserServerProfile; currentUsage: number; limit: number; errorResponse?: any }> {
+  const profile = await getUserServerProfile(userId, userEmail);
+  const limits = getPlanLimits(profile.plan);
+  const usage = profile.usage;
+
+  const used = mediaType === 'image' ? usage.imageGenerationsUsed : usage.videoGenerationsUsed;
+  const limit = mediaType === 'image' ? limits.imageGenerationsLimit : limits.videoGenerationsLimit;
+
+  // Check 4K requirement
+  if (mediaType === 'image' && options?.resolution === '4K' && !limits.allow4kImage) {
+    return {
+      allowed: false,
+      profile,
+      currentUsage: used,
+      limit,
+      errorResponse: {
+        status: 'error',
+        error: 'FEATURE_NOT_ALLOWED',
+        code: 'LIMIT_REACHED',
+        message: '4K Image Generation is available on the PRO plan. Upgrade your plan to generate 4K images.',
+        plan: profile.plan
+      }
+    };
+  }
+
+  // Check audio requirement
+  if (mediaType === 'video' && options?.includeAudio && !limits.allowVideoAudio) {
+    return {
+      allowed: false,
+      profile,
+      currentUsage: used,
+      limit,
+      errorResponse: {
+        status: 'error',
+        error: 'FEATURE_NOT_ALLOWED',
+        code: 'LIMIT_REACHED',
+        message: 'AI Video Audio generation is available on the PRO plan. Upgrade your plan to generate video audio.',
+        plan: profile.plan
+      }
+    };
+  }
+
+  if (used >= limit) {
+    return {
+      allowed: false,
+      profile,
+      currentUsage: used,
+      limit,
+      errorResponse: {
+        status: 'error',
+        error: 'LIMIT_REACHED',
+        code: 'LIMIT_REACHED',
+        message: `You have reached your AI generation limit. Upgrade your plan to continue. (${used}/${limit} used for AI ${mediaType}s).`,
+        currentUsage: used,
+        limit,
+        plan: profile.plan
+      }
+    };
+  }
+
+  return {
+    allowed: true,
+    profile,
+    currentUsage: used,
+    limit
+  };
+}
+
+export async function incrementServerMediaUsage(
+  userId: string | null,
+  userEmail: string | null,
+  mediaType: 'image' | 'video'
+): Promise<void> {
+  const profile = await getUserServerProfile(userId, userEmail);
+  const usage = profile.usage;
+
+  if (mediaType === 'image') {
+    usage.imageGenerationsUsed += 1;
+  } else {
+    usage.videoGenerationsUsed += 1;
+  }
+
+  if (profile.uid && profile.uid !== 'anonymous_guest_user') {
+    try {
+      const userRef = doc(db, 'users', profile.uid);
+      await updateDoc(userRef, { usage, updatedAt: new Date().toISOString() }).catch(() => {});
+    } catch (e) {}
+  } else {
+    guestMemoryUsageStore.set(profile.uid, { plan: profile.plan, usage });
+  }
 }

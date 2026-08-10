@@ -53,6 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navItems = [
     { id: 'home', label: 'Home' },
+    { id: 'ai-studio', label: 'AI Studio', featured: true },
     { id: 'marketplace', label: 'Marketplace', featured: true },
     { id: 'construction-intelligence', label: 'Intelligence' },
     { id: 'pricing', label: 'Pricing' },
