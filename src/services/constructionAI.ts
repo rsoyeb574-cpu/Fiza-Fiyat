@@ -17,6 +17,8 @@ export interface AISuggestionRequest {
   budgetINR?: number;
   qualityLevel?: string;
   promptExtra?: string;
+  userId?: string;
+  userEmail?: string;
 }
 
 export interface AISuggestionResponse {
@@ -27,6 +29,8 @@ export interface AISuggestionResponse {
   colorPalette?: { name: string; hex: string; usage: string }[];
   layoutAdvice?: string[];
   estimatedCostImpact?: string;
+  limitReached?: boolean;
+  limitMessage?: string;
 }
 
 export async function generateConstructionAISuggestion(
@@ -38,9 +42,24 @@ export async function generateConstructionAISuggestion(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req)
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.title) return data;
+
+    const data = await res.json();
+
+    if (res.status === 429 || data.code === 'LIMIT_REACHED') {
+      return {
+        title: 'Plan Limit Reached',
+        summary: data.message || 'You have reached your plan limit for AI construction suggestions. Upgrade your plan to continue.',
+        recommendations: [
+          'Upgrade to MEDIUM or PRO plan for higher monthly limits.',
+          'Access unlimited construction calculators and tools.'
+        ],
+        limitReached: true,
+        limitMessage: data.message
+      };
+    }
+
+    if (res.ok && data && data.title) {
+      return data;
     }
   } catch (err) {
     console.warn('Backend AI API endpoint notice, returning rule-based AI recommendation:', err);

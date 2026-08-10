@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { PlanProvider } from './context/PlanContext';
 import { Header } from './components/common/Header';
 import { Footer } from './components/common/Footer';
 import { FloatingContact } from './components/common/FloatingContact';
@@ -13,6 +14,7 @@ import { AIChatbot } from './components/ai/AIChatbot';
 import { GlobalAIAssistantWidget } from './components/ai/GlobalAIAssistantWidget';
 import { GlobalSearchModal } from './components/common/GlobalSearchModal';
 import { UserExperienceDashboard } from './components/common/UserExperienceDashboard';
+import { UpgradeModal } from './components/common/UpgradeModal';
 
 import { HomePage } from './pages/HomePage';
 import { AboutPage } from './pages/AboutPage';
@@ -27,6 +29,7 @@ import { PrivacyTermsPage } from './pages/PrivacyTermsPage';
 import { AdminPage } from './pages/AdminPage';
 import { ConstructionIntelligencePage } from './pages/ConstructionIntelligencePage';
 import { ClientPortalPage } from './pages/ClientPortalPage';
+import { PricingPage } from './pages/PricingPage';
 
 import { MarketplacePage } from './pages/MarketplacePage';
 import { SellerDashboardPage } from './pages/SellerDashboardPage';
@@ -167,44 +170,49 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <ThemeProvider>
-        <div className="min-h-screen bg-[#0B1020] dark:bg-[#0B1020] light:bg-[#F8FAFC] text-neutral-100 dark:text-neutral-100 light:text-slate-900 font-sans selection:bg-violet-600 selection:text-white flex flex-col justify-between relative overflow-hidden transition-colors duration-300">
-          
-          {/* Ambient Glass Glow Orbs */}
-          <div className="fixed top-0 left-1/4 -translate-x-1/2 w-[650px] h-[650px] bg-violet-600/15 rounded-full blur-[150px] pointer-events-none z-0"></div>
-          <div className="fixed top-1/3 right-10 w-[550px] h-[550px] bg-indigo-600/20 rounded-full blur-[140px] pointer-events-none z-0"></div>
-          <div className="fixed bottom-0 left-1/3 w-[750px] h-[550px] bg-blue-600/15 rounded-full blur-[160px] pointer-events-none z-0"></div>
+      <PlanProvider>
+        <ThemeProvider>
+          <div className="min-h-screen bg-[#0B1020] dark:bg-[#0B1020] light:bg-[#F8FAFC] text-neutral-100 dark:text-neutral-100 light:text-slate-900 font-sans selection:bg-violet-600 selection:text-white flex flex-col justify-between relative overflow-hidden transition-colors duration-300">
+            
+            {/* Ambient Glass Glow Orbs */}
+            <div className="fixed top-0 left-1/4 -translate-x-1/2 w-[650px] h-[650px] bg-violet-600/15 rounded-full blur-[150px] pointer-events-none z-0"></div>
+            <div className="fixed top-1/3 right-10 w-[550px] h-[550px] bg-indigo-600/20 rounded-full blur-[140px] pointer-events-none z-0"></div>
+            <div className="fixed bottom-0 left-1/3 w-[750px] h-[550px] bg-blue-600/15 rounded-full blur-[160px] pointer-events-none z-0"></div>
 
-          {/* Header Navigation */}
-          <Header
-            activePage={activePage}
-            setActivePage={(page) => {
-              setActivePage(page);
-              setSelectedProjectId(null);
-              setSelectedBlogId(null);
-            }}
-            onOpenSearch={() => setSearchModalOpen(true)}
-            onOpenFavorites={() => setFavoritesDrawerOpen(true)}
-            onOpenCalculator={() => setCostCalculatorOpen(true)}
-            favoritesCount={favorites.length}
-          />
+            {/* Header Navigation */}
+            <Header
+              activePage={activePage}
+              setActivePage={(page) => {
+                setActivePage(page);
+                setSelectedProjectId(null);
+                setSelectedBlogId(null);
+              }}
+              onOpenSearch={() => setSearchModalOpen(true)}
+              onOpenFavorites={() => setFavoritesDrawerOpen(true)}
+              onOpenCalculator={() => setCostCalculatorOpen(true)}
+              favoritesCount={favorites.length}
+            />
 
-          {/* Main Content Pages */}
-          <main className="flex-1 relative z-10">
-            {activePage === 'home' && (
-              <HomePage
-                settings={settings}
-                projects={projects}
-                services={services}
-                testimonials={testimonials}
-                categories={categories}
-                setActivePage={setActivePage}
-                onSelectProject={handleSelectProject}
-                onOpenCalculator={() => setCostCalculatorOpen(true)}
-                onToggleFavorite={toggleFavorite}
-                isFavorite={isFavorite}
-              />
-            )}
+            {/* Main Content Pages */}
+            <main className="flex-1 relative z-10">
+              {activePage === 'home' && (
+                <HomePage
+                  settings={settings}
+                  projects={projects}
+                  services={services}
+                  testimonials={testimonials}
+                  categories={categories}
+                  setActivePage={setActivePage}
+                  onSelectProject={handleSelectProject}
+                  onOpenCalculator={() => setCostCalculatorOpen(true)}
+                  onToggleFavorite={toggleFavorite}
+                  isFavorite={isFavorite}
+                />
+              )}
+
+              {activePage === 'pricing' && (
+                <PricingPage onNavigate={setActivePage} />
+              )}
 
             {activePage === 'about' && (
               <AboutPage settings={settings} setActivePage={setActivePage} />
@@ -377,8 +385,12 @@ export default function App() {
           {/* Cookie Banner */}
           <CookieConsent />
 
+          {/* Upgrade Modal */}
+          <UpgradeModal onNavigateToPricing={() => setActivePage('pricing')} />
+
         </div>
       </ThemeProvider>
-    </AuthProvider>
+    </PlanProvider>
+  </AuthProvider>
   );
 }

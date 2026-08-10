@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, Sparkles, X, Send, User, ChevronUp, AlertTriangle, Building2, Calculator, ShieldCheck, Compass, RefreshCw } from 'lucide-react';
+import { usePlan } from '../../context/PlanContext';
 
 interface GlobalAIAssistantWidgetProps {
   activePage: string;
@@ -13,6 +14,7 @@ interface ChatMessage {
 }
 
 export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = ({ activePage }) => {
+  const { userProfile, openUpgradeModal, incrementUsage, plan } = usePlan();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -70,12 +72,6 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
       text: m.text
     }));
 
-    console.log('[GlobalAIAssistantWidget] Sending chat payload to /api/chat:', {
-      prompt: textToSend,
-      historyPayload,
-      pageContext: activePage
-    });
-
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -83,15 +79,29 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
         body: JSON.stringify({
           prompt: textToSend,
           history: historyPayload,
-          pageContext: activePage
+          pageContext: activePage,
+          userId: userProfile?.uid,
+          userEmail: userProfile?.email
         })
       });
 
       const data = await res.json();
-      console.log('[GlobalAIAssistantWidget] Received response from /api/chat:', data);
 
-      if (res.ok && data.status === 'success' && (data.text || data.reply)) {
+      if (res.status === 429 || data.code === 'LIMIT_REACHED') {
+        const limitMsg = data.message || `Your ${plan.toUpperCase()} plan limit for AI chat has been reached. Upgrade your plan to continue.`;
+        setMessages(prev => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            sender: 'ai',
+            text: `🔒 ${limitMsg}`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
+        openUpgradeModal(limitMsg);
+      } else if (res.ok && data.status === 'success' && (data.text || data.reply)) {
         const reply = data.text || data.reply;
+        await incrementUsage('ai_chat');
         setMessages(prev => [
           ...prev,
           {
@@ -102,7 +112,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
           }
         ]);
       } else {
-        const errorMsg = data.error || 'Failed to receive response from Gemini AI. Please check GEMINI_API_KEY environment variable.';
+        const errorMsg = data.error || 'Failed to receive response from Gemini AI.';
         setMessages(prev => [
           ...prev,
           {

@@ -13,10 +13,12 @@ import {
   Briefcase,
   Layers,
   Building2,
-  FileText
+  FileText,
+  Zap
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { usePlan } from '../../context/PlanContext';
 
 interface HeaderProps {
   activePage: string;
@@ -37,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { theme, toggleTheme } = useTheme();
   const { isAdmin } = useAuth();
+  const { plan } = usePlan();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -51,12 +54,13 @@ export const Header: React.FC<HeaderProps> = ({
   const navItems = [
     { id: 'home', label: 'Home' },
     { id: 'marketplace', label: 'Marketplace', featured: true },
+    { id: 'construction-intelligence', label: 'Intelligence' },
+    { id: 'pricing', label: 'Pricing' },
     { id: 'client-portal', label: 'Client Portal' },
     { id: 'community', label: 'Community' },
     { id: 'courses', label: 'Academy' },
     { id: 'jobs', label: 'Jobs' },
     { id: 'directory', label: 'Directory' },
-    { id: 'construction-intelligence', label: 'Intelligence' },
     { id: 'services', label: 'Services' },
     { id: 'portfolio', label: 'Portfolio' },
     { id: 'blog', label: 'Blog' }
@@ -183,6 +187,18 @@ export const Header: React.FC<HeaderProps> = ({
               title="Admin Panel"
             >
               <ShieldCheck className="w-4 h-4" />
+            </button>
+
+            {/* SaaS Plan Tier Badge */}
+            <button
+              onClick={() => handleNavClick('pricing')}
+              className="px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+              title="View SaaS Plans & Usage"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <span className="uppercase font-mono text-[10px] bg-purple-500/20 px-1.5 py-0.5 rounded text-purple-200">
+                {plan}
+              </span>
             </button>
 
             {/* Contact CTA */}
