@@ -51,7 +51,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
   };
 
   const handleSendText = async (textToSend: string) => {
-    if (!textToSend.trim()) return;
+    if (!textToSend.trim() || typing) return;
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -60,62 +60,65 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
     setInput('');
     setTyping(true);
+
+    const historyPayload = newMessages.map(m => ({
+      sender: m.sender,
+      text: m.text
+    }));
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: textToSend, pageContext: activePage })
+        body: JSON.stringify({
+          prompt: textToSend,
+          history: historyPayload,
+          pageContext: activePage
+        })
       });
 
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json();
+
+      if (res.ok && data.status === 'success' && (data.text || data.reply)) {
         const reply = data.text || data.reply;
-        if (reply) {
-          setMessages(prev => [
-            ...prev,
-            {
-              id: (Date.now() + 1).toString(),
-              sender: 'ai',
-              text: reply,
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            }
-          ]);
-          setTyping(false);
-          return;
-        }
+        setMessages(prev => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            sender: 'ai',
+            text: reply,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
+      } else {
+        const errorMsg = data.error || 'Failed to receive response from Gemini AI. Please check GEMINI_API_KEY environment variable.';
+        setMessages(prev => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            sender: 'ai',
+            text: `⚠️ ${errorMsg}`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
       }
     } catch (e) {
-      // Fallback
-    }
-
-    // Smart Rule-Based Fallback
-    setTimeout(() => {
-      let aiReply = "Fiza Hayat specializes in end-to-end luxury building design, Revit BIM modeling, photorealistic 8K rendering, and AI concept generation.";
-      const lower = textToSend.toLowerCase();
-
-      if (lower.includes('cost') || lower.includes('estimate') || lower.includes('budget') || lower.includes('price')) {
-        aiReply = "Our turnkey construction estimates start around ₹1,850 to ₹2,450/sq.ft depending on location and specification tier. Check our Construction Intelligence tab for itemized BOQs!";
-      } else if (lower.includes('vault') || lower.includes('drawing') || lower.includes('invoice') || lower.includes('dwg')) {
-        aiReply = "All client DWG drawings, Revit BIM models, and invoices are stored securely in your Client Portal Cloud Vault with version control!";
-      } else if (lower.includes('bim') || lower.includes('revit') || lower.includes('lod')) {
-        aiReply = "We provide BIM LOD 300 to LOD 500 modeling in Autodesk Revit with 3D MEP clash detection and structural beam verification.";
-      }
-
       setMessages(prev => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           sender: 'ai',
-          text: aiReply,
+          text: `⚠️ Communication Error: Unable to reach AI server.`,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
+    } finally {
       setTyping(false);
-    }, 800);
+    }
   };
 
   const prompts = getPagePrompts();
@@ -182,7 +185,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
                     ? 'bg-blue-600 text-white rounded-tr-none font-medium' 
                     : 'bg-slate-950 text-slate-200 border border-white/10 rounded-tl-none'
                 }`}>
-                  <p className="leading-relaxed text-[11px] whitespace-pre-line">{m.text}</p>
+                  <p className="leading-relaxed text-[11px] whitespace-pre-wrap">{m.text}</p>
                   <span className="text-[9px] opacity-60 block mt-1 text-right">{m.time}</span>
                 </div>
               </div>

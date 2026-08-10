@@ -42,7 +42,7 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || typing) return;
 
     const userMsgText = input.trim();
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -54,65 +54,65 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({
       time: now
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInput('');
     setTyping(true);
 
-    // Call server API route /api/chat or perform smart conversational synthesis
+    // Format chat history for Gemini API
+    const historyPayload = newMessages.map(m => ({
+      sender: m.sender,
+      text: m.text
+    }));
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: userMsgText })
+        body: JSON.stringify({
+          prompt: userMsgText,
+          history: historyPayload
+        })
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      const data = await response.json();
+
+      if (response.ok && data.status === 'success' && (data.text || data.reply)) {
         const aiText = data.text || data.reply;
-        if (aiText) {
-          setMessages(prev => [
-            ...prev,
-            {
-              id: (Date.now() + 1).toString(),
-              sender: 'ai',
-              text: aiText,
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            }
-          ]);
-          setTyping(false);
-          return;
-        }
+        setMessages(prev => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            sender: 'ai',
+            text: aiText,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
+      } else {
+        const errorMsg = data.error || 'Failed to receive response from Gemini AI. Please check GEMINI_API_KEY environment variable.';
+        setMessages(prev => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            sender: 'ai',
+            text: `⚠️ ${errorMsg}`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
       }
-    } catch (e) {
-      // Fallback
-    }
-
-    // Smart Domain-Aware Fallback
-    setTimeout(() => {
-      let aiReply = "Fiza Hayat specializes in end-to-end luxury building design, Revit BIM modeling, photorealistic 8K rendering, and AI concept generation. Would you like to view our latest portfolio or generate an instant cost estimate?";
-      const lower = userMsgText.toLowerCase();
-
-      if (lower.includes('cost') || lower.includes('price') || lower.includes('quote') || lower.includes('budget')) {
-        aiReply = "Our project fees depend on total square footage, Level of Detail (BIM LOD 300 to 500), and interior specification. You can use our interactive Cost Estimator on the website or leave your email to receive an itemized proposal!";
-      } else if (lower.includes('revit') || lower.includes('cad') || lower.includes('bim') || lower.includes('drawing')) {
-        aiReply = "We provide LOD 300 to LOD 500 Autodesk Revit BIM modeling, MEP clash detection, and precision 2D AutoCAD drafting compliant with international building codes.";
-      } else if (lower.includes('ai') || lower.includes('render') || lower.includes('3d') || lower.includes('animation')) {
-        aiReply = "We utilize custom-trained neural diffusion pipelines combined with Unreal Engine 5 & V-Ray to produce photorealistic 8K stills and cinematic 3D walkthrough animations in record time.";
-      } else if (lower.includes('location') || lower.includes('contact') || lower.includes('dubai') || lower.includes('switzerland')) {
-        aiReply = "Fiza Hayat operates globally with primary executive offices in Downtown Dubai and Zurich/Geneva. You can reach our team via WhatsApp, phone, or email at contact@fizahayat.com.";
-      }
-
+    } catch (err: any) {
       setMessages(prev => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           sender: 'ai',
-          text: aiReply,
+          text: `⚠️ Communication Error: Unable to reach AI server.`,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
+    } finally {
       setTyping(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -164,7 +164,7 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({
                   ? 'bg-blue-600 text-white rounded-tr-none' 
                   : 'bg-neutral-800/80 text-neutral-200 border border-white/5 rounded-tl-none'
               }`}>
-                <p className="leading-relaxed">{m.text}</p>
+                <p className="leading-relaxed whitespace-pre-wrap">{m.text}</p>
                 <span className="text-[9px] opacity-60 block mt-1 text-right">{m.time}</span>
               </div>
 
