@@ -8,6 +8,8 @@ export interface Project {
   categoryName: string;
   images: string[];
   coverImage: string;
+  heroImage?: string;
+  year?: string;
   videoUrl?: string;
   softwareUsed: string[];
   tags: string[];

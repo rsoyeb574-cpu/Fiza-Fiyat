@@ -606,8 +606,8 @@ export const ConstructionIntelligencePage: React.FC = () => {
                               <rect 
                                 x={rm.x} 
                                 y={rm.y} 
-                                w={rm.w} 
-                                h={rm.h} 
+                                width={rm.w} 
+                                height={rm.h} 
                                 fill={rm.color} 
                                 stroke="#60a5fa" 
                                 strokeWidth="2" 

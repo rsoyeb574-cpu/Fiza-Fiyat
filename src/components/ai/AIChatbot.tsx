@@ -80,10 +80,16 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({
       });
 
       let data: any = {};
+      let responseText = '';
       try {
-        data = await response.json();
+        responseText = await response.text();
+        data = JSON.parse(responseText);
       } catch {
-        data = { error: `Server error (${response.status}): Unable to parse response.` };
+        if (responseText && responseText.trim()) {
+          data = { error: responseText.slice(0, 200) };
+        } else {
+          data = { error: `Server error (${response.status}): Failed to process request.` };
+        }
       }
 
       if (response.status === 429 || data.code === 'LIMIT_REACHED') {

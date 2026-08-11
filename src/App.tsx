@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PlanProvider } from './context/PlanContext';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Header } from './components/common/Header';
 import { Footer } from './components/common/Footer';
 import { FloatingContact } from './components/common/FloatingContact';
@@ -181,159 +182,163 @@ export default function App() {
             <div className="fixed bottom-0 left-1/3 w-[750px] h-[550px] bg-blue-600/15 rounded-full blur-[160px] pointer-events-none z-0"></div>
 
             {/* Header Navigation */}
-            <Header
-              activePage={activePage}
-              setActivePage={(page) => {
-                setActivePage(page);
-                setSelectedProjectId(null);
-                setSelectedBlogId(null);
-              }}
-              onOpenSearch={() => setSearchModalOpen(true)}
-              onOpenFavorites={() => setFavoritesDrawerOpen(true)}
-              onOpenCalculator={() => setCostCalculatorOpen(true)}
-              favoritesCount={favorites.length}
-            />
+            <ErrorBoundary title="Header Error" description="The header navigation encountered an issue.">
+              <Header
+                activePage={activePage}
+                setActivePage={(page) => {
+                  setActivePage(page);
+                  setSelectedProjectId(null);
+                  setSelectedBlogId(null);
+                }}
+                onOpenSearch={() => setSearchModalOpen(true)}
+                onOpenFavorites={() => setFavoritesDrawerOpen(true)}
+                onOpenCalculator={() => setCostCalculatorOpen(true)}
+                favoritesCount={favorites.length}
+              />
+            </ErrorBoundary>
 
             {/* Main Content Pages */}
             <main className="flex-1 relative z-10">
-              {activePage === 'home' && (
-                <HomePage
-                  settings={settings}
-                  projects={projects}
-                  services={services}
-                  testimonials={testimonials}
-                  categories={categories}
-                  setActivePage={setActivePage}
-                  onSelectProject={handleSelectProject}
-                  onOpenCalculator={() => setCostCalculatorOpen(true)}
-                  onToggleFavorite={toggleFavorite}
-                  isFavorite={isFavorite}
-                />
-              )}
+              <ErrorBoundary title="Page Render Error" description="This section failed to display properly. Try refreshing or switching pages.">
+                {activePage === 'home' && (
+                  <HomePage
+                    settings={settings}
+                    projects={projects}
+                    services={services}
+                    testimonials={testimonials}
+                    categories={categories}
+                    setActivePage={setActivePage}
+                    onSelectProject={handleSelectProject}
+                    onOpenCalculator={() => setCostCalculatorOpen(true)}
+                    onToggleFavorite={toggleFavorite}
+                    isFavorite={isFavorite}
+                  />
+                )}
 
-              {activePage === 'pricing' && (
-                <PricingPage onNavigate={setActivePage} />
-              )}
+                {activePage === 'pricing' && (
+                  <PricingPage onNavigate={setActivePage} />
+                )}
 
-              {activePage === 'ai-studio' && (
-                <AIStudioPage
-                  projects={projects}
-                  onNavigateToPricing={() => setActivePage('pricing')}
-                />
-              )}
+                {activePage === 'ai-studio' && (
+                  <AIStudioPage
+                    projects={projects}
+                    onNavigateToPricing={() => setActivePage('pricing')}
+                  />
+                )}
 
-            {activePage === 'about' && (
-              <AboutPage settings={settings} setActivePage={setActivePage} />
-            )}
+                {activePage === 'about' && (
+                  <AboutPage settings={settings} setActivePage={setActivePage} />
+                )}
 
-            {activePage === 'marketplace' && (
-              <MarketplacePage
-                onNavigateToSeller={() => setActivePage('seller-dashboard')}
-                onNavigateToBuyer={() => setActivePage('buyer-dashboard')}
-              />
-            )}
+                {activePage === 'marketplace' && (
+                  <MarketplacePage
+                    onNavigateToSeller={() => setActivePage('seller-dashboard')}
+                    onNavigateToBuyer={() => setActivePage('buyer-dashboard')}
+                  />
+                )}
 
-            {activePage === 'seller-dashboard' && (
-              <SellerDashboardPage />
-            )}
+                {activePage === 'seller-dashboard' && (
+                  <SellerDashboardPage />
+                )}
 
-            {activePage === 'buyer-dashboard' && (
-              <BuyerDashboardPage />
-            )}
+                {activePage === 'buyer-dashboard' && (
+                  <BuyerDashboardPage />
+                )}
 
-            {activePage === 'community' && (
-              <CommunityPage />
-            )}
+                {activePage === 'community' && (
+                  <CommunityPage />
+                )}
 
-            {activePage === 'courses' && (
-              <CoursePlatformPage />
-            )}
+                {activePage === 'courses' && (
+                  <CoursePlatformPage />
+                )}
 
-            {activePage === 'jobs' && (
-              <JobBoardPage />
-            )}
+                {activePage === 'jobs' && (
+                  <JobBoardPage />
+                )}
 
-            {activePage === 'directory' && (
-              <DirectoryPage />
-            )}
+                {activePage === 'directory' && (
+                  <DirectoryPage />
+                )}
 
-            {activePage === 'client-portal' && (
-              <ClientPortalPage />
-            )}
+                {activePage === 'client-portal' && (
+                  <ClientPortalPage />
+                )}
 
-            {activePage === 'construction-intelligence' && (
-              <ConstructionIntelligencePage />
-            )}
+                {activePage === 'construction-intelligence' && (
+                  <ConstructionIntelligencePage />
+                )}
 
-            {activePage === 'services' && (
-              <ServicesPage
-                services={services}
-                setActivePage={setActivePage}
-                onOpenCalculator={() => setCostCalculatorOpen(true)}
-              />
-            )}
+                {activePage === 'services' && (
+                  <ServicesPage
+                    services={services}
+                    setActivePage={setActivePage}
+                    onOpenCalculator={() => setCostCalculatorOpen(true)}
+                  />
+                )}
 
-            {activePage === 'portfolio' && (
-              <PortfolioPage
-                projects={projects}
-                categories={categories}
-                onSelectProject={handleSelectProject}
-                onToggleFavorite={toggleFavorite}
-                isFavorite={isFavorite}
-              />
-            )}
+                {activePage === 'portfolio' && (
+                  <PortfolioPage
+                    projects={projects}
+                    categories={categories}
+                    onSelectProject={handleSelectProject}
+                    onToggleFavorite={toggleFavorite}
+                    isFavorite={isFavorite}
+                  />
+                )}
 
-            {activePage === 'project-detail' && activeProject && (
-              <ProjectDetailPage
-                project={activeProject}
-                relatedProjects={projects.filter(p => p.id !== activeProject.id)}
-                onBack={() => setActivePage('portfolio')}
-                onSelectProject={handleSelectProject}
-                onOpenShare={(p) => setShareProject(p)}
-                onToggleFavorite={toggleFavorite}
-                isFavorite={isFavorite}
-              />
-            )}
+                {activePage === 'project-detail' && activeProject && (
+                  <ProjectDetailPage
+                    project={activeProject}
+                    relatedProjects={projects.filter(p => p.id !== activeProject.id)}
+                    onBack={() => setActivePage('portfolio')}
+                    onSelectProject={handleSelectProject}
+                    onOpenShare={(p) => setShareProject(p)}
+                    onToggleFavorite={toggleFavorite}
+                    isFavorite={isFavorite}
+                  />
+                )}
 
-            {activePage === 'blog' && (
-              <BlogPage blogs={blogs} onSelectBlog={handleSelectBlog} />
-            )}
+                {activePage === 'blog' && (
+                  <BlogPage blogs={blogs} onSelectBlog={handleSelectBlog} />
+                )}
 
-            {activePage === 'blog-detail' && activeBlog && (
-              <BlogPostPage
-                blog={activeBlog}
-                onBack={() => setActivePage('blog')}
-                onSelectBlog={handleSelectBlog}
-              />
-            )}
+                {activePage === 'blog-detail' && activeBlog && (
+                  <BlogPostPage
+                    blog={activeBlog}
+                    onBack={() => setActivePage('blog')}
+                    onSelectBlog={handleSelectBlog}
+                  />
+                )}
 
-            {activePage === 'gallery' && (
-              <GalleryPage items={gallery} />
-            )}
+                {activePage === 'gallery' && (
+                  <GalleryPage items={gallery} />
+                )}
 
-            {activePage === 'contact' && (
-              <ContactPage settings={settings} />
-            )}
+                {activePage === 'contact' && (
+                  <ContactPage settings={settings} />
+                )}
 
-            {activePage === 'privacy' && (
-              <PrivacyTermsPage mode="privacy" />
-            )}
+                {activePage === 'privacy' && (
+                  <PrivacyTermsPage mode="privacy" />
+                )}
 
-            {activePage === 'terms' && (
-              <PrivacyTermsPage mode="terms" />
-            )}
+                {activePage === 'terms' && (
+                  <PrivacyTermsPage mode="terms" />
+                )}
 
-            {activePage === 'admin' && (
-              <AdminPage
-                projects={projects}
-                categories={categories}
-                services={services}
-                blogs={blogs}
-                settings={settings}
-                onDataChange={() => {}}
-              />
-            )}
-          </main>
+                {activePage === 'admin' && (
+                  <AdminPage
+                    projects={projects}
+                    categories={categories}
+                    services={services}
+                    blogs={blogs}
+                    settings={settings}
+                    onDataChange={() => {}}
+                  />
+                )}
+              </ErrorBoundary>
+            </main>
 
           {/* Footer */}
           <Footer settings={settings} setActivePage={setActivePage} />
@@ -346,7 +351,9 @@ export default function App() {
           />
 
           {/* Global AI Assistant Floating Widget */}
-          <GlobalAIAssistantWidget activePage={activePage} />
+          <ErrorBoundary title="AI Assistant Widget Error">
+            <GlobalAIAssistantWidget activePage={activePage} />
+          </ErrorBoundary>
 
           {/* Global Search Modal */}
           <GlobalSearchModal
@@ -376,12 +383,14 @@ export default function App() {
           />
 
           {/* Fiza AI Assistant Chatbot */}
-          <AIChatbot
-            isOpen={aiChatOpen}
-            onClose={() => setAiChatOpen(false)}
-            services={services}
-            projects={projects}
-          />
+          <ErrorBoundary title="AI Chatbot Error">
+            <AIChatbot
+              isOpen={aiChatOpen}
+              onClose={() => setAiChatOpen(false)}
+              services={services}
+              projects={projects}
+            />
+          </ErrorBoundary>
 
           {/* Share Modal */}
           <ShareModal

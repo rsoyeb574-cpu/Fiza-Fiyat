@@ -248,6 +248,8 @@ export interface ProfessionalProfile {
   name: string;
   avatar: string;
   title: string;
+  role?: string;
+  skills?: string[];
   profession: 
     | 'Architect'
     | 'Interior Designer'

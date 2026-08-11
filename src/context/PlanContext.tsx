@@ -26,6 +26,7 @@ interface PlanContextType {
   checkUsage: (actionType: 'ai_chat' | 'estimate' | 'boq' | 'concept') => { allowed: boolean; used: number; limit: number; plan: PlanTier };
   incrementUsage: (actionType: 'ai_chat' | 'estimate' | 'boq' | 'concept') => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshPlan: () => Promise<void>;
   isUpgradeModalOpen: boolean;
   upgradeModalReason: string;
   openUpgradeModal: (reason?: string) => void;
@@ -43,6 +44,7 @@ const PlanContext = createContext<PlanContextType>({
   checkUsage: () => ({ allowed: true, used: 0, limit: 10, plan: 'free' }),
   incrementUsage: async () => {},
   refreshProfile: async () => {},
+  refreshPlan: async () => {},
   isUpgradeModalOpen: false,
   upgradeModalReason: '',
   openUpgradeModal: () => {},
@@ -180,6 +182,7 @@ export const PlanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       checkUsage,
       incrementUsage,
       refreshProfile: loadProfile,
+      refreshPlan: loadProfile,
       isUpgradeModalOpen,
       upgradeModalReason,
       openUpgradeModal,

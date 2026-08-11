@@ -86,10 +86,16 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
       });
 
       let data: any = {};
+      let responseText = '';
       try {
-        data = await res.json();
+        responseText = await res.text();
+        data = JSON.parse(responseText);
       } catch {
-        data = { error: `Server error (${res.status}): Unable to parse response.` };
+        if (responseText && responseText.trim()) {
+          data = { error: responseText.slice(0, 200) };
+        } else {
+          data = { error: `Server error (${res.status}): Failed to process request.` };
+        }
       }
 
       if (res.status === 429 || data.code === 'LIMIT_REACHED') {
