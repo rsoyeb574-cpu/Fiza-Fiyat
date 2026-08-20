@@ -42,7 +42,7 @@ Respond in JSON ONLY:
 {"isValid": boolean, "reason": "brief explanation if invalid"}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-3.7-flash',
       contents: prompt,
       config: {
         systemInstruction,
@@ -351,19 +351,32 @@ export async function pollVideoGenerationStatus(params: {
     }
 
     // Direct proxy download URL for client
-    const proxyVideoUrl = `/api/ai/video-download?op=${encodeURIComponent(operationName)}`;
+    const proxyVideoUrl = `/api/ai/video-download?op=${encodeURIComponent(operationName)}&genId=${encodeURIComponent(generationId || '')}`;
 
-    // Update record in Firestore
+    // Update record in Firestore idempotently
     if (generationId) {
-      await updateDoc(doc(db, 'aiGenerations', generationId), {
+      const genRef = doc(db, 'aiGenerations', generationId);
+      const snap = await getDoc(genRef).catch(() => null);
+      const prevData = snap && snap.exists() ? snap.data() : null;
+
+      if (prevData?.status === 'completed') {
+        // Already processed and credited once
+        return {
+          status: 'completed',
+          done: true,
+          resultUrl: prevData.resultUrl || proxyVideoUrl
+        };
+      }
+
+      await updateDoc(genRef, {
         status: 'completed',
         resultUrl: proxyVideoUrl,
         updatedAt: new Date().toISOString()
       }).catch(() => {});
-    }
 
-    // Deduct credit ONLY after successful video completion!
-    await incrementServerMediaUsage(userId, userEmail, 'video');
+      // Deduct credit ONLY ONCE after initial transition to completed
+      await incrementServerMediaUsage(userId, userEmail, 'video');
+    }
 
     return {
       status: 'completed',

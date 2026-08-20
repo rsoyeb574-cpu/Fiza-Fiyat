@@ -211,14 +211,35 @@ async function startServer() {
   app.get('/api/ai/video-download', async (req, res) => {
     try {
       const operationName = req.query.op as string;
+      const genId = req.query.genId as string;
+
       if (!operationName) {
-        return res.status(400).send('Missing operation name.');
+        return res.status(400).json({ error: 'Missing operation identifier.' });
+      }
+
+      // Security check: Validate against Firestore record if genId provided
+      if (genId) {
+        try {
+          const { doc, getDoc } = await import('firebase/firestore');
+          const { db } = await import('./src/lib/firebase');
+          const genRef = doc(db, 'aiGenerations', genId);
+          const snap = await getDoc(genRef);
+
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.operationName && data.operationName !== operationName) {
+              return res.status(403).json({ error: 'Unauthorized operation access.' });
+            }
+          }
+        } catch (dbErr) {
+          console.warn('Generation validation lookup warning:', dbErr);
+        }
       }
 
       const { GoogleGenAI, GenerateVideosOperation } = await import('@google/genai');
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        return res.status(500).send('GEMINI_API_KEY missing.');
+        return res.status(500).json({ error: 'AI service configuration missing on server.' });
       }
 
       const ai = new GoogleGenAI({ apiKey });
@@ -229,30 +250,44 @@ async function startServer() {
       const uri = updated.response?.generatedVideos?.[0]?.video?.uri;
 
       if (!uri) {
-        return res.status(404).send('Video URI not ready or found.');
+        return res.status(404).json({ error: 'Video stream is not ready or has expired.' });
       }
 
       const videoRes = await fetch(uri, {
         headers: { 'x-goog-api-key': apiKey }
       });
 
+      if (!videoRes.ok) {
+        return res.status(videoRes.status).json({ error: 'Failed to retrieve media stream from provider.' });
+      }
+
       res.setHeader('Content-Type', 'video/mp4');
       res.setHeader('Content-Disposition', 'inline; filename="fiza_ai_video.mp4"');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
 
       if (videoRes.body) {
         const reader = videoRes.body.getReader();
-        while (true) {
+        let aborted = false;
+
+        req.on('close', () => {
+          aborted = true;
+          reader.cancel().catch(() => {});
+        });
+
+        while (!aborted) {
           const { done, value } = await reader.read();
           if (done) break;
           res.write(value);
         }
-        res.end();
+        if (!aborted) {
+          res.end();
+        }
       } else {
-        res.status(500).send('Failed to read video stream.');
+        res.status(500).json({ error: 'Failed to open video stream buffer.' });
       }
     } catch (error: any) {
       console.error('API /api/ai/video-download error:', error);
-      return res.status(500).send('Video download stream failed.');
+      return res.status(500).json({ error: 'Video streaming service unavailable.' });
     }
   });
 

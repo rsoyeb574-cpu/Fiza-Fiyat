@@ -278,7 +278,7 @@ service cloud.firestore {
     }
 
     match /aiGenerations/{generationId} {
-      allow read: if isAdmin() || (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.userId == 'anonymous_guest_user'));
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
       allow create: if true;
       allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
     }

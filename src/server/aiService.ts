@@ -21,9 +21,9 @@ export function getAIClient(): GoogleGenAI {
 }
 
 const PREFERRED_MODELS = [
-  'gemini-3.6-flash',
+  'gemini-3.7-flash',
   'gemini-3.1-flash-lite',
-  'gemini-1.5-flash'
+  'gemini-flash-latest'
 ];
 
 async function generateWithModelFallback(params: {

@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { PLANS, getPlanLimits, PlanTier } from '../config/plans';
 
@@ -174,74 +174,152 @@ export async function verifyAndIncrementServerUsage(
   userEmail: string | null,
   actionType: ActionType
 ): Promise<{ allowed: boolean; profile: UserServerProfile; currentUsage: number; limit: number; errorResponse?: any }> {
-  const profile = await getUserServerProfile(userId, userEmail);
-  const limits = getPlanLimits(profile.plan);
-  const usage = profile.usage;
+  const uid = userId || 'anonymous_guest_user';
 
-  let used = 0;
-  let limit = 0;
+  if (!userId || userId === 'anonymous_guest_user') {
+    const profile = await getUserServerProfile(userId, userEmail);
+    const limits = getPlanLimits(profile.plan);
+    const usage = profile.usage;
 
-  switch (actionType) {
-    case 'ai_chat':
-      used = usage.aiQuestionsUsed;
-      limit = limits.aiQuestionsLimit;
-      break;
-    case 'estimate':
-      used = usage.estimatesUsed;
-      limit = limits.estimatesLimit;
-      break;
-    case 'boq':
-      used = usage.boqUsed;
-      limit = limits.boqLimit;
-      break;
-    case 'concept':
-      used = usage.conceptsUsed;
-      limit = limits.conceptsLimit;
-      break;
-  }
+    let used = 0;
+    let limit = 0;
 
-  if (used >= limit) {
-    const planName = profile.plan.toUpperCase();
-    return {
-      allowed: false,
-      profile,
-      currentUsage: used,
-      limit,
-      errorResponse: {
-        status: 'error',
-        error: 'LIMIT_REACHED',
-        code: 'LIMIT_REACHED',
-        message: `Your ${planName} plan limit has been reached (${used}/${limit} used for ${actionType}). Upgrade your plan to continue.`,
-        actionType,
+    switch (actionType) {
+      case 'ai_chat':
+        used = usage.aiQuestionsUsed;
+        limit = limits.aiQuestionsLimit;
+        break;
+      case 'estimate':
+        used = usage.estimatesUsed;
+        limit = limits.estimatesLimit;
+        break;
+      case 'boq':
+        used = usage.boqUsed;
+        limit = limits.boqLimit;
+        break;
+      case 'concept':
+        used = usage.conceptsUsed;
+        limit = limits.conceptsLimit;
+        break;
+    }
+
+    if (used >= limit) {
+      const planName = profile.plan.toUpperCase();
+      return {
+        allowed: false,
+        profile,
         currentUsage: used,
         limit,
-        plan: profile.plan
+        errorResponse: {
+          status: 'error',
+          error: 'LIMIT_REACHED',
+          code: 'LIMIT_REACHED',
+          message: `Your ${planName} plan limit has been reached (${used}/${limit} used for ${actionType}). Upgrade your plan to continue.`,
+          actionType,
+          currentUsage: used,
+          limit,
+          plan: profile.plan
+        }
+      };
+    }
+
+    if (actionType === 'ai_chat') usage.aiQuestionsUsed += 1;
+    else if (actionType === 'estimate') usage.estimatesUsed += 1;
+    else if (actionType === 'boq') usage.boqUsed += 1;
+    else if (actionType === 'concept') usage.conceptsUsed += 1;
+
+    guestMemoryUsageStore.set(uid, { plan: profile.plan, usage });
+    return { allowed: true, profile, currentUsage: used + 1, limit };
+  }
+
+  // Atomic Firestore Transaction for registered users
+  try {
+    const userRef = doc(db, 'users', uid);
+    return await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(userRef);
+      let data = snap.exists() ? snap.data() : {};
+      const plan: PlanTier = data.plan && ['free', 'medium', 'pro'].includes(data.plan) ? data.plan : 'free';
+      const limits = getPlanLimits(plan);
+      const usage = normalizeServerUsage(data.usage);
+
+      let used = 0;
+      let limit = 0;
+
+      switch (actionType) {
+        case 'ai_chat':
+          used = usage.aiQuestionsUsed;
+          limit = limits.aiQuestionsLimit;
+          break;
+        case 'estimate':
+          used = usage.estimatesUsed;
+          limit = limits.estimatesLimit;
+          break;
+        case 'boq':
+          used = usage.boqUsed;
+          limit = limits.boqLimit;
+          break;
+        case 'concept':
+          used = usage.conceptsUsed;
+          limit = limits.conceptsLimit;
+          break;
       }
+
+      const profile: UserServerProfile = {
+        uid,
+        email: data.email || userEmail || 'user@fizahayatresearch.com',
+        plan,
+        subscriptionStatus: data.subscriptionStatus || 'active',
+        usage
+      };
+
+      if (used >= limit) {
+        const planName = plan.toUpperCase();
+        return {
+          allowed: false,
+          profile,
+          currentUsage: used,
+          limit,
+          errorResponse: {
+            status: 'error',
+            error: 'LIMIT_REACHED',
+            code: 'LIMIT_REACHED',
+            message: `Your ${planName} plan limit has been reached (${used}/${limit} used for ${actionType}). Upgrade your plan to continue.`,
+            actionType,
+            currentUsage: used,
+            limit,
+            plan
+          }
+        };
+      }
+
+      if (actionType === 'ai_chat') usage.aiQuestionsUsed += 1;
+      else if (actionType === 'estimate') usage.estimatesUsed += 1;
+      else if (actionType === 'boq') usage.boqUsed += 1;
+      else if (actionType === 'concept') usage.conceptsUsed += 1;
+
+      transaction.set(userRef, {
+        usage,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      return {
+        allowed: true,
+        profile: { ...profile, usage },
+        currentUsage: used + 1,
+        limit
+      };
+    });
+  } catch (err) {
+    console.warn('Transaction error in verifyAndIncrementServerUsage, falling back to profile check:', err);
+    const profile = await getUserServerProfile(userId, userEmail);
+    const limits = getPlanLimits(profile.plan);
+    return {
+      allowed: true,
+      profile,
+      currentUsage: 1,
+      limit: limits.aiQuestionsLimit
     };
   }
-
-  // Increment usage
-  if (actionType === 'ai_chat') usage.aiQuestionsUsed += 1;
-  else if (actionType === 'estimate') usage.estimatesUsed += 1;
-  else if (actionType === 'boq') usage.boqUsed += 1;
-  else if (actionType === 'concept') usage.conceptsUsed += 1;
-
-  // Persist updated usage
-  if (profile.uid && profile.uid !== 'anonymous_guest_user') {
-    try {
-      const userRef = doc(db, 'users', profile.uid);
-      await updateDoc(userRef, { usage, updatedAt: new Date().toISOString() }).catch(() => {});
-    } catch (e) {}
-  } else {
-    guestMemoryUsageStore.set(profile.uid, { plan: profile.plan, usage });
-  }
-
-  return {
-    allowed: true,
-    profile,
-    currentUsage: used + 1,
-    limit
-  };
 }
 
 export async function checkServerMediaLimit(
@@ -322,21 +400,42 @@ export async function incrementServerMediaUsage(
   userEmail: string | null,
   mediaType: 'image' | 'video'
 ): Promise<void> {
-  const profile = await getUserServerProfile(userId, userEmail);
-  const usage = profile.usage;
+  const uid = userId || 'anonymous_guest_user';
 
-  if (mediaType === 'image') {
-    usage.imageGenerationsUsed += 1;
-  } else {
-    usage.videoGenerationsUsed += 1;
+  if (!userId || userId === 'anonymous_guest_user') {
+    const profile = await getUserServerProfile(userId, userEmail);
+    const usage = profile.usage;
+
+    if (mediaType === 'image') {
+      usage.imageGenerationsUsed += 1;
+    } else {
+      usage.videoGenerationsUsed += 1;
+    }
+
+    guestMemoryUsageStore.set(uid, { plan: profile.plan, usage });
+    return;
   }
 
-  if (profile.uid && profile.uid !== 'anonymous_guest_user') {
-    try {
-      const userRef = doc(db, 'users', profile.uid);
-      await updateDoc(userRef, { usage, updatedAt: new Date().toISOString() }).catch(() => {});
-    } catch (e) {}
-  } else {
-    guestMemoryUsageStore.set(profile.uid, { plan: profile.plan, usage });
+  try {
+    const userRef = doc(db, 'users', uid);
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(userRef);
+      const data = snap.exists() ? snap.data() : {};
+      const usage = normalizeServerUsage(data.usage);
+
+      if (mediaType === 'image') {
+        usage.imageGenerationsUsed += 1;
+      } else {
+        usage.videoGenerationsUsed += 1;
+      }
+
+      transaction.set(userRef, {
+        usage,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    });
+  } catch (e) {
+    console.warn('Error incrementing media usage atomically:', e);
   }
 }
+
