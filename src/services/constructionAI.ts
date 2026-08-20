@@ -1,5 +1,7 @@
 // Construction Intelligence AI Features Service
 
+import { fetchAndDiagnoseAI } from '../utils/aiDiagnostics';
+
 export interface AISuggestionRequest {
   type: 
     | 'materials'
@@ -37,28 +39,32 @@ export async function generateConstructionAISuggestion(
   req: AISuggestionRequest
 ): Promise<AISuggestionResponse> {
   try {
-    const res = await fetch('/api/construction-ai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req)
-    });
+    const diagnostic = await fetchAndDiagnoseAI<any>(
+      '/api/construction-ai',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req)
+      },
+      '/api/construction-ai'
+    );
 
-    const data = await res.json();
+    const data = diagnostic.data;
 
-    if (res.status === 429 || data.code === 'LIMIT_REACHED') {
+    if (diagnostic.status === 429 || data?.code === 'LIMIT_REACHED') {
       return {
         title: 'Plan Limit Reached',
-        summary: data.message || 'You have reached your plan limit for AI construction suggestions. Upgrade your plan to continue.',
+        summary: data?.message || 'You have reached your plan limit for AI construction suggestions. Upgrade your plan to continue.',
         recommendations: [
           'Upgrade to MEDIUM or PRO plan for higher monthly limits.',
           'Access unlimited construction calculators and tools.'
         ],
         limitReached: true,
-        limitMessage: data.message
+        limitMessage: data?.message
       };
     }
 
-    if (res.ok && data && data.title) {
+    if (diagnostic.ok && data && data.title) {
       return data;
     }
   } catch (err) {
