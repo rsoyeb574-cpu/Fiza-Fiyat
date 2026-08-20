@@ -25,6 +25,7 @@ import { usePlan } from '../../context/PlanContext';
 import { Project } from '../../types';
 import { AIGenerationRecord } from '../../types/userProfile';
 import { PLANS } from '../../config/plans';
+import { fetchAndDiagnoseAI } from '../../utils/aiDiagnostics';
 
 interface AIStudioPageProps {
   projects: Project[];
@@ -123,13 +124,13 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
   const fetchHistory = async () => {
     setLoadingHistory(true);
     try {
-      const res = await fetch('/api/ai/generations', {
+      const diag = await fetchAndDiagnoseAI<any>('/api/ai/generations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.uid })
-      });
-      const data = await res.json();
-      if (data.status === 'success' && Array.isArray(data.history)) {
+      }, 'AI History');
+      const data = diag.data;
+      if (data && data.status === 'success' && Array.isArray(data.history)) {
         setHistory(data.history);
       }
     } catch (err) {
@@ -161,7 +162,7 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
     setGeneratedImageResult(null);
 
     try {
-      const response = await fetch('/api/ai/generate-image', {
+      const diag = await fetchAndDiagnoseAI<any>('/api/ai/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -174,11 +175,11 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
           aspectRatio: imageAspectRatio,
           resolution: imageResolution
         })
-      });
+      }, 'AI Image Generation');
 
-      const data = await response.json();
+      const data = diag.data || {};
 
-      if (response.status === 429 || data.code === 'LIMIT_REACHED' || data.error === 'LIMIT_REACHED') {
+      if (diag.status === 429 || data.code === 'LIMIT_REACHED' || data.error === 'LIMIT_REACHED') {
         setImageError('You have reached your AI generation limit. Upgrade your plan to continue.');
         await refreshPlan();
         return;
@@ -189,12 +190,15 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
         return;
       }
 
-      if (data.status === 'success' && data.data) {
+      if (diag.ok && data.status === 'success' && data.data) {
         setGeneratedImageResult(data.data);
         setHistory(prev => [data.data, ...prev]);
         await refreshPlan();
       } else {
-        setImageError('Unexpected error during image generation.');
+        const fallbackMsg = diag.nonJsonType === 'html_error' 
+          ? 'AI image engine is preparing. Please try again in a few seconds.'
+          : (data.message || 'Unexpected error during image generation.');
+        setImageError(fallbackMsg);
       }
     } catch (err: any) {
       console.error('Image generation client error:', err);
@@ -229,7 +233,7 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
 
     try {
       // 1. Start Video Generation
-      const startRes = await fetch('/api/ai/generate-video', {
+      const diagStart = await fetchAndDiagnoseAI<any>('/api/ai/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -242,19 +246,19 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
           aspectRatio: videoAspectRatio,
           includeAudio
         })
-      });
+      }, 'AI Video Start');
 
-      const startData = await startRes.json();
+      const startData = diagStart.data || {};
 
-      if (startRes.status === 429 || startData.code === 'LIMIT_REACHED' || startData.error === 'LIMIT_REACHED') {
+      if (diagStart.status === 429 || startData.code === 'LIMIT_REACHED' || startData.error === 'LIMIT_REACHED') {
         setVideoError('You have reached your AI generation limit. Upgrade your plan to continue.');
         setIsGeneratingVideo(false);
         await refreshPlan();
         return;
       }
 
-      if (startData.status === 'error') {
-        setVideoError(startData.message || 'Video generation failed.');
+      if (startData.status === 'error' || !startData.operationName) {
+        setVideoError(startData.message || (diagStart.nonJsonType === 'html_error' ? 'AI video engine is initializing. Please try again in a moment.' : 'Video generation failed.'));
         setIsGeneratingVideo(false);
         return;
       }
@@ -282,7 +286,7 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
         setVideoStatusMessage(statusMessages[msgIdx]);
         setVideoProgress(Math.min(92, 15 + attempts * 4));
 
-        const pollRes = await fetch('/api/ai/video-status', {
+        const pollDiag = await fetchAndDiagnoseAI<any>('/api/ai/video-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -291,9 +295,9 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
             operationName,
             generationId
           })
-        });
+        }, 'AI Video Poll');
 
-        const pollData = await pollRes.json();
+        const pollData = pollDiag.data || {};
 
         if (pollData.status === 'completed' && pollData.done && pollData.resultUrl) {
           done = true;

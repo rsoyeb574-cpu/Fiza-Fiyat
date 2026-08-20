@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, Sparkles, X, Send, User, ChevronUp, AlertTriangle, Building2, Calculator, ShieldCheck, Compass, RefreshCw } from 'lucide-react';
 import { usePlan } from '../../context/PlanContext';
+import { fetchAndDiagnoseAI } from '../../utils/aiDiagnostics';
 
 interface GlobalAIAssistantWidgetProps {
   activePage: string;
@@ -73,7 +74,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
     }));
 
     try {
-      const res = await fetch('/api/chat', {
+      const diagResult = await fetchAndDiagnoseAI<any>('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -83,22 +84,12 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
           userId: userProfile?.uid,
           userEmail: userProfile?.email
         })
-      });
+      }, 'Global AI Widget');
 
-      let data: any = {};
-      let responseText = '';
-      try {
-        responseText = await res.text();
-        data = JSON.parse(responseText);
-      } catch {
-        if (responseText && responseText.trim()) {
-          data = { error: responseText.slice(0, 200) };
-        } else {
-          data = { error: `Server error (${res.status}): Failed to process request.` };
-        }
-      }
+      const data = diagResult.data || {};
+      const status = diagResult.status;
 
-      if (res.status === 429 || data.code === 'LIMIT_REACHED') {
+      if (status === 429 || data.code === 'LIMIT_REACHED') {
         const limitMsg = data.message || `Your ${plan.toUpperCase()} plan limit for AI chat has been reached. Upgrade your plan to continue.`;
         setMessages(prev => [
           ...prev,
@@ -110,7 +101,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
           }
         ]);
         openUpgradeModal(limitMsg);
-      } else if (res.ok && data.status === 'success' && (data.text || data.reply)) {
+      } else if (diagResult.ok && data.status === 'success' && (data.text || data.reply)) {
         const reply = data.text || data.reply;
         await incrementUsage('ai_chat');
         setMessages(prev => [
@@ -123,7 +114,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
           }
         ]);
       } else {
-        const errorMsg = data.error || 'Failed to receive response from Gemini AI.';
+        const errorMsg = data.error || (diagResult.nonJsonType === 'html_error' ? 'AI service is warming up. Please resend your message.' : 'Failed to receive response from Gemini AI.');
         setMessages(prev => [
           ...prev,
           {

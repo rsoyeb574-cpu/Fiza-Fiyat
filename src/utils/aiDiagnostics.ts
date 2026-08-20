@@ -114,8 +114,17 @@ export async function fetchAndDiagnoseAI<T = any>(
   const startTime = Date.now();
 
   try {
-    const response = await fetch(url, options);
-    const result = await diagnoseAIResponse<T>(response, label);
+    let response = await fetch(url, options);
+    let result = await diagnoseAIResponse<T>(response, label);
+
+    // Auto-retry once if the reverse-proxy was in transient "Starting Server..." state
+    if (!result.isJson && result.rawBody.includes('Starting Server')) {
+      console.info(`[AI Diagnostics] Container dev server is starting up. Retrying ${label} in 1500ms...`);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      response = await fetch(url, options);
+      result = await diagnoseAIResponse<T>(response, label);
+    }
+
     result.durationMs = Date.now() - startTime;
     return result;
   } catch (networkError: any) {
