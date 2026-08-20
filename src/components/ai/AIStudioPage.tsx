@@ -250,7 +250,13 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
 
       const startData = diagStart.data || {};
 
-      if (diagStart.status === 429 || startData.code === 'LIMIT_REACHED' || startData.error === 'LIMIT_REACHED') {
+      if (startData.code === 'QUOTA_EXHAUSTED' || startData.error === 'QUOTA_EXHAUSTED') {
+        setVideoError(startData.message || 'AI video generation is temporarily unavailable because the video generation quota is exhausted. Please try again later or contact support.');
+        setIsGeneratingVideo(false);
+        return;
+      }
+
+      if (diagStart.status === 429 && (startData.code === 'LIMIT_REACHED' || startData.error === 'LIMIT_REACHED')) {
         setVideoError('You have reached your AI generation limit. Upgrade your plan to continue.');
         setIsGeneratingVideo(false);
         await refreshPlan();

@@ -87,6 +87,13 @@ function normalizeServerUsage(usage?: Partial<UserServerUsage>): UserServerUsage
 // Server-authoritative in-memory profile and usage cache
 const serverMemoryUserStore = new Map<string, UserServerProfile>();
 
+export async function setUserServerPlan(userId: string, userEmail: string | null, plan: PlanTier): Promise<UserServerProfile> {
+  const profile = await getUserServerProfile(userId, userEmail);
+  profile.plan = plan;
+  serverMemoryUserStore.set(profile.uid, profile);
+  return profile;
+}
+
 export async function getUserServerProfile(userId: string | null, userEmail: string | null): Promise<UserServerProfile> {
   const uid = userId && userId.trim() ? userId.trim() : 'anonymous_guest_user';
   const email = userEmail || 'guest@fizahayatresearch.com';

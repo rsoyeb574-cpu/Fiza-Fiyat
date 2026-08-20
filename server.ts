@@ -100,6 +100,18 @@ async function startServer() {
     }
   });
 
+  // Set User Plan (Admin / Internal / Testing)
+  app.post('/api/user/set-plan', async (req, res) => {
+    try {
+      const { userId, userEmail, plan } = req.body || {};
+      const { setUserServerPlan } = await import('./src/server/planEnforcer');
+      const profile = await setUserServerPlan(userId, userEmail, plan || 'pro');
+      return res.json({ status: 'success', profile });
+    } catch (error: any) {
+      return res.status(500).json({ status: 'error', error: error.message });
+    }
+  });
+
   // AI Chat Route using Gemini with Server-Side Usage Limits
   app.post('/api/chat', async (req, res) => {
     try {
@@ -177,16 +189,23 @@ async function startServer() {
       if (result.status === 'error' && (result.code === 'LIMIT_REACHED' || result.error === 'LIMIT_REACHED')) {
         return res.status(429).json(result);
       }
+      if (result.status === 'error' && (result.code === 'QUOTA_EXHAUSTED' || result.error === 'QUOTA_EXHAUSTED')) {
+        return res.status(503).json(result);
+      }
       if (result.status === 'error') {
         return res.status(400).json(result);
       }
       return res.json(result);
     } catch (error: any) {
       console.error('API /api/ai/generate-video error:', error);
-      return res.status(500).json({
+      const isQuota = error?.status === 429 || `${error?.message || ''}`.includes('RESOURCE_EXHAUSTED');
+      return res.status(isQuota ? 503 : 500).json({
         status: 'error',
-        error: 'GENERATION_FAILED',
-        message: error.message || 'Video generation failed.'
+        code: isQuota ? 'QUOTA_EXHAUSTED' : 'GENERATION_FAILED',
+        error: isQuota ? 'QUOTA_EXHAUSTED' : 'GENERATION_FAILED',
+        message: isQuota
+          ? 'AI video generation is temporarily unavailable because the video generation quota is exhausted. Please try again later or contact support.'
+          : (error.message || 'Video generation failed.')
       });
     }
   });
@@ -199,10 +218,15 @@ async function startServer() {
       return res.json(result);
     } catch (error: any) {
       console.error('API /api/ai/video-status error:', error);
-      return res.status(500).json({
+      const isQuota = error?.status === 429 || `${error?.message || ''}`.includes('RESOURCE_EXHAUSTED');
+      return res.status(isQuota ? 503 : 500).json({
         status: 'error',
         done: true,
-        message: error.message || 'Video status polling failed.'
+        code: isQuota ? 'QUOTA_EXHAUSTED' : 'POLLING_FAILED',
+        error: isQuota ? 'QUOTA_EXHAUSTED' : 'POLLING_FAILED',
+        message: isQuota
+          ? 'AI video generation is temporarily unavailable because the video generation quota is exhausted. Please try again later or contact support.'
+          : (error.message || 'Video status polling failed.')
       });
     }
   });

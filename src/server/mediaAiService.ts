@@ -5,6 +5,25 @@ import { checkServerMediaLimit, incrementServerMediaUsage, getUserServerProfile 
 import { MEDIA_COSTS } from '../config/plans';
 import { AIGenerationRecord } from '../types/userProfile';
 
+export const VEO_QUOTA_EXHAUSTED_MESSAGE =
+  'AI video generation is temporarily unavailable because the video generation quota is exhausted. Please try again later or contact support.';
+
+export function isQuotaExhaustedError(err: any): boolean {
+  if (!err) return false;
+  if (err.status === 429 || err.code === 429 || err.statusCode === 429) return true;
+  const errStr = typeof err === 'string'
+    ? err
+    : `${err.message || ''} ${err.name || ''} ${err.status || ''} ${err.code || ''} ${JSON.stringify(err)}`;
+  const lower = errStr.toLowerCase();
+  return (
+    lower.includes('resource_exhausted') ||
+    lower.includes('quota') ||
+    lower.includes('rate_limit') ||
+    lower.includes('429') ||
+    lower.includes('exhausted')
+  );
+}
+
 function getAIClient(): GoogleGenAI {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -302,7 +321,47 @@ export async function startAIVideoGeneration(params: {
       record
     };
   } catch (err: any) {
-    console.error('Video generation initiation error:', err);
+    // 7. Log detailed provider error ONLY on server
+    console.error('[Veo Video Generation Provider Error in startAIVideoGeneration]:', err);
+
+    const isQuota = isQuotaExhaustedError(err);
+    const genId = `gen_vid_failed_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const uid = userId || 'anonymous_guest_user';
+
+    // 3. Mark the generation as failed in Firestore & do not deduct credit
+    try {
+      await setDoc(doc(db, 'aiGenerations', genId), {
+        id: genId,
+        userId: uid,
+        projectId: projectId || 'default',
+        projectContext,
+        type: 'video',
+        prompt,
+        aspectRatio,
+        resolution: '720p',
+        model: modelName,
+        status: 'failed',
+        error: isQuota ? 'QUOTA_EXHAUSTED' : 'GENERATION_FAILED',
+        errorMessage: isQuota
+          ? VEO_QUOTA_EXHAUSTED_MESSAGE
+          : (err.message || 'AI video generation failed to start.'),
+        creditsUsed: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    } catch (dbErr) {
+      console.warn('Firestore write failed video record warning:', dbErr);
+    }
+
+    if (isQuota) {
+      return {
+        status: 'error',
+        code: 'QUOTA_EXHAUSTED',
+        error: 'QUOTA_EXHAUSTED',
+        message: VEO_QUOTA_EXHAUSTED_MESSAGE
+      };
+    }
+
     return {
       status: 'error',
       error: 'GENERATION_FAILED',
@@ -329,6 +388,33 @@ export async function pollVideoGenerationStatus(params: {
 
     const updated = await ai.operations.getVideosOperation({ operation: op });
 
+    // Check if operation returned an error payload from provider
+    if (updated.error) {
+      console.error('[Veo Provider Error in pollVideoGenerationStatus]:', updated.error);
+      const isQuota = isQuotaExhaustedError(updated.error);
+
+      if (generationId) {
+        await updateDoc(doc(db, 'aiGenerations', generationId), {
+          status: 'failed',
+          error: isQuota ? 'QUOTA_EXHAUSTED' : 'OPERATION_FAILED',
+          errorMessage: isQuota
+            ? VEO_QUOTA_EXHAUSTED_MESSAGE
+            : 'Video rendering encountered an error.',
+          updatedAt: new Date().toISOString()
+        }).catch(() => {});
+      }
+
+      return {
+        status: 'error',
+        done: true,
+        code: isQuota ? 'QUOTA_EXHAUSTED' : 'OPERATION_FAILED',
+        error: isQuota ? 'QUOTA_EXHAUSTED' : 'OPERATION_FAILED',
+        message: isQuota
+          ? VEO_QUOTA_EXHAUSTED_MESSAGE
+          : 'Video rendering failed during processing. Your video credit was not deducted.'
+      };
+    }
+
     if (!updated.done) {
       return {
         status: 'pending',
@@ -346,13 +432,14 @@ export async function pollVideoGenerationStatus(params: {
       if (generationId) {
         await updateDoc(doc(db, 'aiGenerations', generationId), {
           status: 'failed',
+          errorMessage: 'Video generation completed without video URI.',
           updatedAt: new Date().toISOString()
         }).catch(() => {});
       }
       return {
         status: 'error',
         done: true,
-        message: 'Video generation completed without video URI.'
+        message: 'Video generation completed without video URI. Your credit was not deducted.'
       };
     }
 
@@ -390,11 +477,28 @@ export async function pollVideoGenerationStatus(params: {
       resultUrl: proxyVideoUrl
     };
   } catch (err: any) {
-    console.error('Video status polling error:', err);
+    console.error('[Veo Polling Exception in pollVideoGenerationStatus]:', err);
+    const isQuota = isQuotaExhaustedError(err);
+
+    if (generationId) {
+      await updateDoc(doc(db, 'aiGenerations', generationId), {
+        status: 'failed',
+        error: isQuota ? 'QUOTA_EXHAUSTED' : 'POLLING_FAILED',
+        errorMessage: isQuota
+          ? VEO_QUOTA_EXHAUSTED_MESSAGE
+          : (err.message || 'Failed to retrieve video status.'),
+        updatedAt: new Date().toISOString()
+      }).catch(() => {});
+    }
+
     return {
       status: 'error',
       done: true,
-      message: err.message || 'Failed to retrieve video status.'
+      code: isQuota ? 'QUOTA_EXHAUSTED' : 'POLLING_FAILED',
+      error: isQuota ? 'QUOTA_EXHAUSTED' : 'POLLING_FAILED',
+      message: isQuota
+        ? VEO_QUOTA_EXHAUSTED_MESSAGE
+        : (err.message || 'Failed to retrieve video status. Your video credit was not deducted.')
     };
   }
 }
