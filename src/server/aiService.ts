@@ -21,6 +21,7 @@ export function getAIClient(): GoogleGenAI {
 }
 
 const PREFERRED_MODELS = [
+  'gemini-2.5-flash',
   'gemini-3.7-flash',
   'gemini-3.1-flash-lite',
   'gemini-flash-latest'
@@ -46,7 +47,8 @@ async function generateWithModelFallback(params: {
         return text.trim();
       }
     } catch (err: any) {
-      console.warn(`Model ${modelName} failed, trying next fallback:`, err.message || err);
+      const errMsg = err?.message || (typeof err === 'string' ? err : 'Service temporary issue');
+      console.info(`[AI Fallback] Model ${modelName} encountered: ${errMsg.slice(0, 100)} -> trying next available model.`);
       lastError = err;
     }
   }

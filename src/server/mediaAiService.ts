@@ -41,16 +41,22 @@ Rule:
 Respond in JSON ONLY:
 {"isValid": boolean, "reason": "brief explanation if invalid"}`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
-      contents: prompt,
-      config: {
-        systemInstruction,
-        responseMimeType: 'application/json'
-      }
-    });
-
-    const jsonText = response.text?.trim() || '';
+    let jsonText = '';
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-3.7-flash', 'gemini-3.1-flash-lite'];
+    for (const m of modelsToTry) {
+      try {
+        const response = await ai.models.generateContent({
+          model: m,
+          contents: prompt,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json'
+          }
+        });
+        jsonText = response.text?.trim() || '';
+        if (jsonText) break;
+      } catch (_) {}
+    }
     if (jsonText) {
       const parsed = JSON.parse(jsonText);
       if (typeof parsed.isValid === 'boolean') {

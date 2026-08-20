@@ -120,7 +120,10 @@ export const PlanProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         },
         (error) => {
-          console.warn('Firestore onSnapshot subscription listener error:', error);
+          // Ignore benign idle stream timeouts / cancellations
+          if (error?.code !== 'cancelled' && !error?.message?.includes('CANCELLED')) {
+            console.warn('Firestore onSnapshot subscription listener update:', error?.message || error);
+          }
         }
       );
     } else {
