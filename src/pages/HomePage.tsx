@@ -15,13 +15,16 @@ import {
   ChevronRight,
   Eye,
   Heart,
-  MessageSquare
+  MessageSquare,
+  ArrowLeftRight,
+  DollarSign
 } from 'lucide-react';
 import { Project, Service, Testimonial, WebsiteSettings, Category } from '../types';
 import { BeforeAfterSlider } from '../components/common/BeforeAfterSlider';
 import { TestimonialCarousel } from '../components/common/TestimonialCarousel';
 import { CONTACT_CONFIG } from '../config/contact';
 import { WhatsAppButton } from '../components/common/WhatsAppButton';
+import { getProjectSpecs } from '../utils/projectComparison';
 
 interface HomePageProps {
   settings: WebsiteSettings;
@@ -34,6 +37,8 @@ interface HomePageProps {
   onOpenCalculator: () => void;
   onToggleFavorite: (project: Project) => void;
   isFavorite: (id: string) => boolean;
+  onToggleCompare?: (project: Project) => void;
+  isComparing?: (id: string) => boolean;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
@@ -46,7 +51,9 @@ export const HomePage: React.FC<HomePageProps> = ({
   onSelectProject,
   onOpenCalculator,
   onToggleFavorite,
-  isFavorite
+  isFavorite,
+  onToggleCompare,
+  isComparing = () => false
 }) => {
   // Typing Effect State
   const typingTexts = settings.heroTypingTexts?.length 
@@ -328,56 +335,105 @@ export const HomePage: React.FC<HomePageProps> = ({
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((proj) => (
-            <div
-              key={proj.id}
-              className="group rounded-3xl bg-[#151B2E] backdrop-blur-xl border border-indigo-500/20 overflow-hidden hover:border-violet-500/40 hover:bg-[#192138] transition-all hover:-translate-y-1 flex flex-col justify-between shadow-xl"
-            >
-              <div className="relative h-60 overflow-hidden cursor-pointer" onClick={() => onSelectProject(proj.id)}>
-                <img
-                  src={proj.coverImage}
-                  alt={proj.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B1020] via-transparent to-transparent"></div>
-                
-                <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0B1020]/80 backdrop-blur-md text-violet-300 text-[10px] font-bold border border-violet-500/30">
-                  {proj.categoryName}
-                </span>
+          {filteredProjects.map((proj) => {
+            const specs = getProjectSpecs(proj);
+            const comparing = isComparing(proj.id);
 
-                <button
-                  onClick={(e) => { e.stopPropagation(); onToggleFavorite(proj); }}
-                  className="absolute top-3 right-3 p-2 rounded-full bg-[#0B1020]/80 backdrop-blur-md text-white hover:text-purple-400 transition-colors cursor-pointer"
-                >
-                  <Heart className={`w-4 h-4 ${isFavorite(proj.id) ? 'fill-purple-500 text-purple-500' : ''}`} />
-                </button>
-              </div>
+            return (
+              <div
+                key={proj.id}
+                className={`group rounded-3xl bg-[#151B2E] backdrop-blur-xl border overflow-hidden hover:bg-[#192138] transition-all hover:-translate-y-1 flex flex-col justify-between shadow-xl ${
+                  comparing
+                    ? 'border-violet-500 shadow-violet-500/20 ring-2 ring-violet-500/30'
+                    : 'border-indigo-500/20 hover:border-violet-500/40'
+                }`}
+              >
+                <div className="relative h-60 overflow-hidden cursor-pointer" onClick={() => onSelectProject(proj.id)}>
+                  <img
+                    src={proj.coverImage}
+                    alt={proj.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B1020] via-transparent to-transparent"></div>
+                  
+                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0B1020]/80 backdrop-blur-md text-violet-300 text-[10px] font-bold border border-violet-500/30">
+                    {proj.categoryName}
+                  </span>
 
-              <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 
-                    onClick={() => onSelectProject(proj.id)}
-                    className="text-base font-bold text-white group-hover:text-violet-400 transition-colors cursor-pointer line-clamp-1"
-                  >
-                    {proj.title}
-                  </h3>
-                  <p className="text-slate-400 text-xs line-clamp-2 mt-1">
-                    {proj.description}
-                  </p>
+                  {/* Top-Right Action Buttons: Compare + Favorite */}
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                    {onToggleCompare && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onToggleCompare(proj); }}
+                        className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-md flex items-center gap-1.5 transition-all cursor-pointer shadow-md ${
+                          comparing
+                            ? 'bg-violet-600 text-white border border-violet-400'
+                            : 'bg-[#0B1020]/85 text-slate-300 hover:text-white hover:bg-slate-900 border border-white/10'
+                        }`}
+                        title={comparing ? "Remove from comparison" : "Add to comparison"}
+                      >
+                        <ArrowLeftRight className={`w-3.5 h-3.5 ${comparing ? 'text-white' : 'text-violet-400'}`} />
+                        <span>{comparing ? 'Comparing' : 'Compare'}</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onToggleFavorite(proj); }}
+                      className="p-2 rounded-full bg-[#0B1020]/80 backdrop-blur-md text-white hover:text-purple-400 transition-colors cursor-pointer border border-white/10"
+                      title="Bookmark Project"
+                    >
+                      <Heart className={`w-4 h-4 ${isFavorite(proj.id) ? 'fill-purple-500 text-purple-500' : ''}`} />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="pt-3 border-t border-indigo-500/20 flex items-center justify-between text-[11px] text-slate-400">
-                  <span>Client: <strong className="text-slate-200">{proj.clientName}</strong></span>
-                  <button
-                    onClick={() => onSelectProject(proj.id)}
-                    className="text-violet-400 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
-                  >
-                    View Details <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
+                <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 
+                      onClick={() => onSelectProject(proj.id)}
+                      className="text-base font-bold text-white group-hover:text-violet-400 transition-colors cursor-pointer line-clamp-1"
+                    >
+                      {proj.title}
+                    </h3>
+                    <p className="text-slate-400 text-xs line-clamp-2 mt-1">
+                      {proj.description}
+                    </p>
+                  </div>
+
+                  {/* Quick Specs & Estimated Cost Badge */}
+                  <div className="grid grid-cols-2 gap-2 bg-[#0B1020]/70 p-2.5 rounded-2xl border border-indigo-500/10 text-[11px]">
+                    <div>
+                      <span className="text-slate-400 text-[9px] uppercase font-bold block">Est. Cost</span>
+                      <span className="text-emerald-400 font-extrabold">{specs.estimatedCost}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 text-[9px] uppercase font-bold block">Scale / Timeline</span>
+                      <span className="text-slate-300 font-semibold truncate block">{specs.area.split(' ')[0]} • {specs.duration}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-indigo-500/20 flex items-center justify-between text-[11px] text-slate-400">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onToggleCompare?.(proj); }}
+                      className={`font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
+                        comparing ? 'text-violet-400 font-bold' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <ArrowLeftRight className="w-3.5 h-3.5" />
+                      {comparing ? 'Selected' : 'Compare'}
+                    </button>
+
+                    <button
+                      onClick={() => onSelectProject(proj.id)}
+                      className="text-violet-400 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
+                    >
+                      View Details <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

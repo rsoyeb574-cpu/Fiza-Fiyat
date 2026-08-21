@@ -10,10 +10,18 @@ import {
   FileCode, 
   Sparkles, 
   ChevronRight,
-  Video
+  Video,
+  ArrowLeftRight,
+  DollarSign,
+  Building,
+  ShieldCheck,
+  Wrench,
+  Layers,
+  CheckCircle2
 } from 'lucide-react';
 import { Project } from '../types';
 import { BeforeAfterSlider } from '../components/common/BeforeAfterSlider';
+import { getProjectSpecs } from '../utils/projectComparison';
 
 interface ProjectDetailPageProps {
   project: Project;
@@ -23,6 +31,8 @@ interface ProjectDetailPageProps {
   onOpenShare: (project: Project) => void;
   onToggleFavorite: (project: Project) => void;
   isFavorite: (id: string) => boolean;
+  onToggleCompare?: (project: Project) => void;
+  isComparing?: (id: string) => boolean;
 }
 
 export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
@@ -32,9 +42,13 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
   onSelectProject,
   onOpenShare,
   onToggleFavorite,
-  isFavorite
+  isFavorite,
+  onToggleCompare,
+  isComparing = () => false
 }) => {
   const [activeImage, setActiveImage] = useState<string>(project.coverImage || project.images?.[0]);
+  const specs = getProjectSpecs(project);
+  const comparing = isComparing(project.id);
 
   return (
     <div className="pt-28 pb-20 space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -61,6 +75,21 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
           </div>
 
           <div className="flex items-center space-x-3">
+            {onToggleCompare && (
+              <button
+                onClick={() => onToggleCompare(project)}
+                className={`px-4 py-3 rounded-2xl font-semibold text-xs flex items-center space-x-2 shadow-lg cursor-pointer transition-all ${
+                  comparing
+                    ? 'bg-violet-600 text-white shadow-violet-600/30'
+                    : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-white/10 hover:border-violet-500/40'
+                }`}
+                title={comparing ? "Remove from comparison" : "Compare this project"}
+              >
+                <ArrowLeftRight className={`w-4 h-4 ${comparing ? 'text-white' : 'text-violet-400'}`} />
+                <span>{comparing ? 'In Comparison Tray' : 'Compare Project'}</span>
+              </button>
+            )}
+
             <button
               onClick={() => onToggleFavorite(project)}
               className="p-3 rounded-2xl bg-neutral-900 border border-white/10 text-white hover:text-red-400 cursor-pointer transition-all"
@@ -93,6 +122,14 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
           <div className="flex items-center space-x-2">
             <Calendar className="w-4 h-4 text-blue-400" />
             <span>Completed: <strong className="text-white">{project.projectDate}</strong></span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <DollarSign className="w-4 h-4 text-emerald-400" />
+            <span>Est. Budget: <strong className="text-emerald-400">{specs.estimatedCost}</strong></span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Layers className="w-4 h-4 text-violet-400" />
+            <span>Scale: <strong className="text-white">{specs.area}</strong></span>
           </div>
         </div>
       </div>
@@ -174,6 +211,64 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
         {/* Sidebar Technical Meta */}
         <div className="space-y-6">
           
+          {/* Specifications & Cost Summary */}
+          <div className="p-6 rounded-3xl bg-neutral-900/60 border border-white/10 space-y-4">
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Building className="w-4 h-4 text-violet-400" />
+                Technical Specifications
+              </span>
+              <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded">
+                {specs.estimatedCost}
+              </span>
+            </h4>
+
+            <div className="divide-y divide-white/5 text-xs">
+              <div className="py-2 flex justify-between">
+                <span className="text-neutral-400">Rate / Unit</span>
+                <span className="text-white font-medium">{specs.costPerSqFt}</span>
+              </div>
+              <div className="py-2 flex justify-between">
+                <span className="text-neutral-400">Total Scale</span>
+                <span className="text-white font-medium">{specs.area}</span>
+              </div>
+              <div className="py-2 flex justify-between">
+                <span className="text-neutral-400">Timeline</span>
+                <span className="text-violet-300 font-medium">{specs.duration}</span>
+              </div>
+              <div className="py-2 flex justify-between">
+                <span className="text-neutral-400">Structural System</span>
+                <span className="text-white font-medium text-right max-w-[170px] truncate">{specs.structuralType}</span>
+              </div>
+              <div className="py-2 flex justify-between">
+                <span className="text-neutral-400">Floors</span>
+                <span className="text-white font-medium">{specs.floors}</span>
+              </div>
+              <div className="py-2 flex justify-between">
+                <span className="text-neutral-400">Sustainability</span>
+                <span className="text-emerald-400 font-medium text-right max-w-[170px] truncate">{specs.energyRating}</span>
+              </div>
+              <div className="py-2 flex justify-between">
+                <span className="text-neutral-400">BIM Level</span>
+                <span className="text-blue-300 font-medium">{specs.bimLevel}</span>
+              </div>
+            </div>
+
+            {/* Key Materials */}
+            {specs.materials && specs.materials.length > 0 && (
+              <div className="pt-2 border-t border-white/5 space-y-1.5">
+                <span className="text-[11px] font-bold text-neutral-300 block">Specified Materials:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {specs.materials.map((mat, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 text-[10px]">
+                      {mat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
           {/* Software Used */}
           <div className="p-6 rounded-3xl bg-neutral-900/60 border border-white/10 space-y-3">
             <h4 className="text-white font-bold text-xs uppercase tracking-wider">Software Stack</h4>
@@ -230,19 +325,54 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
       {/* Related Projects */}
       {relatedProjects.length > 0 && (
         <div className="space-y-6 pt-8 border-t border-white/10">
-          <h3 className="text-2xl font-bold text-white">Related Projects</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-bold text-white">Related Projects</h3>
+            <span className="text-xs text-neutral-400">Select to explore or compare</span>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {relatedProjects.slice(0, 3).map((rel) => (
-              <div
-                key={rel.id}
-                onClick={() => onSelectProject(rel.id)}
-                className="p-4 rounded-2xl bg-neutral-900/60 border border-white/10 hover:border-blue-500/40 cursor-pointer group transition-all space-y-3"
-              >
-                <img src={rel.coverImage} alt={rel.title} className="w-full h-36 object-cover rounded-xl" />
-                <h4 className="text-white font-bold text-xs group-hover:text-blue-400 truncate">{rel.title}</h4>
-                <p className="text-neutral-400 text-[11px] line-clamp-2">{rel.description}</p>
-              </div>
-            ))}
+            {relatedProjects.slice(0, 3).map((rel) => {
+              const relSpecs = getProjectSpecs(rel);
+              const relComparing = isComparing(rel.id);
+
+              return (
+                <div
+                  key={rel.id}
+                  onClick={() => onSelectProject(rel.id)}
+                  className={`p-4 rounded-3xl bg-neutral-900/60 border hover:border-blue-500/40 cursor-pointer group transition-all space-y-3 flex flex-col justify-between ${
+                    relComparing ? 'border-violet-500 ring-2 ring-violet-500/30' : 'border-white/10'
+                  }`}
+                >
+                  <div>
+                    <div className="relative h-36 rounded-2xl overflow-hidden mb-2">
+                      <img src={rel.coverImage} alt={rel.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/70 text-violet-300 text-[10px] font-bold">
+                        {rel.categoryName}
+                      </span>
+                    </div>
+                    <h4 className="text-white font-bold text-xs group-hover:text-blue-400 truncate">{rel.title}</h4>
+                    <p className="text-neutral-400 text-[11px] line-clamp-2 mt-1">{rel.description}</p>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px]">
+                    <span className="text-emerald-400 font-bold">{relSpecs.estimatedCost}</span>
+                    {onToggleCompare && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleCompare(rel);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                          relComparing ? 'bg-violet-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:text-white'
+                        }`}
+                      >
+                        <ArrowLeftRight className="w-3 h-3" />
+                        {relComparing ? 'Comparing' : 'Compare'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

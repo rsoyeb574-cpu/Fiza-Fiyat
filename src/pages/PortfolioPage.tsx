@@ -9,9 +9,12 @@ import {
   ChevronRight, 
   Download, 
   Sparkles, 
-  Building2 
+  Building2,
+  ArrowLeftRight,
+  DollarSign
 } from 'lucide-react';
 import { Project, Category } from '../types';
+import { getProjectSpecs } from '../utils/projectComparison';
 
 interface PortfolioPageProps {
   projects: Project[];
@@ -19,6 +22,8 @@ interface PortfolioPageProps {
   onSelectProject: (id: string) => void;
   onToggleFavorite: (project: Project) => void;
   isFavorite: (id: string) => boolean;
+  onToggleCompare?: (project: Project) => void;
+  isComparing?: (id: string) => boolean;
 }
 
 export const PortfolioPage: React.FC<PortfolioPageProps> = ({
@@ -26,7 +31,9 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
   categories,
   onSelectProject,
   onToggleFavorite,
-  isFavorite
+  isFavorite,
+  onToggleCompare,
+  isComparing = () => false
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSoftware, setSelectedSoftware] = useState<string>('all');
@@ -143,102 +150,180 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
       {/* Projects View */}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((proj) => (
-            <div
-              key={proj.id}
-              className="group rounded-3xl bg-neutral-900/80 border border-white/10 overflow-hidden hover:border-blue-500/40 transition-all hover:-translate-y-1 flex flex-col justify-between"
-            >
-              <div 
-                className="relative h-64 overflow-hidden cursor-pointer"
-                onClick={() => onSelectProject(proj.id)}
+          {filteredProjects.map((proj) => {
+            const specs = getProjectSpecs(proj);
+            const comparing = isComparing(proj.id);
+
+            return (
+              <div
+                key={proj.id}
+                className={`group rounded-3xl bg-neutral-900/80 border overflow-hidden transition-all hover:-translate-y-1 flex flex-col justify-between ${
+                  comparing 
+                    ? 'border-violet-500 shadow-lg shadow-violet-500/20 bg-neutral-900 ring-2 ring-violet-500/30' 
+                    : 'border-white/10 hover:border-blue-500/40'
+                }`}
               >
-                <img
-                  src={proj.coverImage}
-                  alt={proj.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent"></div>
-                
-                <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-neutral-950/80 backdrop-blur-md text-blue-400 text-[10px] font-bold border border-blue-500/30">
-                  {proj.categoryName}
-                </span>
-
-                <button
-                  onClick={(e) => { e.stopPropagation(); onToggleFavorite(proj); }}
-                  className="absolute top-3 right-3 p-2 rounded-full bg-neutral-950/80 backdrop-blur-md text-white hover:text-red-400 transition-colors cursor-pointer"
+                <div 
+                  className="relative h-64 overflow-hidden cursor-pointer"
+                  onClick={() => onSelectProject(proj.id)}
                 >
-                  <Heart className={`w-4 h-4 ${isFavorite(proj.id) ? 'fill-red-500 text-red-500' : ''}`} />
-                </button>
+                  <img
+                    src={proj.coverImage}
+                    alt={proj.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent"></div>
+                  
+                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-neutral-950/80 backdrop-blur-md text-blue-400 text-[10px] font-bold border border-blue-500/30">
+                    {proj.categoryName}
+                  </span>
+
+                  {/* Top-Right Action Buttons: Compare + Favorite */}
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                    {onToggleCompare && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onToggleCompare(proj); }}
+                        className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-md flex items-center gap-1.5 transition-all cursor-pointer shadow-md ${
+                          comparing
+                            ? 'bg-violet-600 text-white border border-violet-400'
+                            : 'bg-neutral-950/80 text-neutral-300 hover:text-white hover:bg-neutral-900 border border-white/10'
+                        }`}
+                        title={comparing ? "Remove from comparison" : "Add to comparison"}
+                      >
+                        <ArrowLeftRight className={`w-3.5 h-3.5 ${comparing ? 'text-white' : 'text-violet-400'}`} />
+                        <span>{comparing ? 'Comparing' : 'Compare'}</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onToggleFavorite(proj); }}
+                      className="p-2 rounded-full bg-neutral-950/80 backdrop-blur-md text-white hover:text-red-400 transition-colors cursor-pointer border border-white/10"
+                      title="Bookmark Project"
+                    >
+                      <Heart className={`w-4 h-4 ${isFavorite(proj.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <h3 
+                      onClick={() => onSelectProject(proj.id)}
+                      className="text-base font-bold text-white group-hover:text-blue-400 transition-colors cursor-pointer line-clamp-1"
+                    >
+                      {proj.title}
+                    </h3>
+                    <p className="text-neutral-400 text-xs line-clamp-2 leading-relaxed">
+                      {proj.description}
+                    </p>
+                  </div>
+
+                  {/* Quick Specs & Estimated Cost Badge */}
+                  <div className="grid grid-cols-2 gap-2 bg-neutral-950/60 p-2.5 rounded-2xl border border-white/5 text-[11px]">
+                    <div>
+                      <span className="text-neutral-500 text-[9px] uppercase font-bold block">Est. Budget / Cost</span>
+                      <span className="text-emerald-400 font-extrabold">{specs.estimatedCost}</span>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500 text-[9px] uppercase font-bold block">Scale / Timeline</span>
+                      <span className="text-neutral-300 font-semibold truncate block">{specs.area.split(' ')[0]} • {specs.duration}</span>
+                    </div>
+                  </div>
+
+                  {/* Software Badges */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {proj.softwareUsed?.slice(0, 3).map((sw) => (
+                      <span key={sw} className="px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-400 text-[10px]">
+                        {sw}
+                      </span>
+                    ))}
+                    {proj.softwareUsed && proj.softwareUsed.length > 3 && (
+                      <span className="text-[10px] text-neutral-500">+{proj.softwareUsed.length - 3}</span>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-neutral-400">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onToggleCompare?.(proj); }}
+                      className={`font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
+                        comparing ? 'text-violet-400 font-bold' : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      <ArrowLeftRight className="w-3.5 h-3.5" />
+                      {comparing ? 'Selected' : 'Compare'}
+                    </button>
+
+                    <button
+                      onClick={() => onSelectProject(proj.id)}
+                      className="text-blue-400 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
+                    >
+                      View Details <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
               </div>
-
-              <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <h3 
-                    onClick={() => onSelectProject(proj.id)}
-                    className="text-base font-bold text-white group-hover:text-blue-400 transition-colors cursor-pointer line-clamp-1"
-                  >
-                    {proj.title}
-                  </h3>
-                  <p className="text-neutral-400 text-xs line-clamp-2 leading-relaxed">
-                    {proj.description}
-                  </p>
-                </div>
-
-                {/* Software Badges */}
-                <div className="flex flex-wrap gap-1.5 pt-2">
-                  {proj.softwareUsed?.slice(0, 3).map((sw) => (
-                    <span key={sw} className="px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-400 text-[10px]">
-                      {sw}
-                    </span>
-                  ))}
-                  {proj.softwareUsed && proj.softwareUsed.length > 3 && (
-                    <span className="text-[10px] text-neutral-500">+{proj.softwareUsed.length - 3}</span>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-neutral-400">
-                  <span>Client: <strong className="text-neutral-200">{proj.clientName}</strong></span>
-                  <button
-                    onClick={() => onSelectProject(proj.id)}
-                    className="text-blue-400 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
-                  >
-                    View Details <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         /* List View */
         <div className="space-y-4">
-          {filteredProjects.map((proj) => (
-            <div
-              key={proj.id}
-              onClick={() => onSelectProject(proj.id)}
-              className="p-4 rounded-3xl bg-neutral-900/80 border border-white/10 hover:border-blue-500/40 transition-all flex flex-col md:flex-row items-center gap-6 cursor-pointer group"
-            >
-              <img
-                src={proj.coverImage}
-                alt={proj.title}
-                className="w-full md:w-48 h-32 object-cover rounded-2xl shrink-0"
-              />
-              <div className="flex-1 space-y-2 text-xs">
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold text-[10px]">
-                  {proj.categoryName}
-                </span>
-                <h3 className="text-base font-bold text-white group-hover:text-blue-400 transition-colors">
-                  {proj.title}
-                </h3>
-                <p className="text-neutral-400 line-clamp-2">{proj.description}</p>
-                <div className="flex flex-wrap gap-2 pt-1 text-neutral-400">
-                  <span>Client: <strong className="text-white">{proj.clientName}</strong></span>
-                  <span>• Date: {proj.projectDate}</span>
+          {filteredProjects.map((proj) => {
+            const specs = getProjectSpecs(proj);
+            const comparing = isComparing(proj.id);
+
+            return (
+              <div
+                key={proj.id}
+                onClick={() => onSelectProject(proj.id)}
+                className={`p-4 rounded-3xl bg-neutral-900/80 border transition-all flex flex-col md:flex-row items-center gap-6 cursor-pointer group ${
+                  comparing ? 'border-violet-500 bg-neutral-900 ring-2 ring-violet-500/30' : 'border-white/10 hover:border-blue-500/40'
+                }`}
+              >
+                <img
+                  src={proj.coverImage}
+                  alt={proj.title}
+                  className="w-full md:w-48 h-32 object-cover rounded-2xl shrink-0"
+                />
+                <div className="flex-1 space-y-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold text-[10px]">
+                      {proj.categoryName}
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                      Est. {specs.estimatedCost}
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-white group-hover:text-blue-400 transition-colors">
+                    {proj.title}
+                  </h3>
+                  <p className="text-neutral-400 line-clamp-2">{proj.description}</p>
+                  <div className="flex flex-wrap gap-3 pt-1 text-neutral-400">
+                    <span>Client: <strong className="text-white">{proj.clientName}</strong></span>
+                    <span>• Area: <strong className="text-slate-200">{specs.area}</strong></span>
+                    <span>• Duration: <strong className="text-violet-300">{specs.duration}</strong></span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {onToggleCompare && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onToggleCompare(proj); }}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        comparing
+                          ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30'
+                          : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-white/10'
+                      }`}
+                    >
+                      <ArrowLeftRight className="w-3.5 h-3.5" />
+                      <span>{comparing ? 'Comparing' : 'Compare'}</span>
+                    </button>
+                  )}
+                  <ChevronRight className="w-5 h-5 text-neutral-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all hidden md:block" />
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-neutral-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all shrink-0 hidden md:block" />
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

@@ -16,6 +16,8 @@ import { GlobalAIAssistantWidget } from './components/ai/GlobalAIAssistantWidget
 import { GlobalSearchModal } from './components/common/GlobalSearchModal';
 import { UserExperienceDashboard } from './components/common/UserExperienceDashboard';
 import { UpgradeModal } from './components/common/UpgradeModal';
+import { ProjectComparisonModal } from './components/common/ProjectComparisonModal';
+import { ProjectComparisonBar } from './components/common/ProjectComparisonBar';
 
 import { HomePage } from './pages/HomePage';
 import { AboutPage } from './pages/AboutPage';
@@ -78,6 +80,10 @@ export default function App() {
   const [costCalculatorOpen, setCostCalculatorOpen] = useState<boolean>(false);
   const [aiChatOpen, setAiChatOpen] = useState<boolean>(false);
   const [shareProject, setShareProject] = useState<Project | null>(null);
+
+  // Comparison State
+  const [compareProjects, setCompareProjects] = useState<Project[]>([]);
+  const [compareModalOpen, setCompareModalOpen] = useState<boolean>(false);
 
   // Favorites state
   const [favorites, setFavorites] = useState<Project[]>(() => {
@@ -155,6 +161,32 @@ export default function App() {
 
   const isFavorite = (id: string) => favorites.some(p => p.id === id);
 
+  // Comparison Handlers
+  const handleToggleCompare = (project: Project) => {
+    setCompareProjects(prev => {
+      const exists = prev.some(p => p.id === project.id);
+      if (exists) {
+        return prev.filter(p => p.id !== project.id);
+      }
+      if (prev.length === 0) {
+        return [project];
+      }
+      if (prev.length === 1) {
+        const next = [prev[0], project];
+        setCompareModalOpen(true);
+        return next;
+      }
+      // If 2 already present, replace the second project with the newly selected one and open modal
+      const next = [prev[0], project];
+      setCompareModalOpen(true);
+      return next;
+    });
+  };
+
+  const isComparing = (id: string) => compareProjects.some(p => p.id === id);
+  const handleRemoveCompare = (id: string) => setCompareProjects(prev => prev.filter(p => p.id !== id));
+  const handleClearCompare = () => setCompareProjects([]);
+
   const handleSelectProject = (id: string) => {
     setSelectedProjectId(id);
     setActivePage('project-detail');
@@ -212,6 +244,8 @@ export default function App() {
                     onOpenCalculator={() => setCostCalculatorOpen(true)}
                     onToggleFavorite={toggleFavorite}
                     isFavorite={isFavorite}
+                    onToggleCompare={handleToggleCompare}
+                    isComparing={isComparing}
                   />
                 )}
 
@@ -284,6 +318,8 @@ export default function App() {
                     onSelectProject={handleSelectProject}
                     onToggleFavorite={toggleFavorite}
                     isFavorite={isFavorite}
+                    onToggleCompare={handleToggleCompare}
+                    isComparing={isComparing}
                   />
                 )}
 
@@ -296,6 +332,8 @@ export default function App() {
                     onOpenShare={(p) => setShareProject(p)}
                     onToggleFavorite={toggleFavorite}
                     isFavorite={isFavorite}
+                    onToggleCompare={handleToggleCompare}
+                    isComparing={isComparing}
                   />
                 )}
 
@@ -397,6 +435,34 @@ export default function App() {
             project={shareProject}
             isOpen={!!shareProject}
             onClose={() => setShareProject(null)}
+          />
+
+          {/* Project Comparison Tray (Dock) */}
+          <ProjectComparisonBar
+            compareList={compareProjects}
+            onRemoveProject={handleRemoveCompare}
+            onClearAll={handleClearCompare}
+            onOpenCompareModal={() => setCompareModalOpen(true)}
+          />
+
+          {/* Project Side-by-Side Comparison Modal */}
+          <ProjectComparisonModal
+            isOpen={compareModalOpen}
+            onClose={() => setCompareModalOpen(false)}
+            project1={compareProjects[0] || null}
+            project2={compareProjects[1] || null}
+            allProjects={projects}
+            onSelectProject1={(p) => setCompareProjects(prev => [p, prev[1] || projects.find(proj => proj.id !== p.id)!])}
+            onSelectProject2={(p) => setCompareProjects(prev => [prev[0] || projects[0], p])}
+            onViewProjectDetails={handleSelectProject}
+            onOpenCalculator={() => {
+              setCompareModalOpen(false);
+              setCostCalculatorOpen(true);
+            }}
+            onInquireProject={(p) => {
+              setCompareModalOpen(false);
+              setActivePage('contact');
+            }}
           />
 
           {/* Cookie Banner */}

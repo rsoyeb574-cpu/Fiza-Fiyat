@@ -28,6 +28,25 @@ export interface Project {
   views?: number;
   likes?: number;
   createdAt: string;
+
+  // Specifications & Cost Attributes for Comparisons
+  estimatedCost?: string;
+  costNumeric?: number;
+  costPerSqFt?: string;
+  area?: string;
+  duration?: string;
+  structuralType?: string;
+  floors?: string;
+  energyRating?: string;
+  bimLevel?: string;
+  materials?: string[];
+  deliverables?: string[];
+  costBreakdown?: {
+    architectural?: string;
+    bimAnd3d?: string;
+    engineering?: string;
+    constructionEst?: string;
+  };
 }
 
 export interface Category {
