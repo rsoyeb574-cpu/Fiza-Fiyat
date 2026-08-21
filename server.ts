@@ -157,7 +157,7 @@ async function startServer() {
         });
       }
 
-      const { history, pageContext, userId, userEmail } = req.body || {};
+      const { history, pageContext, userId, userEmail, personality } = req.body || {};
 
       // Server-side entitlement check
       const usageCheck = await verifyAndIncrementServerUsage(userId, userEmail, 'ai_chat');
@@ -168,7 +168,7 @@ async function startServer() {
         });
       }
 
-      const reply = await handleChatRequest(rawMessage.trim(), history, pageContext);
+      const reply = await handleChatRequest(rawMessage.trim(), history, pageContext, personality);
       return res.json({
         success: true,
         status: 'success',

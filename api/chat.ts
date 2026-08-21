@@ -23,8 +23,8 @@ export default async function handler(req: any, res: any) {
       });
     }
 
-    const { history, pageContext } = req.body || {};
-    const text = await handleChatRequest(rawMessage.trim(), history, pageContext);
+    const { history, pageContext, personality } = req.body || {};
+    const text = await handleChatRequest(rawMessage.trim(), history, pageContext, personality);
     return res.status(200).json({
       success: true,
       text,

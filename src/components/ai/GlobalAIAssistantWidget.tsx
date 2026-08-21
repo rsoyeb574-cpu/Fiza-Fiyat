@@ -20,10 +20,15 @@ import {
   ChevronDown,
   Volume2,
   VolumeX,
-  Square
+  Square,
+  SlidersHorizontal,
+  Palette,
+  RotateCcw
 } from 'lucide-react';
 import { usePlan } from '../../context/PlanContext';
 import { fetchAndDiagnoseAI } from '../../utils/aiDiagnostics';
+
+const CHAT_STORAGE_KEY = 'fiza_ai_chat_history';
 
 interface GlobalAIAssistantWidgetProps {
   activePage: string;
@@ -35,6 +40,60 @@ interface ChatMessage {
   text: string;
   time: string;
 }
+
+export type PersonalityId = 'architectural' | 'creative' | 'engineering';
+
+export interface AssistantPersonality {
+  id: PersonalityId;
+  name: string;
+  shortLabel: string;
+  role: string;
+  tagline: string;
+  iconName: 'Compass' | 'Sparkles' | 'Calculator';
+  badgeClass: string;
+  activeBtnClass: string;
+  welcomeMessage: string;
+  suggestedQuestions: string[];
+}
+
+export const ASSISTANT_PERSONALITIES: AssistantPersonality[] = [
+  {
+    id: 'architectural',
+    name: 'Architectural Professional',
+    shortLabel: 'Architectural',
+    role: 'Principal Architect & BIM Lead',
+    tagline: 'Spatial planning, Revit LOD 500, luxury finishes & ergonomics',
+    iconName: 'Compass',
+    badgeClass: 'text-purple-300 bg-purple-950/60 border-purple-500/30',
+    activeBtnClass: 'bg-purple-600/30 text-purple-200 border-purple-500/50 shadow-sm font-semibold',
+    welcomeMessage: 'Hello! I am Fiza AI in Architectural Professional mode. I specialize in spatial layouts, Revit BIM modeling (LOD 300–500), luxury material palettes, and architectural design standards.',
+    suggestedQuestions: ['Review 3BHK spatial circulation', 'Explain Revit LOD 500 deliverables', 'Suggest luxury facade materials']
+  },
+  {
+    id: 'creative',
+    name: 'Creative Conceptualist',
+    shortLabel: 'Creative',
+    role: 'Avant-Garde Design Visionary',
+    tagline: 'Artistic forms, biophilic concepts, mood lighting & narratives',
+    iconName: 'Sparkles',
+    badgeClass: 'text-amber-300 bg-amber-950/60 border-amber-500/30',
+    activeBtnClass: 'bg-amber-600/30 text-amber-200 border-amber-500/50 shadow-sm font-semibold',
+    welcomeMessage: 'Welcome! I am Fiza AI in Creative Conceptualist mode. Let\'s explore avant-garde sculptural forms, biophilic narratives, sensory lighting moods, and bold design concepts.',
+    suggestedQuestions: ['Generate a biophilic villa concept', 'Describe ambient lighting scenarios', 'Explore futuristic parametric curves']
+  },
+  {
+    id: 'engineering',
+    name: 'Engineering Specialist',
+    shortLabel: 'Engineering',
+    role: 'Structural & Civil Lead',
+    tagline: 'Load paths, IS/ACI seismic codes, Fe500D rebar & BoQ analytics',
+    iconName: 'Calculator',
+    badgeClass: 'text-cyan-300 bg-cyan-950/60 border-cyan-500/30',
+    activeBtnClass: 'bg-cyan-600/30 text-cyan-200 border-cyan-500/50 shadow-sm font-semibold',
+    welcomeMessage: 'Greetings! I am Fiza AI in Engineering Specialist mode. Ready to calculate structural load paths, assess IS/ACI seismic codes, specify Fe500D rebar grades, and optimize your BoQ.',
+    suggestedQuestions: ['Calculate raft foundation depth', 'Compare AAC blocks vs Red bricks', 'Review Fe500D seismic tolerances']
+  }
+];
 
 interface SpeechLanguage {
   code: string;
@@ -78,14 +137,43 @@ function cleanTextForSpeech(raw: string): string {
 export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = ({ activePage }) => {
   const { userProfile, openUpgradeModal, incrementUsage, plan } = usePlan();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      sender: 'ai',
-      text: 'Hello! I am Fiza AI, your architectural & construction intelligence assistant. How can I help you today?',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+  // Personality State
+  const [selectedPersonality, setSelectedPersonality] = useState<PersonalityId>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('fiza_ai_personality') as PersonalityId;
+      if (stored && ['architectural', 'creative', 'engineering'].includes(stored)) {
+        return stored;
+      }
     }
-  ]);
+    return 'architectural';
+  });
+
+  const activePersonalityObj = ASSISTANT_PERSONALITIES.find(p => p.id === selectedPersonality) || ASSISTANT_PERSONALITIES[0];
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to parse saved chat history from localStorage', e);
+      }
+    }
+    return [
+      {
+        id: '1',
+        sender: 'ai',
+        text: activePersonalityObj.welcomeMessage,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ];
+  });
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -116,6 +204,40 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
   const languageMenuRef = useRef<HTMLDivElement>(null);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  // Sync messages to localStorage whenever conversation updates
+  useEffect(() => {
+    if (typeof window !== 'undefined' && messages.length > 0) {
+      try {
+        // Retain up to the latest 80 messages
+        const trimmed = messages.slice(-80);
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(trimmed));
+      } catch (e) {
+        console.warn('Failed to save chat history to localStorage', e);
+      }
+    }
+  }, [messages]);
+
+  // Clear / Reset Conversation History
+  const handleClearHistory = () => {
+    if (isSpeaking) {
+      stopSpeaking();
+    }
+    const freshWelcomeMsg: ChatMessage = {
+      id: Date.now().toString(),
+      sender: 'ai',
+      text: activePersonalityObj.welcomeMessage,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setMessages([freshWelcomeMsg]);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify([freshWelcomeMsg]));
+      } catch (e) {
+        localStorage.removeItem(CHAT_STORAGE_KEY);
+      }
+    }
+  };
+
   // Web Speech API capability checks
   const isSpeechRecognitionSupported = typeof window !== 'undefined' && Boolean(
     (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -123,6 +245,39 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
   const isSpeechSynthesisSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   const currentLanguageObj = SUPPORTED_SPEECH_LANGUAGES.find(l => l.code === selectedLanguage) || SUPPORTED_SPEECH_LANGUAGES[0];
+
+  // Handle personality change
+  const handleSelectPersonality = (personalityId: PersonalityId) => {
+    if (personalityId === selectedPersonality) return;
+    
+    setSelectedPersonality(personalityId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('fiza_ai_personality', personalityId);
+    }
+
+    const newPersona = ASSISTANT_PERSONALITIES.find(p => p.id === personalityId) || ASSISTANT_PERSONALITIES[0];
+
+    // If conversation is fresh (only 1 AI welcome message), replace welcome message with new tone
+    setMessages(prev => {
+      if (prev.length <= 1 && prev[0]?.sender === 'ai') {
+        return [{
+          id: Date.now().toString(),
+          sender: 'ai',
+          text: newPersona.welcomeMessage,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }];
+      }
+      return [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          sender: 'ai',
+          text: `🔄 Switched tone to **${newPersona.name}** (${newPersona.role}). ${newPersona.tagline}.`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ];
+    });
+  };
 
   // Load available speech synthesis voices
   useEffect(() => {
@@ -200,10 +355,10 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
     };
   }, []);
 
-  // Close language menu on outside click
+  // Close language menu on click outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (languageMenuRef.current && !languageMenuRef.current.contains(e.target as Node)) {
         setIsLanguageMenuOpen(false);
       }
     };
@@ -411,22 +566,32 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
     lang.code.toLowerCase().includes(languageSearch.toLowerCase())
   );
 
-  // Contextual Suggested Prompts per Page
+  // Contextual Suggested Prompts per Page & Personality
   const getPagePrompts = () => {
+    const personalityPrompts = activePersonalityObj.suggestedQuestions || [];
+    let pageSpecificPrompts: string[] = [];
+
     switch (activePage) {
       case 'client-portal':
-        return ['Check my project stage status', 'How to download my latest invoice?', 'What drawings are in my Cloud Vault?'];
+        pageSpecificPrompts = ['Check my project stage status', 'What drawings are in my Cloud Vault?'];
+        break;
       case 'construction-intelligence':
-        return ['Estimate my 30x40 plot cost in Kolkata', 'Compare AAC Blocks vs Red Bricks', 'Explain Foundation IS Code standards'];
+        pageSpecificPrompts = ['Estimate my 30x40 plot cost in Kolkata', 'Compare AAC Blocks vs Red Bricks'];
+        break;
       case 'services':
-        return ['What is included in BIM LOD 500?', 'How much does 8K rendering cost?', 'How do I request a site consultation?'];
+        pageSpecificPrompts = ['What is included in BIM LOD 500?', 'How much does 8K rendering cost?'];
+        break;
       case 'portfolio':
-        return ['Tell me about Grand Azure Villa', 'Show me residential project renderings', 'Filter projects by Dubai location'];
+        pageSpecificPrompts = ['Tell me about Grand Azure Villa', 'Show luxury residential project renderings'];
+        break;
       case 'admin':
-        return ['How to generate a new quotation?', 'Show active CRM pipeline value', 'Assign a task to an engineer'];
+        pageSpecificPrompts = ['How to generate a new quotation?', 'Show active CRM pipeline value'];
+        break;
       default:
-        return ['What services does Fiza Hayat offer?', 'Generate an instant cost estimate', 'Book a BIM consultation'];
+        pageSpecificPrompts = ['What architectural services does Fiza Hayat offer?', 'Book a BIM consultation'];
     }
+
+    return Array.from(new Set([...personalityPrompts, ...pageSpecificPrompts]));
   };
 
   const handleSendText = async (textToSend: string) => {
@@ -465,6 +630,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
         body: JSON.stringify({
           message: textToSend,
           prompt: textToSend,
+          personality: selectedPersonality,
           history: historyPayload,
           pageContext: activePage,
           userId: userProfile?.uid,
@@ -547,6 +713,18 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
 
   const prompts = getPagePrompts();
 
+  const renderPersonalityIcon = (iconName: 'Compass' | 'Sparkles' | 'Calculator', className: string = 'w-3 h-3') => {
+    switch (iconName) {
+      case 'Sparkles':
+        return <Sparkles className={className} />;
+      case 'Calculator':
+        return <Calculator className={className} />;
+      case 'Compass':
+      default:
+        return <Compass className={className} />;
+    }
+  };
+
   return (
     <div className="fixed bottom-5 right-5 z-50 text-xs">
       {/* FLOATING TRIGGER BUTTON */}
@@ -557,7 +735,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
           className="px-4 py-3 rounded-full bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white font-bold shadow-2xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer border border-white/20 group"
         >
           <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+            {renderPersonalityIcon(activePersonalityObj.iconName, "w-4 h-4 text-amber-300 animate-pulse")}
           </div>
           <span className="hidden sm:inline">Ask Fiza AI</span>
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
@@ -566,23 +744,38 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
 
       {/* EXPANDED CHAT DRAWER */}
       {isOpen && (
-        <div className="w-[calc(100vw-2rem)] max-w-[360px] sm:max-w-[420px] h-[550px] max-h-[85vh] rounded-3xl bg-slate-900 border border-white/10 shadow-2xl flex flex-col overflow-hidden animate-fadeIn">
+        <div className="w-[calc(100vw-2rem)] max-w-[360px] sm:max-w-[420px] h-[580px] max-h-[88vh] rounded-3xl bg-slate-900 border border-white/10 shadow-2xl flex flex-col overflow-hidden animate-fadeIn">
           {/* HEADER */}
-          <div className="p-4 bg-gradient-to-r from-purple-950/80 via-blue-950/80 to-slate-900 border-b border-white/10 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-xl bg-purple-600/30 text-purple-300 border border-purple-500/40 flex items-center justify-center">
+          <div className="p-3.5 bg-gradient-to-r from-purple-950/80 via-blue-950/80 to-slate-900 border-b border-white/10 flex items-center justify-between">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-xl bg-purple-600/30 text-purple-300 border border-purple-500/40 flex items-center justify-center shrink-0">
                 <Bot className="w-4 h-4 text-purple-300" />
               </div>
-              <div>
-                <div className="text-white font-bold text-xs flex items-center gap-1.5">
+              <div className="overflow-hidden">
+                <div className="text-white font-bold text-xs flex items-center gap-1.5 truncate">
                   <span>Fiza AI Assistant</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 text-[9px] font-mono border border-emerald-500/30">Live</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 text-[8px] font-mono border border-emerald-500/30">Live</span>
                 </div>
-                <span className="text-slate-400 text-[10px]">Context: Page /{activePage}</span>
+                <div className="flex items-center gap-1 text-slate-400 text-[9px] truncate">
+                  <span>Context: /{activePage}</span>
+                  <span>•</span>
+                  <span className="text-purple-300 font-medium">{activePersonalityObj.shortLabel}</span>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
+              {/* CLEAR CHAT HISTORY BUTTON */}
+              <button
+                type="button"
+                id="btn-clear-chat-history"
+                onClick={handleClearHistory}
+                title="Clear conversation history and reset"
+                className="p-1.5 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-white/10 transition-all cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+
               {/* AUTO-SPEAK (TTS) TOGGLE BUTTON */}
               {isSpeechSynthesisSupported && (
                 <button
@@ -611,14 +804,47 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
             </div>
           </div>
 
+          {/* PERSONALITY SELECTOR BAR */}
+          <div className="px-2.5 py-2 bg-slate-950/90 border-b border-white/5 flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+                <SlidersHorizontal className="w-3 h-3 text-purple-400" />
+                <span>Assistant Tone & Persona:</span>
+              </div>
+              <span className="text-[9px] text-slate-500 hidden xs:inline">{activePersonalityObj.role}</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-1">
+              {ASSISTANT_PERSONALITIES.map(persona => {
+                const isSelected = persona.id === selectedPersonality;
+                return (
+                  <button
+                    key={persona.id}
+                    type="button"
+                    onClick={() => handleSelectPersonality(persona.id)}
+                    title={`${persona.name}: ${persona.tagline}`}
+                    className={`px-2 py-1.5 rounded-xl border text-[10px] transition-all flex items-center justify-center gap-1.5 cursor-pointer truncate ${
+                      isSelected
+                        ? persona.activeBtnClass
+                        : 'bg-slate-900/60 hover:bg-slate-800/80 text-slate-400 hover:text-slate-200 border-white/5'
+                    }`}
+                  >
+                    {renderPersonalityIcon(persona.iconName, `w-3 h-3 shrink-0 ${isSelected ? 'text-current' : 'text-slate-500'}`)}
+                    <span className="truncate">{persona.shortLabel}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* DISCLAIMER NOTICE */}
-          <div className="px-3 py-2 bg-amber-950/30 border-b border-amber-500/20 text-[10px] text-slate-300 flex items-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span>AI responses are informational. Engineering designs require licensed professional review.</span>
+          <div className="px-3 py-1.5 bg-amber-950/20 border-b border-amber-500/10 text-[9px] text-slate-400 flex items-center gap-1.5">
+            <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+            <span className="truncate">Informational AI. Construction designs require licensed engineering sign-off.</span>
           </div>
 
           {/* MESSAGES */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3">
+          <div className="flex-1 p-3.5 overflow-y-auto space-y-3">
             {messages.map(m => {
               const isThisMessageSpeaking = isSpeaking && speakingMessageId === m.id;
               return (
@@ -677,7 +903,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
                   <Bot className="w-3.5 h-3.5" />
                 </div>
                 <div className="bg-slate-950 border border-white/10 p-2.5 rounded-2xl rounded-tl-none text-slate-300 text-[11px] flex items-center space-x-2 shadow-md">
-                  <span className="font-medium text-purple-300">Fiza AI is thinking...</span>
+                  <span className="font-medium text-purple-300">Fiza AI ({activePersonalityObj.shortLabel}) is thinking...</span>
                   <div className="flex items-center space-x-1">
                     <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce"></span>
                     <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
@@ -697,7 +923,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
                   key={i}
                   disabled={typing}
                   onClick={() => handleSendText(p)}
-                  className="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-blue-600/30 border border-white/10 text-slate-300 hover:text-white text-[10px] font-medium cursor-pointer transition-all shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-purple-600/30 border border-white/10 text-slate-300 hover:text-white text-[10px] font-medium cursor-pointer transition-all shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ✨ {p}
                 </button>
@@ -856,8 +1082,8 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
                 isListening 
                   ? `Listening (${currentLanguageObj.name})...` 
                   : typing 
-                    ? "Fiza AI is processing..." 
-                    : `Ask or speak to Fiza AI on /${activePage}...`
+                    ? `Fiza AI (${activePersonalityObj.shortLabel}) is responding...` 
+                    : `Ask ${activePersonalityObj.name}...`
               }
               className={`flex-1 px-3 py-2 rounded-xl bg-slate-900 border text-white text-[11px] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
                 isListening 
