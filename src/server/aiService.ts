@@ -1,14 +1,26 @@
 import { GoogleGenAI } from '@google/genai';
 
 export interface ChatMessageInput {
-  sender: 'user' | 'ai' | 'model';
-  text: string;
+  sender?: 'user' | 'ai' | 'model';
+  role?: 'user' | 'model' | 'assistant';
+  text?: string;
+  parts?: { text: string }[];
+  content?: string;
+}
+
+export function isGeminiConfigured(): boolean {
+  const apiKey = process.env.GEMINI_API_KEY;
+  return Boolean(apiKey && apiKey.trim());
+}
+
+export function getConfiguredModel(): string {
+  return process.env.GEMINI_MODEL?.trim() || 'gemini-3.7-flash';
 }
 
 export function getAIClient(): GoogleGenAI {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || !apiKey.trim()) {
-    throw new Error('GEMINI_API_KEY is not set. Please configure GEMINI_API_KEY in your environment variables.');
+    throw new Error('GEMINI_API_KEY is not configured on the server.');
   }
   return new GoogleGenAI({
     apiKey: apiKey.trim(),
@@ -20,12 +32,16 @@ export function getAIClient(): GoogleGenAI {
   });
 }
 
-const PREFERRED_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-3.7-flash',
-  'gemini-3.1-flash-lite',
-  'gemini-flash-latest'
-];
+function getModelCandidates(): string[] {
+  const configured = process.env.GEMINI_MODEL?.trim();
+  const models = [
+    ...(configured ? [configured] : []),
+    'gemini-3.7-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-flash-latest'
+  ];
+  return Array.from(new Set(models.filter(Boolean)));
+}
 
 async function generateWithModelFallback(params: {
   contents: any;
@@ -33,8 +49,9 @@ async function generateWithModelFallback(params: {
 }): Promise<string> {
   const ai = getAIClient();
   let lastError: any = null;
+  const models = getModelCandidates();
 
-  for (const modelName of PREFERRED_MODELS) {
+  for (const modelName of models) {
     try {
       const response = await ai.models.generateContent({
         model: modelName,
@@ -57,30 +74,45 @@ async function generateWithModelFallback(params: {
 }
 
 export async function handleChatRequest(
-  prompt: string,
+  promptOrMessage: string,
   history: ChatMessageInput[] = [],
   pageContext?: string
 ): Promise<string> {
-  if (!prompt || !prompt.trim()) {
-    throw new Error('Prompt cannot be empty.');
+  if (!promptOrMessage || !promptOrMessage.trim()) {
+    throw new Error('Message parameter is required and cannot be empty.');
   }
 
   const rawContents: { role: 'user' | 'model'; text: string }[] = [];
 
   if (Array.isArray(history)) {
     for (const msg of history) {
-      if (msg && msg.text && msg.text.trim()) {
-        const role = (msg.sender === 'user' || (msg as any).role === 'user') ? 'user' : 'model';
-        rawContents.push({ role, text: msg.text.trim() });
+      if (!msg) continue;
+      
+      let text = '';
+      if (typeof msg.text === 'string' && msg.text.trim()) {
+        text = msg.text.trim();
+      } else if (typeof msg.content === 'string' && msg.content.trim()) {
+        text = msg.content.trim();
+      } else if (Array.isArray(msg.parts) && msg.parts.length > 0) {
+        text = msg.parts.map(p => p.text || '').join('\n').trim();
+      }
+
+      if (text) {
+        const isUser = msg.sender === 'user' || msg.role === 'user';
+        rawContents.push({
+          role: isUser ? 'user' : 'model',
+          text
+        });
       }
     }
   }
 
+  // Gemini API requires the conversation to start with a 'user' turn.
   // Find index of first 'user' message in history (dropping initial bot greetings)
   const firstUserIdx = rawContents.findIndex(c => c.role === 'user');
   const validHistory = firstUserIdx !== -1 ? rawContents.slice(firstUserIdx) : [];
 
-  // Combine consecutive messages with same role to ensure strict alternating sequence
+  // Combine consecutive messages with same role to ensure strictly alternating turns (user, model, user, model...)
   const contents: { role: 'user' | 'model'; parts: { text: string }[] }[] = [];
 
   for (const item of validHistory) {
@@ -102,8 +134,8 @@ export async function handleChatRequest(
     }
   }
 
-  // Ensure prompt is present in the final turn as 'user'
-  const trimmedPrompt = prompt.trim();
+  // Ensure user's prompt is present in the final turn as 'user'
+  const trimmedPrompt = promptOrMessage.trim();
   if (contents.length === 0) {
     contents.push({
       role: 'user',
@@ -150,6 +182,12 @@ export function sanitizeErrorMessage(err: any): string {
       msg = parsed.error.message;
     }
   } catch {}
+
+  // Strip sensitive terms if any
+  if (msg.includes('AIzaSy') || msg.includes('API_KEY')) {
+    return 'Authentication error occurred while contacting AI service.';
+  }
+
   return msg;
 }
 

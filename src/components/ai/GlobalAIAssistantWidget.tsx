@@ -74,10 +74,11 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
     }));
 
     try {
-      const diagResult = await fetchAndDiagnoseAI<any>('/api/chat', {
+      const diagResult = await fetchAndDiagnoseAI<any>('/api/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          message: textToSend,
           prompt: textToSend,
           history: historyPayload,
           pageContext: activePage,
@@ -101,8 +102,8 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
           }
         ]);
         openUpgradeModal(limitMsg);
-      } else if (diagResult.ok && data.status === 'success' && (data.text || data.reply)) {
-        const reply = data.text || data.reply;
+      } else if (diagResult.ok && (data.success || data.status === 'success') && (data.reply || data.text)) {
+        const reply = data.reply || data.text;
         await incrementUsage('ai_chat');
         setMessages(prev => [
           ...prev,
@@ -114,7 +115,7 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
           }
         ]);
       } else {
-        const errorMsg = data.error || (diagResult.nonJsonType === 'html_error' ? 'AI service is warming up. Please resend your message.' : 'Failed to receive response from Gemini AI.');
+        const errorMsg = data.error || data.message || (diagResult.nonJsonType === 'html_error' ? 'AI service is warming up. Please resend your message.' : 'Failed to receive response from Gemini AI.');
         setMessages(prev => [
           ...prev,
           {

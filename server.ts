@@ -1,7 +1,13 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { handleChatRequest, handleConstructionAIRequest, sanitizeErrorMessage } from './src/server/aiService';
+import { 
+  handleChatRequest, 
+  handleConstructionAIRequest, 
+  sanitizeErrorMessage,
+  isGeminiConfigured,
+  getConfiguredModel 
+} from './src/server/aiService';
 import { verifyAndIncrementServerUsage, getUserServerProfile, ActionType } from './src/server/planEnforcer';
 
 async function startServer() {
@@ -112,27 +118,101 @@ async function startServer() {
     }
   });
 
-  // AI Chat Route using Gemini with Server-Side Usage Limits
-  app.post('/api/chat', async (req, res) => {
+  // AI Chat Health Endpoint (safe status check without exposing key)
+  app.get('/api/ai-chat/health', (req, res) => {
+    const configured = isGeminiConfigured();
+    const model = getConfiguredModel();
+    if (!configured) {
+      return res.status(500).json({
+        status: 'error',
+        configured: false,
+        model,
+        message: 'GEMINI_API_KEY is not configured on the server.'
+      });
+    }
+    return res.json({
+      status: 'ok',
+      configured: true,
+      model
+    });
+  });
+
+  // Shared AI Chat Request Handler
+  const handleAIChatEndpoint = async (req: express.Request, res: express.Response) => {
     try {
-      const { prompt, history, pageContext, userId, userEmail } = req.body;
+      if (!isGeminiConfigured()) {
+        return res.status(500).json({
+          success: false,
+          status: 'error',
+          error: 'GEMINI_API_KEY is not configured on the server.'
+        });
+      }
+
+      const rawMessage = req.body?.message ?? req.body?.prompt ?? req.body?.text;
+      if (!rawMessage || typeof rawMessage !== 'string' || !rawMessage.trim()) {
+        return res.status(400).json({
+          success: false,
+          status: 'error',
+          error: 'Message parameter is required and cannot be empty.'
+        });
+      }
+
+      const { history, pageContext, userId, userEmail } = req.body || {};
 
       // Server-side entitlement check
       const usageCheck = await verifyAndIncrementServerUsage(userId, userEmail, 'ai_chat');
       if (!usageCheck.allowed) {
-        return res.status(429).json(usageCheck.errorResponse);
+        return res.status(429).json({
+          success: false,
+          ...usageCheck.errorResponse
+        });
       }
 
-      const text = await handleChatRequest(prompt, history, pageContext);
-      return res.json({ text, reply: text, status: 'success', usage: usageCheck.profile.usage });
+      const reply = await handleChatRequest(rawMessage.trim(), history, pageContext);
+      return res.json({
+        success: true,
+        status: 'success',
+        reply,
+        text: reply,
+        usage: usageCheck.profile.usage
+      });
     } catch (error: any) {
-      console.error('Gemini API error in /api/chat:', error);
+      console.error('Gemini API error in /api/ai-chat:', error);
+
+      const errStr = `${error?.message || ''} ${error?.name || ''} ${JSON.stringify(error || '')}`.toLowerCase();
+      const isKeyError = errStr.includes('gemini_api_key') || errStr.includes('api_key is not configured');
+      const isQuota = error?.status === 429 || errStr.includes('resource_exhausted') || errStr.includes('quota') || errStr.includes('rate_limit');
+
+      if (isKeyError) {
+        return res.status(500).json({
+          success: false,
+          status: 'error',
+          error: 'GEMINI_API_KEY is not configured on the server.'
+        });
+      }
+
+      if (isQuota) {
+        return res.status(429).json({
+          success: false,
+          status: 'error',
+          code: 'RATE_LIMIT',
+          error: 'AI request limit reached. Please try again shortly.'
+        });
+      }
+
       return res.status(500).json({
+        success: false,
         status: 'error',
         error: sanitizeErrorMessage(error) || 'Failed to generate AI response'
       });
     }
-  });
+  };
+
+  // Secure Server-Side Gemini AI Chat Endpoint
+  app.post('/api/ai-chat', handleAIChatEndpoint);
+
+  // Backward-compatible alias for existing clients
+  app.post('/api/chat', handleAIChatEndpoint);
 
   // Construction Intelligence AI Route using Gemini with Server-Side Usage Limits
   app.post('/api/construction-ai', async (req, res) => {
