@@ -4,7 +4,7 @@ import {
   setDoc, 
   updateDoc 
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import { UserProfile, UserUsage } from '../types/userProfile';
 import { PlanTier, getPlanLimits } from '../config/plans';
 
@@ -107,6 +107,15 @@ export async function fetchOrCreateUserProfile(uid: string, email: string, displ
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
+
+  // If user is not authenticated or is a guest session, use local cache/state directly
+  const currentUser = auth.currentUser;
+  if (!currentUser || currentUser.uid !== uid) {
+    const cached = getLocalCachedProfile();
+    if (cached && cached.uid === uid) return cached;
+    setLocalCachedProfile(defaultProfile);
+    return defaultProfile;
+  }
 
   try {
     const userRef = doc(db, 'users', uid);

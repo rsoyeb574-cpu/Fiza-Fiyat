@@ -1,4 +1,4 @@
-import { handleChatRequest } from '../src/server/aiService';
+import { handleChatRequest, sanitizeErrorMessage } from '../src/server/aiService';
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,14 +14,29 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { prompt, history, pageContext } = req.body || {};
-    const text = await handleChatRequest(prompt, history, pageContext);
-    return res.status(200).json({ text, reply: text, status: 'success' });
+    const rawMessage = req.body?.prompt ?? req.body?.message ?? req.body?.text;
+    if (!rawMessage || typeof rawMessage !== 'string' || !rawMessage.trim()) {
+      return res.status(400).json({
+        success: false,
+        status: 'error',
+        error: 'Message parameter is required and cannot be empty.'
+      });
+    }
+
+    const { history, pageContext } = req.body || {};
+    const text = await handleChatRequest(rawMessage.trim(), history, pageContext);
+    return res.status(200).json({
+      success: true,
+      text,
+      reply: text,
+      status: 'success'
+    });
   } catch (error: any) {
     console.error('Vercel Serverless Gemini Error in /api/chat:', error);
     return res.status(500).json({
+      success: false,
       status: 'error',
-      error: error.message || 'Failed to generate AI response'
+      error: sanitizeErrorMessage ? sanitizeErrorMessage(error) : (error.message || 'Failed to generate AI response')
     });
   }
 }

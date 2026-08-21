@@ -11,7 +11,7 @@ import {
   orderBy,
   where
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import {
   DigitalProduct,
   SellerStore,
@@ -68,9 +68,29 @@ function setLocalCache<T>(key: string, value: T) {
   }
 }
 
+const ADMIN_EMAILS = [
+  'rsoyeb574@gmail.com',
+  'admin@fizahayatresearch.com',
+  'admin@fiza-hayat-buildcom.iam.gserviceaccount.com'
+];
+
 // Seed Firebase Firestore if collections are empty
 export async function seedMarketplaceDatabaseIfEmpty() {
   try {
+    const currentUser = auth.currentUser;
+    const isUserAdmin = Boolean(
+      currentUser && 
+      currentUser.email && 
+      (ADMIN_EMAILS.includes(currentUser.email.toLowerCase()) || 
+       currentUser.email.endsWith('@fizahayatresearch.com') ||
+       currentUser.email.endsWith('@fiza-hayat-buildcom.iam.gserviceaccount.com'))
+    );
+
+    // Only attempt Firestore writes if authenticated as admin
+    if (!isUserAdmin) {
+      return;
+    }
+
     const productsSnap = await getDocs(collection(db, 'digital_products'));
     if (productsSnap.empty) {
       console.log('Seeding initial digital products to Firestore...');

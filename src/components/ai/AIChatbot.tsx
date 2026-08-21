@@ -69,7 +69,7 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({
     }));
 
     try {
-      const diagResult = await fetchAndDiagnoseAI<any>('/api/ai-chat', {
+      const diagResult = await fetchAndDiagnoseAI<any>('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -34,8 +34,11 @@ export function getAIClient(): GoogleGenAI {
 
 function getModelCandidates(): string[] {
   const configured = process.env.GEMINI_MODEL?.trim();
+  // Filter out any deprecated model strings that would return 404
+  const isDeprecated = (m?: string) => !m || m.includes('2.5') || m.includes('2.0') || m.includes('1.5');
+
   const models = [
-    ...(configured ? [configured] : []),
+    ...(configured && !isDeprecated(configured) ? [configured] : []),
     'gemini-3.7-flash',
     'gemini-3.1-flash-lite',
     'gemini-flash-latest'
@@ -67,6 +70,8 @@ async function generateWithModelFallback(params: {
       const errMsg = err?.message || (typeof err === 'string' ? err : 'Service temporary issue');
       console.info(`[AI Fallback] Model ${modelName} encountered: ${errMsg.slice(0, 100)} -> trying next available model.`);
       lastError = err;
+      // Brief 150ms pause before trying next fallback model to relieve instantaneous spikes
+      await new Promise(r => setTimeout(r, 150));
     }
   }
 

@@ -13,7 +13,7 @@ import {
   where,
   onSnapshot
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import { 
   Project, 
   Category, 
@@ -83,9 +83,29 @@ function setLocalCache<T>(key: string, value: T) {
   }
 }
 
+const ADMIN_EMAILS = [
+  'rsoyeb574@gmail.com',
+  'admin@fizahayatresearch.com',
+  'admin@fiza-hayat-buildcom.iam.gserviceaccount.com'
+];
+
 // Check and Seed Database if Empty
 export async function seedDatabaseIfEmpty() {
   try {
+    const currentUser = auth.currentUser;
+    const isUserAdmin = Boolean(
+      currentUser && 
+      currentUser.email && 
+      (ADMIN_EMAILS.includes(currentUser.email.toLowerCase()) || 
+       currentUser.email.endsWith('@fizahayatresearch.com') ||
+       currentUser.email.endsWith('@fiza-hayat-buildcom.iam.gserviceaccount.com'))
+    );
+
+    // If not admin, do not execute Firestore writes that require admin rules
+    if (!isUserAdmin) {
+      return;
+    }
+
     const categoriesSnap = await getDocs(collection(db, 'categories'));
     if (categoriesSnap.empty) {
       console.log('Seeding initial categories...');
