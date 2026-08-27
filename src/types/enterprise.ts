@@ -225,6 +225,41 @@ export interface AuditLog {
   timestamp: string;
 }
 
+export type NotificationType = 
+  | 'requirement_reviewed' 
+  | 'requirement_approved' 
+  | 'pm_feedback' 
+  | 'deliverable_uploaded' 
+  | 'clarification_requested' 
+  | 'project_milestone' 
+  | 'general';
+
+export interface ClientNotification {
+  id: string;
+  clientUid: string;
+  clientEmail?: string;
+  clientName?: string;
+  projectId?: string;
+  projectTitle?: string;
+  fileRequestId?: string;
+  fileRequestTitle?: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  managerName: string;
+  managerRole: string;
+  managerAvatar?: string;
+  managerEmail?: string;
+  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+  read: boolean;
+  deliverableTitle?: string;
+  deliverableUrl?: string;
+  actionType?: 'open_brief' | 'open_deliverables' | 'open_chat' | 'view_project';
+  metadata?: Record<string, any>;
+  createdAt: string;
+  timestamp: number;
+}
+
 export interface SystemNotification {
   id: string;
   userUid?: string; // empty means broadcast to admin

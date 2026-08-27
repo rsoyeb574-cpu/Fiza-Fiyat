@@ -138,6 +138,25 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /client_notifications/{notifId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.clientUid == request.auth.uid ||
+          resource.data.clientEmail == request.auth.token.email
+        )
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.clientUid == request.auth.uid ||
+          resource.data.clientEmail == request.auth.token.email
+        )
+      );
+      allow delete: if isAdmin() || (
+        isAuthenticated() && resource.data.clientUid == request.auth.uid
+      );
+    }
+
     // =======================================================
     // 4. ENTERPRISE FINANCIAL & BUSINESS DATA (STRICT PROTECTED)
     // =======================================================

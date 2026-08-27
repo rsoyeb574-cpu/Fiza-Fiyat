@@ -48,12 +48,16 @@ interface FileRequestManagerProps {
     photoURL?: string | null;
     phone?: string;
   };
+  initialSelectedRequestId?: string | null;
+  initialModalTab?: 'details' | 'deliverables' | 'discussion';
 }
 
 export const FileRequestManager: React.FC<FileRequestManagerProps> = ({
   projects,
   currentSelectedProject,
-  currentUser
+  currentUser,
+  initialSelectedRequestId,
+  initialModalTab = 'details'
 }) => {
   const [requests, setRequests] = useState<ClientFileRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +69,7 @@ export const FileRequestManager: React.FC<FileRequestManagerProps> = ({
   // Modals
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ClientFileRequest | null>(null);
+  const [modalTab, setModalTab] = useState<'details' | 'deliverables' | 'discussion'>(initialModalTab);
 
   // Direct Document Preview Modal
   const [previewDoc, setPreviewDoc] = useState<PreviewableDocument | null>(null);
@@ -73,6 +78,16 @@ export const FileRequestManager: React.FC<FileRequestManagerProps> = ({
   useEffect(() => {
     loadRequests();
   }, [currentUser.uid]);
+
+  useEffect(() => {
+    if (initialSelectedRequestId && requests.length > 0) {
+      const match = requests.find(r => r.id === initialSelectedRequestId);
+      if (match) {
+        setSelectedRequest(match);
+        setModalTab(initialModalTab || 'details');
+      }
+    }
+  }, [initialSelectedRequestId, requests, initialModalTab]);
 
   const loadRequests = async () => {
     setLoading(true);
@@ -443,6 +458,7 @@ export const FileRequestManager: React.FC<FileRequestManagerProps> = ({
           onUpdateRequest={handleRequestUpdated}
           currentUserUid={currentUser.uid}
           currentUserName={currentUser.displayName || currentUser.email?.split('@')[0] || 'Client User'}
+          initialTab={modalTab}
         />
       )}
 

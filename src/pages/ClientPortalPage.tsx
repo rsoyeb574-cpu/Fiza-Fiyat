@@ -35,15 +35,22 @@ import {
   PaymentTransaction, 
   ChatMessage, 
   CalendarEvent, 
-  SystemNotification 
+  SystemNotification,
+  ClientNotification,
+  ClientFileRequest
 } from '../types/enterprise';
 import { 
   fetchEnterpriseProjects, 
   fetchInvoices, 
   saveEnterpriseProject, 
-  saveInvoice 
+  saveInvoice,
+  fetchClientFileRequests
 } from '../services/enterpriseDb';
 import { FileRequestManager } from '../components/client/FileRequestManager';
+import { ClientNotificationCenter } from '../components/client/ClientNotificationCenter';
+import { NotificationToast } from '../components/client/NotificationToast';
+import { PMFeedbackSimulator } from '../components/client/PMFeedbackSimulator';
+import { subscribeToClientNotifications } from '../services/notificationService';
 
 export const ClientPortalPage: React.FC = () => {
   const { user, logout, loginWithEmail, registerWithEmail } = useAuth();
@@ -59,10 +66,18 @@ export const ClientPortalPage: React.FC = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   // Client Data State
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'filerequests' | 'projects' | 'downloads' | 'payments' | 'chat' | 'meetings' | 'profile'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'filerequests' | 'notifications' | 'projects' | 'downloads' | 'payments' | 'chat' | 'meetings' | 'profile'>('dashboard');
   const [projects, setProjects] = useState<EnterpriseProject[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selectedProject, setSelectedProject] = useState<EnterpriseProject | null>(null);
+  const [fileRequests, setFileRequests] = useState<ClientFileRequest[]>([]);
+
+  // Notification State & Toast
+  const [activeToast, setActiveToast] = useState<ClientNotification | null>(null);
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
+  const [targetFileRequestId, setTargetFileRequestId] = useState<string | null>(null);
+  const [targetFileRequestTab, setTargetFileRequestTab] = useState<'details' | 'deliverables' | 'discussion'>('details');
+  const [lastNotificationTimestamp, setLastNotificationTimestamp] = useState<number>(Date.now());
 
   // Chat State
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -88,12 +103,38 @@ export const ClientPortalPage: React.FC = () => {
     loadClientData();
   }, [user]);
 
+  // Real-time Notification Listener for Toast Alerts
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToClientNotifications(
+      user.uid,
+      user.email || undefined,
+      (list) => {
+        if (list.length > 0) {
+          const newest = list[0];
+          if (!newest.read && newest.timestamp > lastNotificationTimestamp - 5000) {
+            setActiveToast(newest);
+          }
+        }
+      }
+    );
+    return () => unsub();
+  }, [user, lastNotificationTimestamp]);
+
   const loadClientData = async () => {
     const p = await fetchEnterpriseProjects();
     const inv = await fetchInvoices();
+    const reqs = await fetchClientFileRequests(user?.uid);
     setProjects(p);
     setInvoices(inv);
+    setFileRequests(reqs);
     if (p.length > 0) setSelectedProject(p[0]);
+  };
+
+  const handleOpenBriefFromNotification = (briefId: string, initialTab: 'details' | 'deliverables' | 'discussion' = 'details') => {
+    setTargetFileRequestId(briefId);
+    setTargetFileRequestTab(initialTab);
+    setActiveTab('filerequests');
   };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -311,19 +352,40 @@ export const ClientPortalPage: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-3">
+          {/* REAL-TIME NOTIFICATION POPUP CENTER */}
+          {user && (
+            <ClientNotificationCenter
+              clientUid={user.uid}
+              clientEmail={user.email || undefined}
+              variant="header_dropdown"
+              onOpenRequirementBrief={handleOpenBriefFromNotification}
+            />
+          )}
+
+          {/* SIMULATE PM FEEDBACK TRIGGER BUTTON */}
+          <button
+            onClick={() => setIsSimulatorOpen(true)}
+            className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold flex items-center gap-1.5 shadow-lg shadow-purple-600/20 cursor-pointer text-xs"
+            title="Simulate PM reviewing, approving, or sending feedback on your briefs"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span className="hidden sm:inline">Simulate PM Action</span>
+            <span className="sm:hidden">Test PM</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('chat')}
             className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center gap-2 shadow-lg cursor-pointer"
           >
             <MessageSquare className="w-4 h-4" />
-            <span>Chat with Company</span>
+            <span className="hidden sm:inline">Chat with Company</span>
           </button>
           <button
             onClick={logout}
             className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold flex items-center gap-2 cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
+            <span className="hidden sm:inline">Sign Out</span>
           </button>
         </div>
       </div>
@@ -333,6 +395,7 @@ export const ClientPortalPage: React.FC = () => {
         {[
           { id: 'dashboard', label: 'Client Overview', icon: Building2 },
           { id: 'filerequests', label: 'File Requests & Briefs', icon: FileText },
+          { id: 'notifications', label: 'PM Alerts & Notifications', icon: Bell },
           { id: 'projects', label: `Active Projects (${projects.length})`, icon: Layers },
           { id: 'downloads', label: 'Download Center (CAD/PDF)', icon: Download },
           { id: 'payments', label: `Invoices & Payments (${invoices.length})`, icon: CreditCard },
@@ -469,6 +532,18 @@ export const ClientPortalPage: React.FC = () => {
           projects={projects}
           currentSelectedProject={selectedProject}
           currentUser={user}
+          initialSelectedRequestId={targetFileRequestId}
+          initialModalTab={targetFileRequestTab}
+        />
+      )}
+
+      {/* TAB: REAL-TIME PM ALERTS & NOTIFICATIONS CENTER */}
+      {activeTab === 'notifications' && (
+        <ClientNotificationCenter
+          clientUid={user.uid}
+          clientEmail={user.email || undefined}
+          variant="full_panel"
+          onOpenRequirementBrief={handleOpenBriefFromNotification}
         />
       )}
 
@@ -760,6 +835,28 @@ export const ClientPortalPage: React.FC = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* REAL-TIME SLIDE-IN NOTIFICATION TOAST */}
+      <NotificationToast
+        notification={activeToast}
+        onClose={() => setActiveToast(null)}
+        onOpenBrief={handleOpenBriefFromNotification}
+      />
+
+      {/* PM FEEDBACK & REVIEW SIMULATION MODAL */}
+      {user && (
+        <PMFeedbackSimulator
+          isOpen={isSimulatorOpen}
+          onClose={() => setIsSimulatorOpen(false)}
+          clientUid={user.uid}
+          clientEmail={user.email || undefined}
+          clientName={user.displayName || user.email?.split('@')[0] || 'Client'}
+          fileRequests={fileRequests}
+          onSimulateSuccess={() => {
+            loadClientData();
+          }}
+        />
       )}
     </div>
   );

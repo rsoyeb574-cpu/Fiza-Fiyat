@@ -29,6 +29,7 @@ import {
   FileRequestAttachment 
 } from '../../types/enterprise';
 import { saveClientFileRequest } from '../../services/enterpriseDb';
+import { sendClientNotification } from '../../services/notificationService';
 import { DocumentPreviewModal, PreviewableDocument } from './DocumentPreviewModal';
 
 interface FileRequestDetailModalProps {
@@ -38,6 +39,7 @@ interface FileRequestDetailModalProps {
   onUpdateRequest: (updated: ClientFileRequest) => void;
   currentUserUid: string;
   currentUserName: string;
+  initialTab?: 'details' | 'discussion' | 'deliverables';
 }
 
 export const FileRequestDetailModal: React.FC<FileRequestDetailModalProps> = ({
@@ -46,12 +48,16 @@ export const FileRequestDetailModal: React.FC<FileRequestDetailModalProps> = ({
   request,
   onUpdateRequest,
   currentUserUid,
-  currentUserName
+  currentUserName,
+  initialTab = 'details'
 }) => {
-  const [activeTab, setActiveTab] = useState<'details' | 'discussion' | 'deliverables'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'discussion' | 'deliverables'>(initialTab);
   const [newMsgText, setNewMsgText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [showPmTools, setShowPmTools] = useState(false);
+  const [pmFeedbackText, setPmFeedbackText] = useState('');
+  const [isSimulatingPM, setIsSimulatingPM] = useState(false);
   
   // File Preview Modal State
   const [previewDoc, setPreviewDoc] = useState<PreviewableDocument | null>(null);
@@ -133,6 +139,95 @@ export const FileRequestDetailModal: React.FC<FileRequestDetailModalProps> = ({
     await saveClientFileRequest(updated);
     onUpdateRequest(updated);
     setIsUpdatingStatus(false);
+  };
+
+  // PM Review, Approval, and Feedback triggers
+  const handleSimulatePMAction = async (action: 'review' | 'approve' | 'feedback') => {
+    setIsSimulatingPM(true);
+    let updatedStatus = request.status;
+    let newAdminNotes = request.adminNotes;
+    let deliverables = request.responseDeliverables || [];
+    let messages = request.messages || [];
+    let notifTitle = '';
+    let notifMessage = '';
+    let notifType: any = 'requirement_reviewed';
+
+    if (action === 'review') {
+      updatedStatus = 'Under Review';
+      notifType = 'requirement_reviewed';
+      notifTitle = `Requirement Reviewed by ${request.assignedManagerName}`;
+      notifMessage = pmFeedbackText.trim() || `${request.assignedManagerName} has reviewed the specifications for "${request.title}" and initiated engineering load & drafting calculations.`;
+      newAdminNotes = `Reviewed on ${new Date().toLocaleDateString()}: ${notifMessage}`;
+    } else if (action === 'approve') {
+      updatedStatus = 'Fulfilled';
+      notifType = 'requirement_approved';
+      notifTitle = `Requirement Approved by ${request.assignedManagerName}`;
+      notifMessage = pmFeedbackText.trim() || `All parameters and compliance checks for "${request.title}" have been approved. Official CAD/BIM working drawings have been attached.`;
+      newAdminNotes = `Approved by ${request.assignedManagerName}: ${notifMessage}`;
+
+      const newDeliv = {
+        id: `deliv-${Date.now()}`,
+        title: `FH_${request.title.replace(/\s+/g, '_').substring(0, 24)}_Approved.dwg`,
+        fileType: 'dwg' as const,
+        url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        uploadedBy: request.assignedManagerName,
+        uploadedAt: 'Today',
+        notes: `Signed off by ${request.assignedManagerName}`
+      };
+      deliverables = [newDeliv, ...deliverables];
+    } else if (action === 'feedback') {
+      notifType = 'pm_feedback';
+      notifTitle = `New Feedback from ${request.assignedManagerName}`;
+      notifMessage = pmFeedbackText.trim() || `${request.assignedManagerName}: "Deflection criteria satisfied per IS 456. Rebar spacing optimized for 150mm c/c."`;
+
+      const newMsg: FileRequestMessage = {
+        id: `fmsg-pm-${Date.now()}`,
+        senderUid: request.assignedManagerUid || 'pm-lead',
+        senderName: request.assignedManagerName,
+        senderRole: 'Project Manager',
+        senderAvatar: request.assignedManagerAvatar,
+        text: notifMessage,
+        createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      messages = [...messages, newMsg];
+    }
+
+    const updated: ClientFileRequest = {
+      ...request,
+      status: updatedStatus,
+      adminNotes: newAdminNotes,
+      responseDeliverables: deliverables,
+      messages: messages,
+      updatedAt: 'Just now'
+    };
+
+    await saveClientFileRequest(updated);
+    onUpdateRequest(updated);
+
+    // Dispatch real-time alert to client
+    await sendClientNotification({
+      clientUid: request.clientUid,
+      clientEmail: request.clientEmail,
+      clientName: request.clientName,
+      projectId: request.projectId,
+      projectTitle: request.projectTitle,
+      fileRequestId: request.id,
+      fileRequestTitle: request.title,
+      type: notifType,
+      title: notifTitle,
+      message: notifMessage,
+      managerName: request.assignedManagerName,
+      managerRole: request.assignedManagerRole,
+      managerAvatar: request.assignedManagerAvatar,
+      managerEmail: request.assignedManagerEmail,
+      priority: action === 'approve' ? 'High' : (action === 'review' ? 'Urgent' : 'Medium'),
+      read: false,
+      actionType: action === 'approve' ? 'open_deliverables' : (action === 'feedback' ? 'open_chat' : 'open_brief')
+    });
+
+    setPmFeedbackText('');
+    setIsSimulatingPM(false);
+    setShowPmTools(false);
   };
 
   const handlePrintSummary = () => {
@@ -300,7 +395,20 @@ export const FileRequestDetailModal: React.FC<FileRequestDetailModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+            <button
+              onClick={() => setShowPmTools(!showPmTools)}
+              className={`px-3 py-1.5 rounded-xl border font-semibold text-[11px] flex items-center gap-1.5 cursor-pointer transition-all ${
+                showPmTools 
+                  ? 'bg-indigo-600 text-white border-indigo-400 shadow-md' 
+                  : 'bg-indigo-950/50 hover:bg-indigo-900/50 text-indigo-300 border-indigo-500/30'
+              }`}
+              title="Trigger PM review, approval, or feedback to test real-time alerts"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
+              <span>PM Review Actions</span>
+            </button>
+
             <button
               onClick={() => setActiveTab('discussion')}
               className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 font-semibold text-[11px] flex items-center gap-1.5 cursor-pointer"
@@ -319,6 +427,63 @@ export const FileRequestDetailModal: React.FC<FileRequestDetailModalProps> = ({
             )}
           </div>
         </div>
+
+        {/* COLLAPSIBLE PM SIMULATION ACTIONS BAR */}
+        {showPmTools && (
+          <div className="px-6 py-4 bg-gradient-to-r from-indigo-950/60 via-slate-900 to-indigo-950/60 border-b border-indigo-500/30 space-y-3 animate-fadeIn">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-indigo-400" />
+                <span className="text-white font-bold text-xs">Simulate Project Manager Action for this Brief:</span>
+              </div>
+              <span className="text-slate-400 text-[10px]">Triggers instant real-time notification & audio chime</span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={pmFeedbackText}
+                onChange={e => setPmFeedbackText(e.target.value)}
+                placeholder={`Type custom notes as ${request.assignedManagerName} (or leave blank for automatic notes)...`}
+                className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-white/10 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-indigo-500"
+              />
+              <div className="flex items-center space-x-2 shrink-0">
+                <button
+                  type="button"
+                  disabled={isSimulatingPM}
+                  onClick={() => handleSimulatePMAction('review')}
+                  className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title="Mark brief Under Review and notify client"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Review Brief</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSimulatingPM}
+                  onClick={() => handleSimulatePMAction('approve')}
+                  className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title="Approve requirement and attach CAD dwg"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Approve & Sign Off</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSimulatingPM}
+                  onClick={() => handleSimulatePMAction('feedback')}
+                  className="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title="Send PM feedback note and notify client"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Send Feedback</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* TABS NAVIGATION */}
         <div className="flex items-center space-x-2 px-6 pt-3 border-b border-white/5 text-xs bg-slate-900">

@@ -14,11 +14,13 @@ import {
   Layers,
   Building2,
   FileText,
-  Zap
+  Zap,
+  Bell
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { usePlan } from '../../context/PlanContext';
+import { ClientNotificationCenter } from '../client/ClientNotificationCenter';
 
 interface HeaderProps {
   activePage: string;
@@ -38,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   favoritesCount
 }) => {
   const { theme, toggleTheme } = useTheme();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { plan } = usePlan();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -176,6 +178,26 @@ export const Header: React.FC<HeaderProps> = ({
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
+
+            {/* Notifications (if user is signed in) */}
+            {user ? (
+              <ClientNotificationCenter
+                clientUid={user.uid}
+                clientEmail={user.email || undefined}
+                variant="header_dropdown"
+                onOpenRequirementBrief={() => {
+                  handleNavClick('client-portal');
+                }}
+              />
+            ) : (
+              <button
+                onClick={() => handleNavClick('client-portal')}
+                className="p-2 rounded-xl bg-[#151B2E] backdrop-blur-md border border-indigo-500/20 text-slate-300 hover:text-blue-400 hover:bg-indigo-900/30 transition-all cursor-pointer"
+                title="Client Portal & Notifications"
+              >
+                <Bell className="w-4 h-4" />
+              </button>
+            )}
 
             {/* Admin Hub Link */}
             <button

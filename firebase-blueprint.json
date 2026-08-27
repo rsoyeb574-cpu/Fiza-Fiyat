@@ -205,6 +205,30 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["projectId", "clientUid", "title", "category", "description"]
+    },
+    "client_notifications": {
+      "title": "Client Real-Time Notifications & PM Alerts",
+      "description": "Real-time alerts sent to clients when requirements are reviewed, approved, deliverables uploaded, or PM feedback provided",
+      "type": "object",
+      "properties": {
+        "clientUid": { "type": "string" },
+        "clientEmail": { "type": "string" },
+        "clientName": { "type": "string" },
+        "projectId": { "type": "string" },
+        "projectTitle": { "type": "string" },
+        "fileRequestId": { "type": "string" },
+        "fileRequestTitle": { "type": "string" },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "managerName": { "type": "string" },
+        "managerRole": { "type": "string" },
+        "priority": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["clientUid", "type", "title", "message", "managerName"]
     }
   }
 }
