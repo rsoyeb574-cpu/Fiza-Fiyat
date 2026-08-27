@@ -136,9 +136,9 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-neutral-950/80 backdrop-blur-md animate-fadeIn">
       <div 
-        className="w-full max-w-lg bg-neutral-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[580px]"
+        className="w-[calc(100vw-20px)] sm:w-[420px] max-w-[420px] sm:max-w-[calc(100vw-40px)] h-[min(550px,calc(100vh-30px))] bg-neutral-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Chat Header */}

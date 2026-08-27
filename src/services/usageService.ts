@@ -184,15 +184,20 @@ export async function updateUserPlanInDb(uid: string, newPlan: PlanTier): Promis
     updatedAt: new Date().toISOString()
   };
 
-  try {
-    const userRef = doc(db, 'users', uid);
-    await setDoc(userRef, {
-      plan: newPlan,
-      subscriptionStatus: 'active',
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
-  } catch (err) {
-    console.warn('Error updating plan in DB:', err);
+  const currentUser = auth.currentUser;
+  if (currentUser && currentUser.uid === uid) {
+    try {
+      const userRef = doc(db, 'users', uid);
+      await setDoc(userRef, {
+        plan: newPlan,
+        subscriptionStatus: 'active',
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (err: any) {
+      if (err?.code !== 'permission-denied') {
+        console.warn('Error updating plan in DB:', err);
+      }
+    }
   }
 
   setLocalCachedProfile(updatedProfile);
@@ -264,14 +269,19 @@ export async function incrementClientUsage(uid: string, actionType: 'ai_chat' | 
 
   setLocalCachedProfile(updatedProfile);
 
-  try {
-    const userRef = doc(db, 'users', uid);
-    await updateDoc(userRef, {
-      usage,
-      updatedAt: new Date().toISOString()
-    });
-  } catch (err) {
-    console.warn('Firestore update usage error:', err);
+  const currentUser = auth.currentUser;
+  if (currentUser && currentUser.uid === uid) {
+    try {
+      const userRef = doc(db, 'users', uid);
+      await updateDoc(userRef, {
+        usage,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (err: any) {
+      if (err?.code !== 'permission-denied') {
+        console.warn('Firestore update usage error:', err);
+      }
+    }
   }
 
   return updatedProfile;

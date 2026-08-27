@@ -230,7 +230,82 @@ export interface SystemNotification {
   userUid?: string; // empty means broadcast to admin
   title: string;
   message: string;
-  type: 'project' | 'payment' | 'meeting' | 'alert';
+  type: 'project' | 'payment' | 'meeting' | 'alert' | 'file_request';
   read: boolean;
   createdAt: string;
+}
+
+// Client File Request & Requirement Document Types
+export type FileRequestStatus = 'Submitted' | 'Under Review' | 'In Progress' | 'Fulfilled' | 'Needs Clarification' | 'Cancelled';
+
+export type FileRequestCategory = 
+  | 'Architectural Working Drawings'
+  | 'Structural & Foundation Specs'
+  | '3D BIM Model & Exterior Renders'
+  | 'MEP & Electrical Schematics'
+  | 'Interior Fit-out & Material Palette'
+  | 'Site Survey & Soil Test Reports'
+  | 'Bill of Quantities (BOQ) & Costing'
+  | 'Municipal & Authority Permit Drawings'
+  | 'Change Order / Design Revision'
+  | 'Other Document Brief';
+
+export type FileRequestPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
+
+export interface FileRequestAttachment {
+  id: string;
+  name: string;
+  sizeBytes: number;
+  fileType: 'pdf' | 'dwg' | 'rvt' | 'docx' | 'png' | 'jpg' | 'zip' | 'ifc' | 'txt';
+  url: string;
+  uploadedAt: string;
+}
+
+export interface FileRequestResponseDeliverable {
+  id: string;
+  title: string;
+  fileType: 'pdf' | 'dwg' | 'rvt' | 'docx' | 'png' | 'jpg' | 'zip' | 'ifc';
+  url: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  notes?: string;
+}
+
+export interface FileRequestMessage {
+  id: string;
+  senderUid: string;
+  senderName: string;
+  senderRole: 'Client' | 'Project Manager' | 'Principal Architect' | 'BIM Specialist' | 'Structural Engineer';
+  senderAvatar?: string;
+  text: string;
+  attachments?: FileRequestAttachment[];
+  createdAt: string;
+}
+
+export interface ClientFileRequest {
+  id: string;
+  projectId: string;
+  projectTitle: string;
+  clientUid: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string;
+  assignedManagerUid: string;
+  assignedManagerName: string;
+  assignedManagerRole: string;
+  assignedManagerEmail?: string;
+  assignedManagerAvatar?: string;
+  title: string;
+  category: FileRequestCategory;
+  priority: FileRequestPriority;
+  targetDueDate?: string;
+  description: string;
+  deliverablesRequested: string[];
+  attachments: FileRequestAttachment[];
+  status: FileRequestStatus;
+  adminNotes?: string;
+  responseDeliverables?: FileRequestResponseDeliverable[];
+  messages?: FileRequestMessage[];
+  createdAt: string;
+  updatedAt: string;
 }

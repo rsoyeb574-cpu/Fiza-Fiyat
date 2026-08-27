@@ -18,8 +18,20 @@ import {
   TrendingUp, 
   Calendar 
 } from 'lucide-react';
-import { EnterpriseProject, ProjectStatus, ProjectPriority, ProjectLog, ProjectMilestone } from '../../types/enterprise';
-import { fetchEnterpriseProjects, saveEnterpriseProject } from '../../services/enterpriseDb';
+import { 
+  EnterpriseProject, 
+  ProjectStatus, 
+  ProjectPriority, 
+  ProjectLog, 
+  ProjectMilestone,
+  ClientFileRequest 
+} from '../../types/enterprise';
+import { 
+  fetchEnterpriseProjects, 
+  saveEnterpriseProject,
+  fetchClientFileRequests,
+  saveClientFileRequest 
+} from '../../services/enterpriseDb';
 
 export const ProjectManagementAdmin: React.FC = () => {
   const [projects, setProjects] = useState<EnterpriseProject[]>([]);
@@ -40,14 +52,34 @@ export const ProjectManagementAdmin: React.FC = () => {
   const [logNotes, setLogNotes] = useState('');
   const [logType, setLogType] = useState<'Daily' | 'Weekly' | 'Monthly'>('Daily');
 
+  // Client File Requests
+  const [fileRequests, setFileRequests] = useState<ClientFileRequest[]>([]);
+
   useEffect(() => {
     loadProjects();
+    loadFileRequests();
   }, []);
 
   const loadProjects = async () => {
     const p = await fetchEnterpriseProjects();
     setProjects(p);
     if (p.length > 0 && !selectedProj) setSelectedProj(p[0]);
+  };
+
+  const loadFileRequests = async () => {
+    const reqs = await fetchClientFileRequests();
+    setFileRequests(reqs);
+  };
+
+  const handleUpdateFileRequestStatus = async (req: ClientFileRequest, newStatus: any) => {
+    const updated = {
+      ...req,
+      status: newStatus,
+      updatedAt: new Date().toISOString().split('T')[0]
+    };
+    await saveClientFileRequest(updated);
+    setFileRequests(fileRequests.map(r => r.id === updated.id ? updated : r));
+    alert(`File Request status updated to ${newStatus}`);
   };
 
   const handleSelectProject = (p: EnterpriseProject) => {
@@ -288,6 +320,65 @@ export const ProjectManagementAdmin: React.FC = () => {
                         <span className="text-slate-500 font-mono text-[10px]">{l.date}</span>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* INCOMING CLIENT FILE REQUESTS & BRIEFS */}
+                <div className="p-4 rounded-2xl bg-slate-950 border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                    <div>
+                      <h4 className="text-white font-bold text-xs flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                        <span>Client Requirement Briefs & File Requests ({fileRequests.filter(r => r.projectId === selectedProj.id).length})</span>
+                      </h4>
+                      <p className="text-slate-400 text-[11px]">Submitted by {selectedProj.clientName} directly to Project Managers.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    {fileRequests.filter(r => r.projectId === selectedProj.id).length === 0 ? (
+                      <div className="p-4 rounded-xl bg-slate-900 text-center text-slate-500 text-xs">
+                        No requirement documents submitted for this project yet.
+                      </div>
+                    ) : (
+                      fileRequests.filter(r => r.projectId === selectedProj.id).map(req => (
+                        <div key={req.id} className="p-3.5 rounded-xl bg-slate-900 border border-white/5 space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-bold text-white text-xs">{req.title}</span>
+                              <span className="px-2 py-0.5 rounded-md bg-blue-950 text-blue-300 text-[9px] font-bold border border-blue-500/20">
+                                {req.category}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-1.5">
+                              <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
+                                req.priority === 'Urgent' ? 'bg-red-950 text-red-400' : 'bg-slate-800 text-slate-300'
+                              }`}>
+                                {req.priority}
+                              </span>
+                              <select
+                                value={req.status}
+                                onChange={e => handleUpdateFileRequestStatus(req, e.target.value)}
+                                className="px-2 py-1 rounded-lg bg-slate-950 text-xs border border-white/10 text-white font-bold cursor-pointer"
+                              >
+                                <option value="Submitted">Submitted</option>
+                                <option value="Under Review">Under Review</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Fulfilled">Fulfilled</option>
+                                <option value="Needs Clarification">Needs Clarification</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <p className="text-slate-300 text-xs line-clamp-2">{req.description}</p>
+
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-white/5">
+                            <span>Client: {req.clientName} ({req.clientEmail})</span>
+                            <span>Submitted: {req.createdAt} • Attachments: {req.attachments?.length || 0}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>

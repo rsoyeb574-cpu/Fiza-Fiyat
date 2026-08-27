@@ -43,6 +43,7 @@ import {
   saveEnterpriseProject, 
   saveInvoice 
 } from '../services/enterpriseDb';
+import { FileRequestManager } from '../components/client/FileRequestManager';
 
 export const ClientPortalPage: React.FC = () => {
   const { user, logout, loginWithEmail, registerWithEmail } = useAuth();
@@ -58,7 +59,7 @@ export const ClientPortalPage: React.FC = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   // Client Data State
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'downloads' | 'payments' | 'chat' | 'meetings' | 'profile'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'filerequests' | 'projects' | 'downloads' | 'payments' | 'chat' | 'meetings' | 'profile'>('dashboard');
   const [projects, setProjects] = useState<EnterpriseProject[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selectedProject, setSelectedProject] = useState<EnterpriseProject | null>(null);
@@ -331,6 +332,7 @@ export const ClientPortalPage: React.FC = () => {
       <div className="flex items-center space-x-2 overflow-x-auto pb-2 border-b border-white/10 text-xs">
         {[
           { id: 'dashboard', label: 'Client Overview', icon: Building2 },
+          { id: 'filerequests', label: 'File Requests & Briefs', icon: FileText },
           { id: 'projects', label: `Active Projects (${projects.length})`, icon: Layers },
           { id: 'downloads', label: 'Download Center (CAD/PDF)', icon: Download },
           { id: 'payments', label: `Invoices & Payments (${invoices.length})`, icon: CreditCard },
@@ -360,11 +362,27 @@ export const ClientPortalPage: React.FC = () => {
       {/* TAB 1: DASHBOARD OVERVIEW */}
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="p-5 rounded-3xl bg-slate-900 border border-white/10">
               <span className="text-slate-400 font-bold uppercase text-[10px]">Active Projects</span>
               <div className="text-2xl font-black text-white mt-1">{projects.length}</div>
               <span className="text-blue-400 text-[10px] mt-1 block">Tracked live via BIM engine</span>
+            </div>
+
+            {/* Quick File Request Shortcut Card */}
+            <div 
+              onClick={() => setActiveTab('filerequests')}
+              className="p-5 rounded-3xl bg-gradient-to-br from-blue-950/60 to-slate-900 border border-blue-500/30 hover:border-blue-500/60 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-blue-300 font-bold uppercase text-[10px]">Requirement Briefs</span>
+                <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[9px] font-bold">File Request</span>
+              </div>
+              <div className="text-lg font-black text-white mt-1 group-hover:text-blue-300 transition-colors flex items-center gap-1.5">
+                <span>Submit to PM</span>
+                <ChevronRight className="w-4 h-4 text-blue-400 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+              <span className="text-slate-400 text-[10px] mt-1 block">CAD, BIM & structural briefs</span>
             </div>
 
             <div className="p-5 rounded-3xl bg-slate-900 border border-white/10">
@@ -380,7 +398,7 @@ export const ClientPortalPage: React.FC = () => {
               <div className="text-2xl font-black text-emerald-400 mt-1">
                 {selectedProject?.deliverables.filter(d => d.status === 'Pending Approval').length || 0} Pending
               </div>
-              <span className="text-slate-400 text-[10px] mt-1 block">Drawings awaiting your review</span>
+              <span className="text-slate-400 text-[10px] mt-1 block">Drawings awaiting review</span>
             </div>
           </div>
 
@@ -392,9 +410,18 @@ export const ClientPortalPage: React.FC = () => {
                   <span className="text-blue-400 font-bold uppercase text-[10px]">Primary Active Project</span>
                   <h3 className="text-lg font-bold text-white mt-0.5">{selectedProject.title}</h3>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-blue-950 border border-blue-500/30 text-blue-300 font-bold text-[11px]">
-                  {selectedProject.status} Stage
-                </span>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setActiveTab('filerequests')}
+                    className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Request Drawings / Brief</span>
+                  </button>
+                  <span className="px-3 py-1 rounded-full bg-blue-950 border border-blue-500/30 text-blue-300 font-bold text-[11px]">
+                    {selectedProject.status} Stage
+                  </span>
+                </div>
               </div>
 
               {/* PROGRESS BAR */}
@@ -434,6 +461,15 @@ export const ClientPortalPage: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* TAB: FILE REQUESTS (PROJECT REQUIREMENT BRIEFS) */}
+      {activeTab === 'filerequests' && (
+        <FileRequestManager
+          projects={projects}
+          currentSelectedProject={selectedProject}
+          currentUser={user}
+        />
       )}
 
       {/* TAB 2: PROJECTS */}

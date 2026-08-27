@@ -25,7 +25,8 @@ import {
   ChatMessage, 
   CRMLead, 
   AuditLog, 
-  SystemNotification 
+  SystemNotification,
+  ClientFileRequest 
 } from '../types/enterprise';
 
 // Operation Error Handler according to Firebase Skill guidelines
@@ -273,5 +274,161 @@ export async function saveCRMLead(lead: CRMLead): Promise<void> {
     await setDoc(doc(db, 'crm_leads', lead.id), lead, { merge: true });
   } catch (err) {
     handleDbError(err, OperationType.WRITE, `crm_leads/${lead.id}`);
+  }
+}
+
+// Initial Mock File Requests for Authenticated Client Demo
+export const initialFileRequests: ClientFileRequest[] = [
+  {
+    id: 'freq-2026-001',
+    projectId: 'proj-ent-101',
+    projectTitle: 'Grand Azure Luxury Villa & Infinity Pool',
+    clientUid: 'client-demouser-1',
+    clientName: 'Aarav Sharma',
+    clientEmail: 'aarav.sharma@example.com',
+    clientPhone: '+91 98765 43210',
+    assignedManagerUid: 'emp-1',
+    assignedManagerName: 'Eng. Fiza Hayat',
+    assignedManagerRole: 'Principal Architect',
+    assignedManagerEmail: 'contact@fizahayat.com',
+    assignedManagerAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+    title: 'Balcony Cantilever Rebar & Glass Balustrade Specification',
+    category: 'Structural & Foundation Specs',
+    priority: 'Urgent',
+    targetDueDate: '2026-08-30',
+    description: 'We are requesting the updated working drawings and structural load calculation for the 2nd-floor master balcony cantilever slab extension (1.8m overhang) along with fixing details for the frameless 12mm laminated toughened glass balustrade. Please verify deflection limits according to IS 456 codes.',
+    deliverablesRequested: [
+      'AutoCAD 2024 .DWG Detailed Section',
+      'Structural Calculation Note (PDF)',
+      'Glass Balustrade Anchorage Detail',
+      'Fe500D Rebar Bending Schedule'
+    ],
+    attachments: [
+      {
+        id: 'att-1',
+        name: 'Client_Balcony_Markups_v2.pdf',
+        sizeBytes: 1450000,
+        fileType: 'pdf',
+        url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        uploadedAt: '2026-08-06'
+      },
+      {
+        id: 'att-2',
+        name: 'Architectural_Balcony_Photo_Ref.jpg',
+        sizeBytes: 2840000,
+        fileType: 'jpg',
+        url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+        uploadedAt: '2026-08-06'
+      }
+    ],
+    status: 'In Progress',
+    adminNotes: 'Structural engineering team is finalizing beam anchorage depth. Reviewing with lead consultant.',
+    responseDeliverables: [
+      {
+        id: 'resp-del-1',
+        title: 'FH-BAL-STR-01_Balcony_Overhang_Rebar_Draft.dwg',
+        fileType: 'dwg',
+        url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        uploadedBy: 'Eng. Fiza Hayat',
+        uploadedAt: '2026-08-07',
+        notes: 'Initial section layout ready. Reviewing concrete mix design (M30).'
+      }
+    ],
+    messages: [
+      {
+        id: 'fmsg-1',
+        senderUid: 'client-demouser-1',
+        senderName: 'Aarav Sharma',
+        senderRole: 'Client',
+        text: 'Hi Eng. Fiza, could you ensure the structural anchor plate does not puncture the waterproof membrane on the deck?',
+        createdAt: '2026-08-06 14:15'
+      },
+      {
+        id: 'fmsg-2',
+        senderUid: 'emp-1',
+        senderName: 'Eng. Fiza Hayat',
+        senderRole: 'Principal Architect',
+        senderAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+        text: 'Hello Mr. Sharma! Yes, we have designed side-mounted chemical anchor studs into the RCC upstand beam, preserving the floor membrane integrity.',
+        createdAt: '2026-08-07 09:30'
+      }
+    ],
+    createdAt: '2026-08-06',
+    updatedAt: '2026-08-07'
+  },
+  {
+    id: 'freq-2026-002',
+    projectId: 'proj-ent-101',
+    projectTitle: 'Grand Azure Luxury Villa & Infinity Pool',
+    clientUid: 'client-demouser-1',
+    clientName: 'Aarav Sharma',
+    clientEmail: 'aarav.sharma@example.com',
+    clientPhone: '+91 98765 43210',
+    assignedManagerUid: 'emp-2',
+    assignedManagerName: 'Rohan Mehta',
+    assignedManagerRole: 'BIM 3D Specialist',
+    assignedManagerEmail: 'rohan.mehta@fizahayat.com',
+    assignedManagerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    title: 'Italian Travertine Marble Living Room Render & Material Schedule',
+    category: 'Interior Fit-out & Material Palette',
+    priority: 'Medium',
+    targetDueDate: '2026-09-05',
+    description: 'Requirement brief for 4K photorealistic interior renders of the double-height formal living room using Roman Navona Travertine wall cladding and warm brass accents. Please specify recommended slab dimensions and dry-cladding clamp hardware.',
+    deliverablesRequested: [
+      '3x 4K Ultra-HD Photorealistic 3D Renders',
+      'Material Bill of Quantities (Sq.Ft Breakdown)',
+      'Dry Cladding Clamp Detail Diagram'
+    ],
+    attachments: [
+      {
+        id: 'att-3',
+        name: 'Travertine_Cladding_Inspiration.png',
+        sizeBytes: 3120000,
+        fileType: 'png',
+        url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80',
+        uploadedAt: '2026-08-03'
+      }
+    ],
+    status: 'Under Review',
+    createdAt: '2026-08-03',
+    updatedAt: '2026-08-04'
+  }
+];
+
+export async function fetchClientFileRequests(clientUid?: string): Promise<ClientFileRequest[]> {
+  try {
+    const colRef = collection(db, 'file_requests');
+    let q = query(colRef);
+    if (clientUid) {
+      q = query(colRef, where('clientUid', '==', clientUid));
+    }
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as ClientFileRequest));
+    }
+  } catch (err) {
+    handleDbError(err, OperationType.LIST, 'file_requests');
+  }
+  if (clientUid) {
+    return initialFileRequests.filter(r => r.clientUid === clientUid || r.clientEmail === 'aarav.sharma@example.com');
+  }
+  return initialFileRequests;
+}
+
+export async function saveClientFileRequest(req: ClientFileRequest): Promise<void> {
+  try {
+    const docRef = doc(db, 'file_requests', req.id);
+    await setDoc(docRef, req, { merge: true });
+  } catch (err) {
+    handleDbError(err, OperationType.WRITE, `file_requests/${req.id}`);
+  }
+}
+
+export async function deleteClientFileRequest(reqId: string): Promise<void> {
+  try {
+    const docRef = doc(db, 'file_requests', reqId);
+    await deleteDoc(docRef);
+  } catch (err) {
+    handleDbError(err, OperationType.DELETE, `file_requests/${reqId}`);
   }
 }

@@ -726,25 +726,25 @@ export const GlobalAIAssistantWidget: React.FC<GlobalAIAssistantWidgetProps> = (
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 text-xs">
+    <div className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-50 text-xs">
       {/* FLOATING TRIGGER BUTTON */}
       {!isOpen && (
         <button
           id="btn-open-global-ai-assistant"
           onClick={() => setIsOpen(true)}
-          className="px-4 py-3 rounded-full bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white font-bold shadow-2xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer border border-white/20 group"
+          className="px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white font-bold shadow-2xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer border border-white/20 group"
         >
-          <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-            {renderPersonalityIcon(activePersonalityObj.iconName, "w-4 h-4 text-amber-300 animate-pulse")}
+          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/20 flex items-center justify-center">
+            {renderPersonalityIcon(activePersonalityObj.iconName, "w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 animate-pulse")}
           </div>
-          <span className="hidden sm:inline">Ask Fiza AI</span>
+          <span className="hidden xs:inline sm:inline">Ask Fiza AI</span>
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
         </button>
       )}
 
       {/* EXPANDED CHAT DRAWER */}
       {isOpen && (
-        <div className="w-[calc(100vw-2rem)] max-w-[360px] sm:max-w-[420px] h-[580px] max-h-[88vh] rounded-3xl bg-slate-900 border border-white/10 shadow-2xl flex flex-col overflow-hidden animate-fadeIn">
+        <div className="w-[calc(100vw-20px)] sm:w-[420px] max-w-[420px] sm:max-w-[calc(100vw-40px)] h-[min(550px,calc(100vh-30px))] rounded-3xl bg-slate-900 border border-white/10 shadow-2xl flex flex-col overflow-hidden animate-fadeIn">
           {/* HEADER */}
           <div className="p-3.5 bg-gradient-to-r from-purple-950/80 via-blue-950/80 to-slate-900 border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center space-x-2.5">

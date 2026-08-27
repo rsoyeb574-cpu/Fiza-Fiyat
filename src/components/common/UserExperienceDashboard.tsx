@@ -84,7 +84,7 @@ export const UserExperienceDashboard: React.FC<UserExperienceDashboardProps> = (
                 favorites.map(p => (
                   <div key={p.id} className="p-3 rounded-2xl bg-slate-950 border border-white/10 flex justify-between items-center">
                     <div className="flex gap-3 items-center cursor-pointer" onClick={() => { onSelectProject(p.id); onClose(); }}>
-                      <img src={p.heroImage} alt={p.title} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                      <img src={p.heroImage || p.coverImage} alt={p.title} className="w-12 h-12 rounded-xl object-cover shrink-0" />
                       <div>
                         <div className="text-white font-bold text-xs">{p.title}</div>
                         <div className="text-slate-400 text-[10px]">{p.location}</div>

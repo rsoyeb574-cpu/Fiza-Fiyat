@@ -64,19 +64,19 @@ export const CostCalculatorModal: React.FC<CostCalculatorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-neutral-950/80 backdrop-blur-md animate-fadeIn">
       <div 
         className="w-full max-w-2xl bg-neutral-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-6 bg-gradient-to-r from-neutral-950 via-blue-950/40 to-neutral-950 border-b border-white/10 flex items-center justify-between">
+        <div className="p-4 sm:p-6 bg-gradient-to-r from-neutral-950 via-blue-950/40 to-neutral-950 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
               <Calculator className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white tracking-tight">
+              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
                 Fiza Hayat Cost Estimator
               </h3>
               <p className="text-neutral-400 text-xs">
@@ -93,10 +93,10 @@ export const CostCalculatorModal: React.FC<CostCalculatorModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 text-xs">
           
           {/* Type Toggle */}
-          <div className="grid grid-cols-2 gap-2 bg-neutral-950 p-1.5 rounded-2xl border border-white/10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-neutral-950 p-1.5 rounded-2xl border border-white/10">
             <button
               onClick={() => setCalcType('construction')}
               className={`py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
@@ -123,9 +123,9 @@ export const CostCalculatorModal: React.FC<CostCalculatorModalProps> = ({
 
           {/* Area Slider */}
           <div className="space-y-2 bg-neutral-950/50 p-4 rounded-2xl border border-white/5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <label className="text-neutral-300 font-semibold">Total Area (Sq.Ft)</label>
-              <span className="text-blue-400 font-bold text-sm bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
+              <span className="text-blue-400 font-bold text-xs sm:text-sm bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 w-fit">
                 {areaSqFt.toLocaleString()} Sq.Ft ({Math.round(areaSqFt * 0.092903)} m²)
               </span>
             </div>
@@ -143,7 +143,7 @@ export const CostCalculatorModal: React.FC<CostCalculatorModalProps> = ({
           {/* Luxury Finish Tier */}
           <div className="space-y-2">
             <label className="text-neutral-300 font-semibold block">Quality & Finish Specification</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
                 { id: 'standard', name: 'Standard Commercial', rate: rates[calcType].standard },
                 { id: 'luxury', name: 'Premium Luxury', rate: rates[calcType].luxury },
@@ -166,7 +166,7 @@ export const CostCalculatorModal: React.FC<CostCalculatorModalProps> = ({
           </div>
 
           {/* Add-on Services */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className={`p-3 rounded-2xl border flex items-center space-x-2 cursor-pointer transition-all ${
               includeBIM ? 'bg-blue-600/10 border-blue-500 text-white' : 'bg-neutral-950 border-white/10 text-neutral-400'
             }`}>

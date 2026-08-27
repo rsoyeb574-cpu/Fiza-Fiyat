@@ -211,6 +211,30 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /file_requests/{requestId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.clientUid == request.auth.uid ||
+          resource.data.clientEmail == request.auth.token.email ||
+          resource.data.assignedManagerUid == request.auth.uid
+        )
+      );
+      allow create: if isAuthenticated() && (
+        request.resource.data.clientUid == request.auth.uid ||
+        request.resource.data.clientEmail == request.auth.token.email ||
+        isAdmin()
+      );
+      allow update: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.clientUid == request.auth.uid ||
+          resource.data.assignedManagerUid == request.auth.uid
+        )
+      );
+      allow delete: if isAdmin() || (
+        isAuthenticated() && resource.data.clientUid == request.auth.uid
+      );
+    }
+
     // AUDIT LOGS: Read by Admin only; NEVER writable by clients!
     match /audit_logs/{logId} {
       allow read: if isAdmin();
