@@ -58,6 +58,7 @@ import { FileRequestManager } from '../components/client/FileRequestManager';
 import { ClientNotificationCenter } from '../components/client/ClientNotificationCenter';
 import { NotificationToast } from '../components/client/NotificationToast';
 import { PMFeedbackSimulator } from '../components/client/PMFeedbackSimulator';
+import { ClientDirectMessenger } from '../components/client/ClientDirectMessenger';
 import { subscribeToClientNotifications } from '../services/notificationService';
 import { playNotificationChime } from '../utils/soundEffects';
 
@@ -514,10 +515,11 @@ export const ClientPortalPage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('chat')}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center gap-2 shadow-lg cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold flex items-center gap-2 shadow-lg shadow-blue-600/30 cursor-pointer transition-all"
           >
-            <MessageSquare className="w-4 h-4" />
-            <span className="hidden sm:inline">Chat with Company</span>
+            <MessageSquare className="w-4 h-4 text-blue-200" />
+            <span className="hidden sm:inline">Direct PM Messenger</span>
+            <span className="sm:hidden">PM Chat</span>
           </button>
           <button
             onClick={logout}
@@ -681,10 +683,10 @@ export const ClientPortalPage: React.FC = () => {
           { id: 'dashboard', label: 'Client Overview', icon: Building2 },
           { id: 'filerequests', label: 'File Requests & Briefs', icon: FileText },
           { id: 'notifications', label: 'PM Alerts & Notifications', icon: Bell },
+          { id: 'chat', label: 'Direct PM Messenger (Secure)', icon: MessageSquare },
           { id: 'projects', label: `Active Projects (${projects.length})`, icon: Layers },
           { id: 'downloads', label: 'Download Center (CAD/PDF)', icon: Download },
           { id: 'payments', label: `Invoices & Payments (${invoices.length})`, icon: CreditCard },
-          { id: 'chat', label: 'Real-Time Company Chat', icon: MessageSquare },
           { id: 'meetings', label: 'Book Site Visit / Call', icon: Calendar },
           { id: 'profile', label: 'Security & Profile', icon: UserIcon }
         ].map(tab => {
@@ -959,38 +961,20 @@ export const ClientPortalPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 5: REAL-TIME CHAT */}
+      {/* TAB 5: DEDICATED DIRECT PM MESSENGER */}
       {activeTab === 'chat' && (
-        <div className="p-6 rounded-3xl bg-slate-900 border border-white/10 space-y-4 flex flex-col h-[500px]">
-          <h3 className="text-sm font-bold text-white border-b border-white/10 pb-3 flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-blue-400" />
-            <span>Direct Portal Chat with Fiza Hayat Team</span>
-          </h3>
-
-          <div className="flex-1 overflow-y-auto space-y-3 p-2 bg-slate-950 rounded-2xl border border-white/5">
-            {chatMessages.map(msg => (
-              <div key={msg.id} className={`flex flex-col ${msg.senderRole === 'Client' ? 'items-end' : 'items-start'}`}>
-                <div className="text-[10px] text-slate-400 mb-1">{msg.senderName} ({msg.senderRole}) • {msg.createdAt}</div>
-                <div className={`p-3 rounded-2xl max-w-md ${msg.senderRole === 'Client' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-200'}`}>
-                  {msg.text}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <form onSubmit={handleSendChatMessage} className="flex items-center space-x-2 pt-2">
-            <input
-              type="text"
-              value={newChatText}
-              onChange={e => setNewChatText(e.target.value)}
-              placeholder="Type your message to our architects..."
-              className="flex-1 px-4 py-3 rounded-2xl bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-blue-500"
-            />
-            <button type="submit" className="px-5 py-3 rounded-2xl bg-blue-600 text-white font-bold flex items-center gap-1">
-              <Send className="w-4 h-4" /> Send
-            </button>
-          </form>
-        </div>
+        <ClientDirectMessenger
+          currentUser={{
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName || name || user.email?.split('@')[0] || 'Client User'
+          }}
+          projects={projects}
+          currentSelectedProject={selectedProject}
+          fileRequests={fileRequests}
+          onOpenRequirementBrief={handleOpenBriefFromNotification}
+          onBookMeeting={() => setActiveTab('meetings')}
+        />
       )}
 
       {/* TAB 6: MEETINGS */}

@@ -229,6 +229,38 @@
         "timestamp": { "type": "number" }
       },
       "required": ["clientUid", "type", "title", "message", "managerName"]
+    },
+    "direct_pm_messages": {
+      "title": "Direct PM & Client Messages",
+      "description": "Direct, secure communications between clients and assigned project managers regarding drawings, specifications, milestones, and site queries",
+      "type": "object",
+      "properties": {
+        "channelId": { "type": "string" },
+        "senderUid": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderRole": { "type": "string" },
+        "senderPhoto": { "type": "string" },
+        "recipientUid": { "type": "string" },
+        "recipientName": { "type": "string" },
+        "recipientRole": { "type": "string" },
+        "projectId": { "type": "string" },
+        "projectTitle": { "type": "string" },
+        "fileRequestId": { "type": "string" },
+        "fileRequestTitle": { "type": "string" },
+        "priority": { "type": "string" },
+        "text": { "type": "string" },
+        "attachmentUrl": { "type": "string" },
+        "attachmentName": { "type": "string" },
+        "attachmentType": { "type": "string" },
+        "attachmentSizeBytes": { "type": "number" },
+        "audioNoteUrl": { "type": "string" },
+        "audioDurationSeconds": { "type": "number" },
+        "readBy": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "isEncrypted": { "type": "boolean" }
+      },
+      "required": ["senderUid", "text", "createdAt"]
     }
   }
 }

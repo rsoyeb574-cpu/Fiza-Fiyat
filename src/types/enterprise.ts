@@ -190,16 +190,56 @@ export interface CalendarEvent {
 
 export interface ChatMessage {
   id: string;
-  channelId: string; // 'client-chat' or 'internal-team'
+  channelId: string; // 'client-chat' or 'internal-team' or 'pm-direct'
   senderUid: string;
   senderName: string;
   senderRole: string;
   senderPhoto?: string;
+  recipientUid?: string;
+  recipientName?: string;
+  recipientRole?: string;
+  projectId?: string;
+  projectTitle?: string;
+  fileRequestId?: string;
+  fileRequestTitle?: string;
+  priority?: 'Normal' | 'Urgent' | 'Milestone Review' | 'Site Query';
   text: string;
   attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentType?: 'dwg' | 'rvt' | 'pdf' | 'jpg' | 'png' | 'zip' | 'doc';
+  attachmentSizeBytes?: number;
   audioNoteUrl?: string;
+  audioDurationSeconds?: number;
   readBy: string[];
   createdAt: string;
+  timestamp?: number;
+  isEncrypted?: boolean;
+}
+
+export interface DirectPMMember {
+  uid: string;
+  name: string;
+  role: string;
+  specialization: string;
+  email: string;
+  phone?: string;
+  avatar: string;
+  status: 'Online' | 'In Design Studio' | 'On Site Inspection' | 'In BIM Review' | 'Away';
+  assignedProjects: string[]; // project IDs
+  typicalResponseTime: string;
+  licenseNumber?: string;
+  bio?: string;
+}
+
+export interface PMDirectThread {
+  id: string;
+  pm: DirectPMMember;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  lastMessageSenderUid?: string;
+  unreadCount: number;
+  relatedProjectId?: string;
+  relatedProjectTitle?: string;
 }
 
 export interface CRMLead {
