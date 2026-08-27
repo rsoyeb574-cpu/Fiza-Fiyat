@@ -9,7 +9,10 @@ import {
   deleteDoc, 
   query, 
   where, 
-  orderBy 
+  orderBy,
+  onSnapshot,
+  Unsubscribe,
+  DocumentChange
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { 
@@ -432,3 +435,123 @@ export async function deleteClientFileRequest(reqId: string): Promise<void> {
     handleDbError(err, OperationType.DELETE, `file_requests/${reqId}`);
   }
 }
+
+/**
+ * Real-time listener using Firebase Firestore onSnapshot for client file requests / document briefs.
+ * Tracks status changes (e.g. 'Submitted' -> 'Under Review' -> 'Fulfilled' / 'Approved') and triggers callbacks.
+ */
+export function subscribeToClientFileRequests(
+  clientUid: string,
+  clientEmail: string | undefined,
+  onUpdate: (
+    requests: ClientFileRequest[],
+    changes: Array<{
+      type: 'added' | 'modified' | 'removed';
+      doc: ClientFileRequest;
+    }>
+  ) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  try {
+    const colRef = collection(db, 'file_requests');
+    let q = query(colRef);
+    if (clientUid) {
+      q = query(colRef, where('clientUid', '==', clientUid));
+    }
+
+    let initialLoadDone = false;
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const items: ClientFileRequest[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push({ id: docSnap.id, ...docSnap.data() } as ClientFileRequest);
+        });
+
+        // Determine modified or added changes
+        const changes: Array<{
+          type: 'added' | 'modified' | 'removed';
+          doc: ClientFileRequest;
+        }> = [];
+
+        if (initialLoadDone) {
+          snapshot.docChanges().forEach((change) => {
+            const data = { id: change.doc.id, ...change.doc.data() } as ClientFileRequest;
+            changes.push({
+              type: change.type,
+              doc: data
+            });
+          });
+        } else {
+          initialLoadDone = true;
+        }
+
+        // If firestore is empty, fall back to initial mock items for demo
+        if (items.length === 0) {
+          const fallback = initialFileRequests.filter(
+            r => r.clientUid === clientUid || (clientEmail && r.clientEmail === clientEmail) || r.clientEmail === 'aarav.sharma@example.com'
+          );
+          onUpdate(fallback.length > 0 ? fallback : initialFileRequests, []);
+        } else {
+          onUpdate(items, changes);
+        }
+      },
+      (error) => {
+        handleDbError(error, OperationType.LIST, 'file_requests/snapshot');
+        if (onError) onError(error);
+        // Fallback gracefully to seed items
+        const fallback = initialFileRequests.filter(
+          r => r.clientUid === clientUid || (clientEmail && r.clientEmail === clientEmail) || r.clientEmail === 'aarav.sharma@example.com'
+        );
+        onUpdate(fallback.length > 0 ? fallback : initialFileRequests, []);
+      }
+    );
+
+    return unsubscribe;
+  } catch (err) {
+    handleDbError(err, OperationType.LIST, 'file_requests/snapshot');
+    const fallback = initialFileRequests.filter(
+      r => r.clientUid === clientUid || (clientEmail && r.clientEmail === clientEmail) || r.clientEmail === 'aarav.sharma@example.com'
+    );
+    onUpdate(fallback.length > 0 ? fallback : initialFileRequests, []);
+    return () => {};
+  }
+}
+
+/**
+ * Real-time listener for Enterprise Projects to detect status & deliverable changes
+ */
+export function subscribeToEnterpriseProjects(
+  onUpdate: (projects: EnterpriseProject[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  try {
+    const colRef = collection(db, 'enterprise_projects');
+    const unsubscribe = onSnapshot(
+      colRef,
+      (snapshot) => {
+        const items: EnterpriseProject[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push({ id: docSnap.id, ...docSnap.data() } as EnterpriseProject);
+        });
+        if (items.length === 0) {
+          onUpdate(initialEnterpriseProjects);
+        } else {
+          onUpdate(items);
+        }
+      },
+      (error) => {
+        handleDbError(error, OperationType.LIST, 'enterprise_projects/snapshot');
+        if (onError) onError(error);
+        onUpdate(initialEnterpriseProjects);
+      }
+    );
+    return unsubscribe;
+  } catch (err) {
+    handleDbError(err, OperationType.LIST, 'enterprise_projects/snapshot');
+    onUpdate(initialEnterpriseProjects);
+    return () => {};
+  }
+}
+
