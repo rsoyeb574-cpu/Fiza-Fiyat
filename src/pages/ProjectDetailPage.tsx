@@ -17,10 +17,14 @@ import {
   ShieldCheck,
   Wrench,
   Layers,
-  CheckCircle2
+  CheckCircle2,
+  Move3d,
+  Image as ImageIcon,
+  Sliders
 } from 'lucide-react';
 import { Project } from '../types';
 import { BeforeAfterSlider } from '../components/common/BeforeAfterSlider';
+import { ArchitecturalModelViewer } from '../components/common/ArchitecturalModelViewer';
 import { getProjectSpecs } from '../utils/projectComparison';
 
 interface ProjectDetailPageProps {
@@ -46,6 +50,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
   onToggleCompare,
   isComparing = () => false
 }) => {
+  const [mediaViewMode, setMediaViewMode] = useState<'3d' | 'gallery' | 'video' | 'beforeAfter'>('3d');
   const [activeImage, setActiveImage] = useState<string>(project.coverImage || project.images?.[0]);
   const specs = getProjectSpecs(project);
   const comparing = isComparing(project.id);
@@ -134,63 +139,139 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
         </div>
       </div>
 
-      {/* Main Image Gallery Showcase */}
-      <div className="space-y-4">
-        <div className="w-full h-[400px] sm:h-[550px] rounded-3xl overflow-hidden border border-white/10 relative">
-          <img
-            src={activeImage}
-            alt={project.title}
-            className="w-full h-full object-cover transition-all duration-300"
-          />
-        </div>
+      {/* Media Mode View Switcher */}
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-white/10">
+          <div className="flex items-center space-x-2 p-1 rounded-2xl bg-neutral-900 border border-white/10 text-xs">
+            <button
+              onClick={() => setMediaViewMode('3d')}
+              className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all ${
+                mediaViewMode === '3d'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Move3d className="w-4 h-4 text-blue-300" />
+              <span>Interactive 3D BIM Model</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold border border-emerald-500/30 animate-pulse">
+                Live 3D
+              </span>
+            </button>
 
-        {/* Thumbnail Strip */}
-        {project.images && project.images.length > 1 && (
-          <div className="flex items-center space-x-3 overflow-x-auto pb-2">
-            {project.images.map((img, i) => (
+            <button
+              onClick={() => setMediaViewMode('gallery')}
+              className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all ${
+                mediaViewMode === 'gallery'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <ImageIcon className="w-4 h-4" />
+              <span>Photo Showcase ({project.images?.length || 1})</span>
+            </button>
+
+            {project.videoUrl && (
               <button
-                key={i}
-                onClick={() => setActiveImage(img)}
-                className={`w-24 h-20 rounded-xl overflow-hidden border-2 shrink-0 cursor-pointer transition-all ${
-                  activeImage === img ? 'border-blue-500 scale-105' : 'border-white/10 opacity-60 hover:opacity-100'
+                onClick={() => setMediaViewMode('video')}
+                className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all ${
+                  mediaViewMode === 'video'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                    : 'text-neutral-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <img src={img} alt={`Thumb ${i}`} className="w-full h-full object-cover" />
+                <Video className="w-4 h-4" />
+                <span>Motion Reel</span>
               </button>
-            ))}
+            )}
+
+            {project.beforeAfter && (
+              <button
+                onClick={() => setMediaViewMode('beforeAfter')}
+                className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all ${
+                  mediaViewMode === 'beforeAfter'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                    : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Sliders className="w-4 h-4" />
+                <span>Before & After</span>
+              </button>
+            )}
+          </div>
+
+          <span className="text-xs text-neutral-400 hidden sm:inline">
+            Use mouse/touch to orbit, zoom, slice slabs, and inspect architectural rebar specifications.
+          </span>
+        </div>
+
+        {/* 1. INTERACTIVE 3D BIM MODEL VIEWER */}
+        {mediaViewMode === '3d' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <ArchitecturalModelViewer project={project} />
+          </div>
+        )}
+
+        {/* 2. PHOTO GALLERY VIEW */}
+        {mediaViewMode === 'gallery' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <div className="w-full h-[400px] sm:h-[550px] rounded-3xl overflow-hidden border border-white/10 relative shadow-2xl">
+              <img
+                src={activeImage}
+                alt={project.title}
+                className="w-full h-full object-cover transition-all duration-300"
+              />
+            </div>
+
+            {/* Thumbnail Strip */}
+            {project.images && project.images.length > 1 && (
+              <div className="flex items-center space-x-3 overflow-x-auto pb-2">
+                {project.images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImage(img)}
+                    className={`w-24 h-20 rounded-xl overflow-hidden border-2 shrink-0 cursor-pointer transition-all ${
+                      activeImage === img ? 'border-blue-500 scale-105' : 'border-white/10 opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={img} alt={`Thumb ${i}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 3. VIDEO WALKTHROUGH VIEW */}
+        {mediaViewMode === 'video' && project.videoUrl && (
+          <div className="p-6 rounded-3xl bg-neutral-900/80 border border-white/10 space-y-4 animate-in fade-in duration-300">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Video className="w-5 h-5 text-blue-400" />
+              3D Walkthrough & Motion Reel
+            </h3>
+            <div className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+              <video
+                src={project.videoUrl}
+                controls
+                autoPlay
+                className="w-full max-h-[500px] object-cover"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 4. BEFORE & AFTER TRANSFORMATION VIEW */}
+        {mediaViewMode === 'beforeAfter' && project.beforeAfter && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <h3 className="text-lg font-bold text-white">Before vs After Transformation</h3>
+            <BeforeAfterSlider
+              beforeImage={project.beforeAfter.before}
+              afterImage={project.beforeAfter.after}
+              labelBefore={project.beforeAfter.labelBefore}
+              labelAfter={project.beforeAfter.labelAfter}
+            />
           </div>
         )}
       </div>
-
-      {/* Video Player Section */}
-      {project.videoUrl && (
-        <div className="p-6 rounded-3xl bg-neutral-900/80 border border-white/10 space-y-4">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Video className="w-5 h-5 text-blue-400" />
-            3D Walkthrough & Motion Reel
-          </h3>
-          <div className="rounded-2xl overflow-hidden border border-white/10">
-            <video
-              src={project.videoUrl}
-              controls
-              className="w-full max-h-[500px] object-cover"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Before / After Slider (If Available) */}
-      {project.beforeAfter && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-bold text-white">Before vs After Transformation</h3>
-          <BeforeAfterSlider
-            beforeImage={project.beforeAfter.before}
-            afterImage={project.beforeAfter.after}
-            labelBefore={project.beforeAfter.labelBefore}
-            labelAfter={project.beforeAfter.labelAfter}
-          />
-        </div>
-      )}
 
       {/* Project Writeup & Software Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
