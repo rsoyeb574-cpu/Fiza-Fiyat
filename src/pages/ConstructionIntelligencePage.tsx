@@ -68,6 +68,8 @@ import { AICostAdvisor } from '../components/ai/AICostAdvisor';
 import { AIProjectAdvisor } from '../components/ai/AIProjectAdvisor';
 import { AIContentAssistant } from '../components/ai/AIContentAssistant';
 import { AIImageOrganizer } from '../components/ai/AIImageOrganizer';
+import { AIStructuralDamageInspector } from '../components/structural/AIStructuralDamageInspector';
+import { ShieldAlert } from 'lucide-react';
 
 export const ConstructionIntelligencePage: React.FC = () => {
   // Navigation active tab
@@ -156,6 +158,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
 
   // Nav Items definition
   const mainNavItems = [
+    { id: 'ai-structural-inspector', label: 'AI Structural Inspector', icon: ShieldAlert, desc: 'Damage Diagnosis & Visual Annotations' },
     { id: 'calculator', label: 'Construction Calculator', icon: Calculator, desc: 'Smart Plot Plan & Estimate Generator' },
     { id: 'ai-architect', label: 'AI Architect Assistant', icon: Compass, desc: 'Conceptual Spatial & Floor Plan Guidance' },
     { id: 'ai-interior', label: 'AI Interior Designer', icon: Sofa, desc: 'Mood Boards, Color Schemes & Furniture' },
@@ -229,6 +232,14 @@ export const ConstructionIntelligencePage: React.FC = () => {
 
             {/* Quick Action Badges */}
             <div className="flex flex-wrap items-center gap-3">
+              <button 
+                onClick={() => setActiveTab('ai-structural-inspector')}
+                className="px-4 py-3 rounded-xl font-medium text-sm text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-red-500/10"
+              >
+                <ShieldAlert className="w-4 h-4 text-red-400" />
+                AI Damage Inspector
+              </button>
+
               <button 
                 onClick={() => setIsSearchOpen(true)}
                 className="px-4 py-3 rounded-xl font-medium text-sm text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 transition-all flex items-center gap-2 cursor-pointer"
@@ -365,6 +376,13 @@ export const ConstructionIntelligencePage: React.FC = () => {
 
         {/* MAIN TAB CONTENT RENDERER */}
         <AnimatePresence mode="wait">
+
+          {/* AI STRUCTURAL DAMAGE INSPECTOR */}
+          {activeTab === 'ai-structural-inspector' && (
+            <motion.div key="ai-structural-inspector" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <AIStructuralDamageInspector />
+            </motion.div>
+          )}
 
           {/* AI ARCHITECT ASSISTANT */}
           {activeTab === 'ai-architect' && (

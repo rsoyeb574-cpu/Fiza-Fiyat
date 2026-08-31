@@ -18,8 +18,10 @@ import {
   X, 
   Info,
   ChevronRight,
-  Zap
+  Zap,
+  ShieldAlert
 } from 'lucide-react';
+import { AIStructuralDamageInspector } from '../structural/AIStructuralDamageInspector';
 import { useAuth } from '../../context/AuthContext';
 import { usePlan } from '../../context/PlanContext';
 import { Project } from '../../types';
@@ -73,7 +75,7 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
   const { user } = useAuth();
   const { plan, usage, refreshPlan } = usePlan();
 
-  const [activeTab, setActiveTab] = useState<'image' | 'video'>('image');
+  const [activeTab, setActiveTab] = useState<'image' | 'video' | 'damage_inspector'>('image');
 
   // Shared Form State
   const [selectedContext, setSelectedContext] = useState<string>(PRESET_CONTEXTS[0]);
@@ -441,6 +443,21 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
             <span>AI VIDEO GENERATOR (Veo 3.1)</span>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/30 border border-white/10">
               {videoRemaining} LEFT
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('damage_inspector')}
+            className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all flex items-center space-x-2.5 cursor-pointer ${
+              activeTab === 'damage_inspector'
+                ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-lg shadow-red-600/30 border border-red-500/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <ShieldAlert className="w-4 h-4 text-red-400" />
+            <span>AI STRUCTURAL DAMAGE INSPECTOR</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
+              CIVIL AI
             </span>
           </button>
         </div>
@@ -973,6 +990,13 @@ export const AIStudioPage: React.FC<AIStudioPageProps> = ({ projects, onNavigate
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* TAB 3: STRUCTURAL DAMAGE INSPECTOR */}
+        {activeTab === 'damage_inspector' && (
+          <div className="space-y-6">
+            <AIStructuralDamageInspector />
           </div>
         )}
 

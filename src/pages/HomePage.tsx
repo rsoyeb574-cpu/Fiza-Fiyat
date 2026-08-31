@@ -22,6 +22,7 @@ import {
 import { Project, Service, Testimonial, WebsiteSettings, Category } from '../types';
 import { BeforeAfterSlider } from '../components/common/BeforeAfterSlider';
 import { TestimonialCarousel } from '../components/common/TestimonialCarousel';
+import { QuickEstimateSlider } from '../components/common/QuickEstimateSlider';
 import { CONTACT_CONFIG } from '../config/contact';
 import { WhatsAppButton } from '../components/common/WhatsAppButton';
 import { getProjectSpecs } from '../utils/projectComparison';
@@ -240,6 +241,12 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
         </div>
       </section>
+
+      {/* INTERACTIVE QUICK ESTIMATE SLIDER */}
+      <QuickEstimateSlider 
+        onOpenCalculator={onOpenCalculator}
+        onInquireProject={(details) => setActivePage('contact')}
+      />
 
       {/* FEATURED SERVICES */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">

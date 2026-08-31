@@ -16,10 +16,13 @@ import {
   Maximize2,
   FileSpreadsheet,
   Share2,
-  Check
+  Check,
+  FileDown,
+  Printer
 } from 'lucide-react';
 import { Project } from '../../types';
 import { getProjectSpecs, calculateComparisonDelta } from '../../utils/projectComparison';
+import { downloadProposalReport } from '../../utils/proposalPdfGenerator';
 
 interface ProjectComparisonModalProps {
   isOpen: boolean;
@@ -47,6 +50,7 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
   onInquireProject
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   if (!isOpen || !project1 || !project2) return null;
 
@@ -66,6 +70,22 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
       navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleDownloadProposalPdf = () => {
+    setIsGeneratingPdf(true);
+    try {
+      downloadProposalReport({
+        project1,
+        project2,
+        specs1,
+        specs2
+      });
+    } catch (err) {
+      console.error('Failed to generate PDF proposal:', err);
+    } finally {
+      setTimeout(() => setIsGeneratingPdf(false), 1200);
     }
   };
 
@@ -95,6 +115,16 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button
+              onClick={handleDownloadProposalPdf}
+              disabled={isGeneratingPdf}
+              title="Download comparison proposal report as PDF"
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs font-bold text-white flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer border border-emerald-400/30"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download Proposal as PDF'}</span>
+            </button>
+
             <button
               onClick={handleSwap}
               title="Swap Column 1 and Column 2"
@@ -552,6 +582,14 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
             Need a tailored quotation combining features from both projects?
           </span>
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={handleDownloadProposalPdf}
+              disabled={isGeneratingPdf}
+              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 hover:text-emerald-200 font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <FileDown className="w-4 h-4 text-emerald-400" />
+              <span>{isGeneratingPdf ? 'Generating...' : 'Download Proposal PDF'}</span>
+            </button>
             <button
               onClick={onClose}
               className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold transition-all cursor-pointer"

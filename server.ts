@@ -15,10 +15,12 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json({
+    limit: '50mb',
     verify: (req: any, res, buf) => {
       req.rawBody = buf.toString();
     }
   }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // API Routes
   app.get('/api/health', (req, res) => {
@@ -235,6 +237,104 @@ async function startServer() {
       return res.status(500).json({
         status: 'error',
         error: sanitizeErrorMessage(error) || 'Failed to generate construction AI response'
+      });
+    }
+  });
+
+  // AI Structural Damage Inspector Endpoint
+  app.post('/api/structural-inspection', async (req, res) => {
+    try {
+      if (!isGeminiConfigured()) {
+        return res.status(500).json({
+          success: false,
+          status: 'error',
+          error: 'GEMINI_API_KEY is not configured on the server.'
+        });
+      }
+
+      const { images, structureType, isVideo, videoTimestamps, notes, userId, userEmail } = req.body || {};
+
+      if (!images || !Array.isArray(images) || images.length === 0) {
+        return res.status(400).json({
+          success: false,
+          status: 'error',
+          error: 'At least one media file (image or video frame) is required for analysis.'
+        });
+      }
+
+      // Usage tracking / Plan check
+      const usageCheck = await verifyAndIncrementServerUsage(userId, userEmail, 'concept');
+      if (!usageCheck.allowed) {
+        return res.status(429).json(usageCheck.errorResponse);
+      }
+
+      const { analyzeStructuralDamage } = await import('./src/server/structuralInspectionService');
+      const inspectionResult = await analyzeStructuralDamage({
+        images,
+        structureType: structureType || 'auto_detect',
+        isVideo: Boolean(isVideo),
+        videoTimestamps,
+        notes
+      });
+
+      return res.json({
+        success: true,
+        status: 'success',
+        ...inspectionResult,
+        usage: usageCheck.profile.usage
+      });
+    } catch (error: any) {
+      console.error('API /api/structural-inspection error:', error);
+      const isQuota = error?.status === 429 || `${error?.message || ''}`.toLowerCase().includes('quota') || `${error?.message || ''}`.toLowerCase().includes('rate_limit');
+      return res.status(isQuota ? 429 : 500).json({
+        success: false,
+        status: 'error',
+        error: isQuota 
+          ? 'AI inspection limit temporarily reached. Please retry in a few seconds.'
+          : (sanitizeErrorMessage(error) || 'Failed to complete structural damage inspection.')
+      });
+    }
+  });
+
+  // AI Structural Damage Q&A Endpoint
+  app.post('/api/structural-inspection/qa', async (req, res) => {
+    try {
+      if (!isGeminiConfigured()) {
+        return res.status(500).json({
+          success: false,
+          status: 'error',
+          error: 'GEMINI_API_KEY is not configured on the server.'
+        });
+      }
+
+      const { question, inspectionContext, conversationHistory, userId, userEmail } = req.body || {};
+
+      if (!question || typeof question !== 'string' || !question.trim()) {
+        return res.status(400).json({
+          success: false,
+          status: 'error',
+          error: 'Question is required.'
+        });
+      }
+
+      const { handleStructuralQA } = await import('./src/server/structuralInspectionService');
+      const answer = await handleStructuralQA({
+        question: question.trim(),
+        inspectionContext: inspectionContext || {},
+        conversationHistory
+      });
+
+      return res.json({
+        success: true,
+        status: 'success',
+        answer
+      });
+    } catch (error: any) {
+      console.error('API /api/structural-inspection/qa error:', error);
+      return res.status(500).json({
+        success: false,
+        status: 'error',
+        error: sanitizeErrorMessage(error) || 'Failed to generate answer for damage inquiry.'
       });
     }
   });

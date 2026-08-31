@@ -34,6 +34,7 @@ import { ConstructionIntelligencePage } from './pages/ConstructionIntelligencePa
 import { ClientPortalPage } from './pages/ClientPortalPage';
 import { PricingPage } from './pages/PricingPage';
 import { AIStudioPage } from './components/ai/AIStudioPage';
+import { StructuralInspectorPage } from './pages/StructuralInspectorPage';
 
 import { MarketplacePage } from './pages/MarketplacePage';
 import { SellerDashboardPage } from './pages/SellerDashboardPage';
