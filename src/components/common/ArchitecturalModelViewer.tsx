@@ -10,6 +10,9 @@ import {
   Camera, 
   Sun, 
   Moon, 
+  Sunrise,
+  Sunset,
+  Lightbulb,
   Compass, 
   Sparkles, 
   Grid, 
@@ -25,6 +28,8 @@ import {
   Pause, 
   Move3d,
   ChevronRight,
+  ChevronDown,
+  Check,
   Sliders,
   X,
   Share2
@@ -33,8 +38,73 @@ import { Project } from '../../types';
 
 export type ModelAssetType = 'exterior' | 'structural' | 'floorplan' | 'canopy' | 'site';
 export type RenderMode = 'solid' | 'wireframe' | 'xray' | 'blueprint';
-export type TimeOfDay = 'morning' | 'noon' | 'sunset' | 'night';
+export type LightingEnvironment = 'daylight' | 'sunset' | 'studio' | 'night' | 'morning';
+export type TimeOfDay = LightingEnvironment;
 export type CameraPreset = 'perspective' | 'isometric' | 'front' | 'side' | 'top';
+
+export interface LightingEnvironmentOption {
+  id: LightingEnvironment;
+  label: string;
+  shortLabel: string;
+  tagline: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  activeBg: string;
+  badge: string;
+}
+
+export const LIGHTING_ENVIRONMENTS: LightingEnvironmentOption[] = [
+  {
+    id: 'daylight',
+    label: 'Daylight',
+    shortLabel: 'Daylight',
+    tagline: 'High solar direct illumination & crisp architectural shadows',
+    icon: Sun,
+    color: 'text-amber-400',
+    activeBg: 'bg-amber-500/20 border-amber-500/40 text-amber-300',
+    badge: 'Solar 5500K'
+  },
+  {
+    id: 'sunset',
+    label: 'Sunset',
+    shortLabel: 'Sunset',
+    tagline: 'Warm golden hour dusk with elongated atmospheric shadows',
+    icon: Sunset,
+    color: 'text-orange-400',
+    activeBg: 'bg-orange-500/20 border-orange-500/40 text-orange-300',
+    badge: 'Golden 3200K'
+  },
+  {
+    id: 'studio',
+    label: 'Studio Lighting',
+    shortLabel: 'Studio',
+    tagline: 'Balanced 3-point soft diffuse lighting for BIM structure inspection',
+    icon: Lightbulb,
+    color: 'text-cyan-400',
+    activeBg: 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300',
+    badge: 'Neutral 4500K'
+  },
+  {
+    id: 'night',
+    label: 'Night Architectural',
+    shortLabel: 'Night',
+    tagline: 'Nocturnal ambient atmosphere with dramatic facade uplighting',
+    icon: Moon,
+    color: 'text-blue-400',
+    activeBg: 'bg-blue-500/20 border-blue-500/40 text-blue-300',
+    badge: 'Nocturnal'
+  },
+  {
+    id: 'morning',
+    label: 'Morning Dawn',
+    shortLabel: 'Morning',
+    tagline: 'Crisp early morning sunrise with soft warm ambient gradients',
+    icon: Sunrise,
+    color: 'text-amber-300',
+    activeBg: 'bg-amber-500/20 border-amber-400/40 text-amber-200',
+    badge: 'Sunrise'
+  }
+];
 
 interface Hotspot {
   id: string;
@@ -57,11 +127,13 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const lightingMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Viewer State
   const [selectedAsset, setSelectedAsset] = useState<ModelAssetType>('exterior');
   const [renderMode, setRenderMode] = useState<RenderMode>('solid');
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('noon');
+  const [timeOfDay, setTimeOfDay] = useState<LightingEnvironment>('daylight');
+  const [showLightingMenu, setShowLightingMenu] = useState<boolean>(false);
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('perspective');
   const [isAutoRotating, setIsAutoRotating] = useState<boolean>(true);
   const [explodeValue, setExplodeValue] = useState<number>(0); // 0 to 1
@@ -77,6 +149,8 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
   const [showSnapshotMenu, setShowSnapshotMenu] = useState<boolean>(false);
   const [snapshotResolution, setSnapshotResolution] = useState<'viewport' | '2k' | '4k'>('2k');
   const [includeTitleBlock, setIncludeTitleBlock] = useState<boolean>(true);
+  const [isControlsVisible, setIsControlsVisible] = useState<boolean>(true);
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 3D Camera & Transform State (Angles in radians, zoom scale, offset pan)
   const cameraRef = useRef<{
@@ -313,9 +387,9 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
       };
     };
 
-    // Lighting color palette based on Time of Day
-    const getLightingPalette = (time: TimeOfDay) => {
-      switch (time) {
+    // Lighting color palette based on Lighting Environment Preset
+    const getLightingPalette = (env: LightingEnvironment | string) => {
+      switch (env) {
         case 'morning':
           return {
             bgTop: '#0b1329',
@@ -326,6 +400,7 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
             gridColor: 'rgba(255, 200, 150, 0.08)',
             shadowAlpha: 0.45
           };
+        case 'daylight':
         case 'noon':
           return {
             bgTop: '#090d16',
@@ -346,7 +421,18 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
             gridColor: 'rgba(249, 115, 22, 0.1)',
             shadowAlpha: 0.55
           };
+        case 'studio':
+          return {
+            bgTop: '#131b2a',
+            bgBottom: '#0a0e17',
+            ambient: '#f8fafc',
+            lightDir: [0.55, 0.8, 0.6],
+            sunIntensity: 0.95,
+            gridColor: 'rgba(148, 163, 184, 0.14)',
+            shadowAlpha: 0.38
+          };
         case 'night':
+        default:
           return {
             bgTop: '#030712',
             bgBottom: '#0a0f1d',
@@ -862,6 +948,85 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
     }
   };
 
+  // Close dropdown menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (lightingMenuRef.current && !lightingMenuRef.current.contains(event.target as Node)) {
+        setShowLightingMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Auto-hide UI controls after 3 seconds of inactivity
+  const resetInactivityTimer = useCallback(() => {
+    setIsControlsVisible(true);
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    inactivityTimerRef.current = setTimeout(() => {
+      setIsControlsVisible(false);
+    }, 3000);
+  }, []);
+
+  // Set up mouse/pointer activity listeners on container to reveal controls & reset timer
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleActivity = () => {
+      resetInactivityTimer();
+    };
+
+    container.addEventListener('mousemove', handleActivity);
+    container.addEventListener('pointermove', handleActivity);
+    container.addEventListener('pointerdown', handleActivity);
+    container.addEventListener('touchstart', handleActivity, { passive: true });
+    container.addEventListener('touchmove', handleActivity, { passive: true });
+    container.addEventListener('wheel', handleActivity, { passive: true });
+
+    // Initial 3-second timer on mount
+    resetInactivityTimer();
+
+    return () => {
+      container.removeEventListener('mousemove', handleActivity);
+      container.removeEventListener('pointermove', handleActivity);
+      container.removeEventListener('pointerdown', handleActivity);
+      container.removeEventListener('touchstart', handleActivity);
+      container.removeEventListener('touchmove', handleActivity);
+      container.removeEventListener('wheel', handleActivity);
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+    };
+  }, [resetInactivityTimer]);
+
+  // Determine whether UI controls should be rendered as visible
+  const isUIVisible = useMemo(() => {
+    return (
+      isControlsVisible ||
+      showLightingMenu ||
+      showSnapshotMenu ||
+      showInfoPanel ||
+      selectedHotspot !== null ||
+      showControlsGuide
+    );
+  }, [isControlsVisible, showLightingMenu, showSnapshotMenu, showInfoPanel, selectedHotspot, showControlsGuide]);
+
+  // Quick Cycle through Lighting Environments
+  const cycleLightingEnvironment = useCallback(() => {
+    const list: LightingEnvironment[] = ['daylight', 'sunset', 'studio', 'night', 'morning'];
+    const currIdx = list.indexOf(timeOfDay);
+    const nextIdx = (currIdx + 1) % list.length;
+    setTimeOfDay(list[nextIdx]);
+  }, [timeOfDay]);
+
+  // Current Active Lighting Environment Config
+  const currentLightingOpt = useMemo(() => {
+    return LIGHTING_ENVIRONMENTS.find(l => l.id === timeOfDay) || LIGHTING_ENVIRONMENTS[0];
+  }, [timeOfDay]);
+
   // Synthesize acoustic camera shutter feedback
   const playShutterSound = () => {
     try {
@@ -922,15 +1087,19 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
     };
 
     // Lighting config
-    const getLighting = (time: TimeOfDay) => {
-      switch (time) {
+    const getLighting = (env: LightingEnvironment | string) => {
+      switch (env) {
         case 'morning':
           return { bgTop: '#0b1329', bgBottom: '#1e1b38', sunIntensity: 0.9, lightDir: [0.8, 0.5, 0.6], gridColor: 'rgba(255, 200, 150, 0.08)' };
+        case 'daylight':
         case 'noon':
           return { bgTop: '#090d16', bgBottom: '#111827', sunIntensity: 1.0, lightDir: [0.3, 0.9, 0.4], gridColor: 'rgba(59, 130, 246, 0.12)' };
         case 'sunset':
           return { bgTop: '#180e29', bgBottom: '#29141e', sunIntensity: 0.85, lightDir: [-0.9, 0.3, 0.5], gridColor: 'rgba(249, 115, 22, 0.1)' };
+        case 'studio':
+          return { bgTop: '#131b2a', bgBottom: '#0a0e17', sunIntensity: 0.95, lightDir: [0.55, 0.8, 0.6], gridColor: 'rgba(148, 163, 184, 0.14)' };
         case 'night':
+        default:
           return { bgTop: '#030712', bgBottom: '#0a0f1d', sunIntensity: 0.6, lightDir: [0.2, 0.4, 0.9], gridColor: 'rgba(56, 189, 248, 0.06)' };
       }
     };
@@ -1265,6 +1434,12 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
   return (
     <div 
       ref={containerRef}
+      onMouseMove={resetInactivityTimer}
+      onPointerMove={resetInactivityTimer}
+      onPointerDown={resetInactivityTimer}
+      onTouchStart={resetInactivityTimer}
+      onTouchMove={resetInactivityTimer}
+      onWheel={resetInactivityTimer}
       className={`rounded-3xl bg-neutral-950 border border-white/10 overflow-hidden shadow-2xl flex flex-col relative transition-all duration-300 ${
         isFullscreen ? 'fixed inset-0 z-50 rounded-none w-screen h-screen' : className
       }`}
@@ -1329,8 +1504,12 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
         </div>
       </div>
 
-      {/* 2. SUB-TOOLBAR: RENDERING MODES, LIGHTING & CAMERA CONTROLS */}
-      <div className="px-4 py-2 bg-neutral-900/60 border-b border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs relative z-20">
+      {/* 2. SUB-TOOLBAR: RENDERING MODES, LIGHTING & CAMERA CONTROLS (With Auto-Hide) */}
+      <div 
+        className={`px-4 py-2 bg-neutral-900/80 backdrop-blur-md border-b border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs relative z-20 transition-all duration-500 ease-in-out ${
+          isUIVisible ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-1 pointer-events-none'
+        }`}
+      >
         
         {/* Shading Style Selectors */}
         <div className="flex items-center space-x-2">
@@ -1357,32 +1536,76 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
           </div>
         </div>
 
-        {/* Camera Views & Time of Day */}
+        {/* Camera Views & Lighting Environment */}
         <div className="flex items-center space-x-2">
-          {/* Time of Day */}
-          <div className="flex items-center space-x-1 p-0.5 rounded-xl bg-neutral-950 border border-white/10">
-            {[
-              { id: 'morning', icon: Sun, title: 'Morning Rays' },
-              { id: 'noon', icon: Sun, title: 'Midday Solar' },
-              { id: 'sunset', icon: Sun, title: 'Sunset Dusk' },
-              { id: 'night', icon: Moon, title: 'Night Architectural Uplighting' }
-            ].map(t => {
-              const Icon = t.icon;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setTimeOfDay(t.id as TimeOfDay)}
-                  className={`p-1.5 rounded-lg text-xs cursor-pointer transition-all ${
-                    timeOfDay === t.id
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                  title={t.title}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                </button>
-              );
-            })}
+          {/* Lighting Environment Dropdown Menu */}
+          <div className="relative" ref={lightingMenuRef}>
+            <div className="flex items-center space-x-1 p-0.5 rounded-xl bg-neutral-950 border border-white/10">
+              <button
+                onClick={() => setShowLightingMenu(!showLightingMenu)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
+                  showLightingMenu 
+                    ? 'bg-blue-600/30 border border-blue-500/40 text-white shadow-sm' 
+                    : `${currentLightingOpt.activeBg}`
+                }`}
+                title="Select Lighting Environment (Daylight, Sunset, Studio Lighting, Night)"
+              >
+                {React.createElement(currentLightingOpt.icon, { className: `w-3.5 h-3.5 ${currentLightingOpt.color}` })}
+                <span className="text-[11px] font-bold">{currentLightingOpt.label}</span>
+                <ChevronDown className={`w-3 h-3 text-neutral-400 transition-transform duration-200 ${showLightingMenu ? 'rotate-180 text-white' : ''}`} />
+              </button>
+
+              {/* Quick cycle button */}
+              <button
+                onClick={cycleLightingEnvironment}
+                className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 cursor-pointer transition-all"
+                title="Cycle to next lighting environment (Daylight → Sunset → Studio → Night → Morning)"
+              >
+                <RefreshCw className="w-3 h-3" />
+              </button>
+            </div>
+
+            {/* FLOATING LIGHTING DROPDOWN MENU */}
+            {showLightingMenu && (
+              <div className="absolute top-full left-0 mt-2 z-50 w-72 p-2 rounded-2xl bg-neutral-950/95 backdrop-blur-xl border border-white/15 shadow-2xl space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 flex items-center justify-between border-b border-white/5">
+                  <span>Lighting Environments</span>
+                  <span className="text-blue-400 font-mono text-[9px]">Shader Atmosphere</span>
+                </div>
+                {LIGHTING_ENVIRONMENTS.map(env => {
+                  const EnvIcon = env.icon;
+                  const isActive = timeOfDay === env.id;
+                  return (
+                    <button
+                      key={env.id}
+                      onClick={() => {
+                        setTimeOfDay(env.id);
+                        setShowLightingMenu(false);
+                      }}
+                      className={`w-full p-2 rounded-xl text-left flex items-start gap-2.5 cursor-pointer transition-all ${
+                        isActive
+                          ? 'bg-blue-600/20 border border-blue-500/40 text-white shadow-sm'
+                          : 'hover:bg-neutral-900/80 text-neutral-300 hover:text-white border border-transparent'
+                      }`}
+                    >
+                      <div className={`p-1.5 rounded-lg shrink-0 ${isActive ? 'bg-blue-600 text-white' : 'bg-neutral-900 text-neutral-400'}`}>
+                        <EnvIcon className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-xs">{env.label}</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-neutral-900 text-neutral-400 border border-white/5 shrink-0">
+                            {env.badge}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-neutral-400 leading-tight mt-0.5">{env.tagline}</p>
+                      </div>
+                      {isActive && <Check className="w-3.5 h-3.5 text-blue-400 mt-1 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Camera Angles */}
@@ -1407,29 +1630,47 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
             ))}
           </div>
 
-          {/* Auto Rotate Turntable Toggle */}
-          <button
-            onClick={() => setIsAutoRotating(!isAutoRotating)}
-            className={`p-1.5 rounded-xl border flex items-center gap-1 cursor-pointer transition-all ${
-              isAutoRotating
-                ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-300'
-                : 'bg-neutral-950 border-white/10 text-neutral-400 hover:text-white'
-            }`}
-            title={isAutoRotating ? 'Pause 360° Turntable' : 'Play 360° Turntable'}
-          >
-            {isAutoRotating ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            <span className="text-[10px] font-bold hidden sm:inline">360° Spin</span>
-          </button>
+          {/* Auto 360° Slow Rotation Toggle Switch */}
+          <div className="flex items-center gap-1.5 p-0.5 rounded-xl bg-neutral-950 border border-white/10">
+            <button
+              role="switch"
+              aria-checked={isAutoRotating}
+              onClick={() => setIsAutoRotating(!isAutoRotating)}
+              className={`px-2 py-1 rounded-lg flex items-center gap-2 cursor-pointer transition-all duration-200 ${
+                isAutoRotating
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+              title={isAutoRotating ? 'Disable automatic slow 360° rotation animation' : 'Enable automatic slow 360° rotation animation'}
+            >
+              <div className="flex items-center gap-1.5">
+                <RotateCw 
+                  className={`w-3.5 h-3.5 transition-transform duration-700 ${isAutoRotating ? 'text-emerald-400 animate-spin' : 'text-neutral-400'}`} 
+                  style={{ animationDuration: '6s' }} 
+                />
+                <span className="text-[11px] font-bold select-none hidden sm:inline">360° Spin</span>
+              </div>
 
-          {/* Screenshot / Snapshot Action Button */}
+              {/* Toggle Switch Track & Sliding Knob */}
+              <div 
+                className={`w-7 h-3.5 rounded-full p-0.5 transition-colors duration-200 flex items-center ${
+                  isAutoRotating ? 'bg-emerald-500 justify-end' : 'bg-neutral-800 justify-start'
+                }`}
+              >
+                <div className="w-2.5 h-2.5 rounded-full bg-white shadow-sm transform transition-transform duration-200" />
+              </div>
+            </button>
+          </div>
+
+          {/* Take Snapshot Action Button */}
           <div className="relative">
             <button
               onClick={() => handleCaptureSnapshot(snapshotResolution, includeTitleBlock)}
-              className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] flex items-center gap-1.5 shadow-md shadow-blue-600/30 cursor-pointer transition-all active:scale-95"
-              title="Capture & Download High-Resolution Snapshot of Current View"
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-[11px] flex items-center gap-1.5 shadow-md shadow-blue-600/30 cursor-pointer transition-all active:scale-95"
+              title="Take Snapshot (Download High-Resolution PNG image of Current View)"
             >
               <Camera className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Capture Snapshot</span>
+              <span>Take Snapshot</span>
             </button>
           </div>
 
@@ -1444,7 +1685,7 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
             title="Snapshot Export Options (2K / 4K / Title Block)"
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold hidden lg:inline">HD/4K Export</span>
+            <span className="text-[10px] font-bold hidden lg:inline">HD/4K Settings</span>
           </button>
 
           {/* Reset Camera */}
@@ -1476,7 +1717,11 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
         />
 
         {/* FLOATING OVERLAY: EXPLODED AXONOMETRIC SLIDER */}
-        <div className="absolute top-4 left-4 z-20 p-3 rounded-2xl bg-neutral-950/80 backdrop-blur-md border border-white/10 shadow-xl space-y-1.5 max-w-[200px]">
+        <div 
+          className={`absolute top-4 left-4 z-20 p-3 rounded-2xl bg-neutral-950/80 backdrop-blur-md border border-white/10 shadow-xl space-y-1.5 max-w-[200px] transition-all duration-500 ease-in-out ${
+            isUIVisible ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+          }`}
+        >
           <div className="flex items-center justify-between text-[11px] font-bold text-neutral-300">
             <span className="flex items-center gap-1">
               <Sliders className="w-3 h-3 text-blue-400" />
@@ -1554,7 +1799,11 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
         )}
 
         {/* FLOATING OVERLAY: NAVIGATION INSTRUCTIONS / CONTROLS HINT */}
-        <div className="absolute bottom-4 left-4 z-20 flex items-center space-x-2">
+        <div 
+          className={`absolute bottom-4 left-4 z-20 flex items-center space-x-2 transition-all duration-500 ease-in-out ${
+            isUIVisible ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-2 pointer-events-none'
+          }`}
+        >
           <div className="px-3 py-1.5 rounded-xl bg-neutral-950/80 backdrop-blur-md border border-white/10 text-neutral-400 text-[11px] font-medium flex items-center space-x-3">
             <span>🖱️ <strong>Left Click + Drag:</strong> Orbit</span>
             <span className="hidden sm:inline">•</span>
@@ -1573,7 +1822,11 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
         </div>
 
         {/* FLOATING OVERLAY: BOTTOM RIGHT UTILITY BAR (Zoom, Snapshot, Fullscreen, Info) */}
-        <div className="absolute bottom-4 right-4 z-20 flex items-center space-x-2">
+        <div 
+          className={`absolute bottom-4 right-4 z-20 flex items-center space-x-2 transition-all duration-500 ease-in-out ${
+            isUIVisible ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-2 pointer-events-none'
+          }`}
+        >
           
           {/* Zoom In / Out */}
           <div className="flex items-center p-0.5 rounded-xl bg-neutral-950/80 backdrop-blur-md border border-white/10">
@@ -1623,13 +1876,41 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
             <Eye className="w-4 h-4" />
           </button>
 
-          {/* High-Res Snapshot Capture */}
+          {/* Toggle 360° Auto-Rotation in Bottom Dock */}
+          <button
+            role="switch"
+            aria-checked={isAutoRotating}
+            onClick={() => setIsAutoRotating(!isAutoRotating)}
+            className={`p-2 rounded-xl backdrop-blur-md border cursor-pointer transition-all ${
+              isAutoRotating
+                ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-sm'
+                : 'bg-neutral-950/80 border-white/10 text-neutral-400 hover:text-white'
+            }`}
+            title={isAutoRotating ? 'Pause 360° Auto-Rotation' : 'Enable 360° Auto-Rotation'}
+          >
+            <RotateCw 
+              className={`w-4 h-4 transition-transform duration-700 ${isAutoRotating ? 'animate-spin text-emerald-400' : ''}`} 
+              style={{ animationDuration: '6s' }} 
+            />
+          </button>
+
+          {/* Quick Lighting Preset Cycle */}
+          <button
+            onClick={cycleLightingEnvironment}
+            className={`p-2 rounded-xl backdrop-blur-md border cursor-pointer transition-all ${currentLightingOpt.activeBg}`}
+            title={`Lighting: ${currentLightingOpt.label} (Click to Cycle: Daylight → Sunset → Studio → Night → Morning)`}
+          >
+            {React.createElement(currentLightingOpt.icon, { className: 'w-4 h-4' })}
+          </button>
+
+          {/* Take Snapshot Button in Bottom Dock */}
           <button
             onClick={() => handleCaptureSnapshot(snapshotResolution, includeTitleBlock)}
-            className="p-2 rounded-xl bg-neutral-950/80 hover:bg-neutral-800 backdrop-blur-md border border-white/10 text-neutral-300 hover:text-white cursor-pointer transition-all"
-            title="Download PNG Snapshot (Current Perspective)"
+            className="px-3 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 backdrop-blur-md border border-blue-500/40 shadow-lg shadow-blue-600/30 cursor-pointer transition-all active:scale-95"
+            title="Take Snapshot (Save High-Res PNG Image to Device)"
           >
-            <Camera className="w-4 h-4 text-blue-400" />
+            <Camera className="w-4 h-4" />
+            <span className="hidden sm:inline">Take Snapshot</span>
           </button>
 
           {/* Asset Technical Info Drawer Toggle */}
