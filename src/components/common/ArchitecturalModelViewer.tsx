@@ -13,6 +13,8 @@ import {
   Sunrise,
   Sunset,
   Lightbulb,
+  Palette,
+  Pipette,
   Compass, 
   Sparkles, 
   Grid, 
@@ -41,6 +43,7 @@ export type RenderMode = 'solid' | 'wireframe' | 'xray' | 'blueprint';
 export type LightingEnvironment = 'daylight' | 'sunset' | 'studio' | 'night' | 'morning';
 export type TimeOfDay = LightingEnvironment;
 export type CameraPreset = 'perspective' | 'isometric' | 'front' | 'side' | 'top';
+export type BackgroundColorPresetId = 'default' | 'white' | 'alabaster' | 'warm-sand' | 'concrete' | 'slate' | 'carbon' | 'custom';
 
 export interface LightingEnvironmentOption {
   id: LightingEnvironment;
@@ -52,6 +55,98 @@ export interface LightingEnvironmentOption {
   activeBg: string;
   badge: string;
 }
+
+export interface BackgroundColorOption {
+  id: BackgroundColorPresetId;
+  label: string;
+  shortLabel: string;
+  bgTop: string;
+  bgBottom: string;
+  swatch: string;
+  textColor: string;
+  isLight: boolean;
+  tagline: string;
+}
+
+export const BACKGROUND_COLOR_OPTIONS: BackgroundColorOption[] = [
+  {
+    id: 'default',
+    label: 'Atmosphere Gradient',
+    shortLabel: 'Atmosphere',
+    bgTop: '',
+    bgBottom: '',
+    swatch: 'linear-gradient(135deg, #1e1b38 0%, #090d16 100%)',
+    textColor: 'text-blue-400',
+    isLight: false,
+    tagline: 'Dynamically adapts to selected lighting environment (Daylight, Sunset, Studio, Night)'
+  },
+  {
+    id: 'white',
+    label: 'Studio Pure White',
+    shortLabel: 'White',
+    bgTop: '#ffffff',
+    bgBottom: '#f8fafc',
+    swatch: '#ffffff',
+    textColor: 'text-neutral-900',
+    isLight: true,
+    tagline: 'Crisp, gallery-grade neutral white backdrop for pristine architectural massing'
+  },
+  {
+    id: 'alabaster',
+    label: 'Alabaster Warm Neutral',
+    shortLabel: 'Alabaster',
+    bgTop: '#f7f6f2',
+    bgBottom: '#eceae3',
+    swatch: '#f5f4ee',
+    textColor: 'text-amber-950',
+    isLight: true,
+    tagline: 'Warm architectural limestone neutral with soft low-contrast tone'
+  },
+  {
+    id: 'warm-sand',
+    label: 'Warm Sand Neutral',
+    shortLabel: 'Sand',
+    bgTop: '#f4efe6',
+    bgBottom: '#e7ded2',
+    swatch: '#ede5d8',
+    textColor: 'text-amber-900',
+    isLight: true,
+    tagline: 'Earthy desert sand tone creating natural organic background contrast'
+  },
+  {
+    id: 'concrete',
+    label: 'Architectural Concrete',
+    shortLabel: 'Concrete',
+    bgTop: '#e2e8f0',
+    bgBottom: '#cbd5e1',
+    swatch: '#dbe2ec',
+    textColor: 'text-slate-800',
+    isLight: true,
+    tagline: 'Medium cool grey simulating raw architectural concrete studio backdrop'
+  },
+  {
+    id: 'slate',
+    label: 'Cool Slate Grey',
+    shortLabel: 'Slate',
+    bgTop: '#1e293b',
+    bgBottom: '#0f172a',
+    swatch: '#1e293b',
+    textColor: 'text-slate-200',
+    isLight: false,
+    tagline: 'Deep elegant slate grey providing sharp contrast for illuminated structural elements'
+  },
+  {
+    id: 'carbon',
+    label: 'Onyx Jet Black',
+    shortLabel: 'Black',
+    bgTop: '#09090b',
+    bgBottom: '#000000',
+    swatch: '#09090b',
+    textColor: 'text-neutral-100',
+    isLight: false,
+    tagline: 'High-contrast nocturnal black void for dramatic facade and lighting inspection'
+  }
+];
 
 export const LIGHTING_ENVIRONMENTS: LightingEnvironmentOption[] = [
   {
@@ -128,12 +223,16 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lightingMenuRef = useRef<HTMLDivElement | null>(null);
+  const bgColorMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Viewer State
   const [selectedAsset, setSelectedAsset] = useState<ModelAssetType>('exterior');
   const [renderMode, setRenderMode] = useState<RenderMode>('solid');
   const [timeOfDay, setTimeOfDay] = useState<LightingEnvironment>('daylight');
   const [showLightingMenu, setShowLightingMenu] = useState<boolean>(false);
+  const [bgColorPreset, setBgColorPreset] = useState<BackgroundColorPresetId>('default');
+  const [customBgColor, setCustomBgColor] = useState<string>('#ffffff');
+  const [showBgColorMenu, setShowBgColorMenu] = useState<boolean>(false);
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('perspective');
   const [isAutoRotating, setIsAutoRotating] = useState<boolean>(true);
   const [explodeValue, setExplodeValue] = useState<number>(0); // 0 to 1
@@ -445,6 +544,76 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
       }
     };
 
+    // Background Color Config resolver based on preset or custom color
+    const getEffectiveBackground = (
+      presetId: BackgroundColorPresetId,
+      customColor: string,
+      lightingPalette: { bgTop: string; bgBottom: string; gridColor: string },
+      mode: RenderMode
+    ) => {
+      if (mode === 'blueprint' && presetId === 'default') {
+        return {
+          bgTop: '#0a1d37',
+          bgBottom: '#061124',
+          isLight: false,
+          gridColor: 'rgba(56, 189, 248, 0.2)'
+        };
+      }
+
+      if (presetId === 'default') {
+        return {
+          bgTop: lightingPalette.bgTop,
+          bgBottom: lightingPalette.bgBottom,
+          isLight: false,
+          gridColor: lightingPalette.gridColor
+        };
+      }
+
+      if (presetId === 'custom') {
+        const hex = customColor.startsWith('#') ? customColor : `#${customColor}`;
+        const cleanHex = hex.replace('#', '');
+        let isLight = false;
+        let bgTop = hex;
+        let bgBottom = hex;
+        if (cleanHex.length === 6) {
+          const r = parseInt(cleanHex.substring(0, 2), 16);
+          const g = parseInt(cleanHex.substring(2, 4), 16);
+          const b = parseInt(cleanHex.substring(4, 6), 16);
+          const lum = 0.299 * (r / 255) + 0.587 * (g / 255) + 0.114 * (b / 255);
+          isLight = lum > 0.55;
+
+          const factor = isLight ? 0.94 : 0.72;
+          const bR = Math.max(0, Math.min(255, Math.round(r * factor))).toString(16).padStart(2, '0');
+          const bG = Math.max(0, Math.min(255, Math.round(g * factor))).toString(16).padStart(2, '0');
+          const bB = Math.max(0, Math.min(255, Math.round(b * factor))).toString(16).padStart(2, '0');
+          bgBottom = `#${bR}${bG}${bB}`;
+        }
+        return {
+          bgTop,
+          bgBottom,
+          isLight,
+          gridColor: isLight ? 'rgba(15, 23, 42, 0.14)' : 'rgba(255, 255, 255, 0.12)'
+        };
+      }
+
+      const opt = BACKGROUND_COLOR_OPTIONS.find(o => o.id === presetId);
+      if (opt && opt.bgTop) {
+        return {
+          bgTop: opt.bgTop,
+          bgBottom: opt.bgBottom,
+          isLight: opt.isLight,
+          gridColor: opt.isLight ? 'rgba(15, 23, 42, 0.14)' : 'rgba(255, 255, 255, 0.12)'
+        };
+      }
+
+      return {
+        bgTop: lightingPalette.bgTop,
+        bgBottom: lightingPalette.bgBottom,
+        isLight: false,
+        gridColor: lightingPalette.gridColor
+      };
+    };
+
     // Render Frame Function
     const render = () => {
       const { width, height } = canvas;
@@ -465,16 +634,12 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
       const cy = height / 2;
       const baseScale = Math.min(width, height) * 0.28;
       const lighting = getLightingPalette(timeOfDay);
+      const bgConfig = getEffectiveBackground(bgColorPreset, customBgColor, lighting, renderMode);
 
       // 1. Draw Canvas Background Gradient
       const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
-      if (renderMode === 'blueprint') {
-        bgGrad.addColorStop(0, '#0a1d37');
-        bgGrad.addColorStop(1, '#061124');
-      } else {
-        bgGrad.addColorStop(0, lighting.bgTop);
-        bgGrad.addColorStop(1, lighting.bgBottom);
-      }
+      bgGrad.addColorStop(0, bgConfig.bgTop);
+      bgGrad.addColorStop(1, bgConfig.bgBottom);
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
@@ -486,7 +651,9 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
         const gridStep = 0.8;
         const gridY = -1.6;
 
-        ctx.strokeStyle = renderMode === 'blueprint' ? 'rgba(56, 189, 248, 0.2)' : lighting.gridColor;
+        ctx.strokeStyle = renderMode === 'blueprint' && bgColorPreset === 'default' 
+          ? 'rgba(56, 189, 248, 0.2)' 
+          : bgConfig.gridColor;
 
         for (let i = -gridSize; i <= gridSize; i++) {
           const p1 = projectPoint([i * gridStep, gridY, -gridSize * gridStep], cam.rotX, cam.rotY, cam.zoom, cam.panX, cam.panY, cx, cy, baseScale);
@@ -954,6 +1121,9 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
       if (lightingMenuRef.current && !lightingMenuRef.current.contains(event.target as Node)) {
         setShowLightingMenu(false);
       }
+      if (bgColorMenuRef.current && !bgColorMenuRef.current.contains(event.target as Node)) {
+        setShowBgColorMenu(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -1007,12 +1177,13 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
     return (
       isControlsVisible ||
       showLightingMenu ||
+      showBgColorMenu ||
       showSnapshotMenu ||
       showInfoPanel ||
       selectedHotspot !== null ||
       showControlsGuide
     );
-  }, [isControlsVisible, showLightingMenu, showSnapshotMenu, showInfoPanel, selectedHotspot, showControlsGuide]);
+  }, [isControlsVisible, showLightingMenu, showBgColorMenu, showSnapshotMenu, showInfoPanel, selectedHotspot, showControlsGuide]);
 
   // Quick Cycle through Lighting Environments
   const cycleLightingEnvironment = useCallback(() => {
@@ -1026,6 +1197,19 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
   const currentLightingOpt = useMemo(() => {
     return LIGHTING_ENVIRONMENTS.find(l => l.id === timeOfDay) || LIGHTING_ENVIRONMENTS[0];
   }, [timeOfDay]);
+
+  // Quick Cycle through Background Colors / Tones
+  const cycleBackgroundColor = useCallback(() => {
+    const list: BackgroundColorPresetId[] = ['default', 'white', 'alabaster', 'warm-sand', 'concrete', 'slate', 'carbon'];
+    const currIdx = list.indexOf(bgColorPreset);
+    const nextIdx = (currIdx + 1) % list.length;
+    setBgColorPreset(list[nextIdx]);
+  }, [bgColorPreset]);
+
+  // Current Active Background Color Option
+  const currentBgColorOpt = useMemo(() => {
+    return BACKGROUND_COLOR_OPTIONS.find(b => b.id === bgColorPreset) || BACKGROUND_COLOR_OPTIONS[0];
+  }, [bgColorPreset]);
 
   // Synthesize acoustic camera shutter feedback
   const playShutterSound = () => {
@@ -1105,15 +1289,46 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
     };
     const lighting = getLighting(timeOfDay);
 
+    // Resolve background colors & lightness
+    const resolveSnapshotBg = () => {
+      if (renderMode === 'blueprint' && bgColorPreset === 'default') {
+        return { bgTop: '#0a1d37', bgBottom: '#061124', isLight: false, gridColor: 'rgba(56, 189, 248, 0.2)' };
+      }
+      if (bgColorPreset === 'default') {
+        return { bgTop: lighting.bgTop, bgBottom: lighting.bgBottom, isLight: false, gridColor: lighting.gridColor };
+      }
+      if (bgColorPreset === 'custom') {
+        const hex = customBgColor.startsWith('#') ? customBgColor : `#${customBgColor}`;
+        const cleanHex = hex.replace('#', '');
+        let isLight = false;
+        let bgTop = hex;
+        let bgBottom = hex;
+        if (cleanHex.length === 6) {
+          const r = parseInt(cleanHex.substring(0, 2), 16);
+          const g = parseInt(cleanHex.substring(2, 4), 16);
+          const b = parseInt(cleanHex.substring(4, 6), 16);
+          isLight = (0.299 * (r / 255) + 0.587 * (g / 255) + 0.114 * (b / 255)) > 0.55;
+          const factor = isLight ? 0.94 : 0.72;
+          const bR = Math.max(0, Math.min(255, Math.round(r * factor))).toString(16).padStart(2, '0');
+          const bG = Math.max(0, Math.min(255, Math.round(g * factor))).toString(16).padStart(2, '0');
+          const bB = Math.max(0, Math.min(255, Math.round(b * factor))).toString(16).padStart(2, '0');
+          bgBottom = `#${bR}${bG}${bB}`;
+        }
+        return { bgTop, bgBottom, isLight, gridColor: isLight ? 'rgba(15, 23, 42, 0.14)' : 'rgba(255, 255, 255, 0.12)' };
+      }
+      const opt = BACKGROUND_COLOR_OPTIONS.find(o => o.id === bgColorPreset);
+      if (opt && opt.bgTop) {
+        return { bgTop: opt.bgTop, bgBottom: opt.bgBottom, isLight: opt.isLight, gridColor: opt.isLight ? 'rgba(15, 23, 42, 0.14)' : 'rgba(255, 255, 255, 0.12)' };
+      }
+      return { bgTop: lighting.bgTop, bgBottom: lighting.bgBottom, isLight: false, gridColor: lighting.gridColor };
+    };
+
+    const bgConfig = resolveSnapshotBg();
+
     // 1. Background
     const bgGrad = targetCtx.createLinearGradient(0, 0, 0, targetHeight);
-    if (renderMode === 'blueprint') {
-      bgGrad.addColorStop(0, '#0a1d37');
-      bgGrad.addColorStop(1, '#061124');
-    } else {
-      bgGrad.addColorStop(0, lighting.bgTop);
-      bgGrad.addColorStop(1, lighting.bgBottom);
-    }
+    bgGrad.addColorStop(0, bgConfig.bgTop);
+    bgGrad.addColorStop(1, bgConfig.bgBottom);
     targetCtx.fillStyle = bgGrad;
     targetCtx.fillRect(0, 0, targetWidth, targetHeight);
 
@@ -1121,7 +1336,9 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
     if (showGrid) {
       targetCtx.save();
       targetCtx.lineWidth = Math.max(1, targetWidth / 1200);
-      targetCtx.strokeStyle = renderMode === 'blueprint' ? 'rgba(56, 189, 248, 0.2)' : lighting.gridColor;
+      targetCtx.strokeStyle = renderMode === 'blueprint' && bgColorPreset === 'default' 
+        ? 'rgba(56, 189, 248, 0.2)' 
+        : bgConfig.gridColor;
       const gridSize = 8;
       const gridStep = 0.8;
       const gridY = -1.6;
@@ -1330,13 +1547,13 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
       const tbY = targetHeight - tbHeight - pad;
 
       // Outer drawing boundary frame
-      targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      targetCtx.strokeStyle = bgConfig.isLight ? 'rgba(15, 23, 42, 0.15)' : 'rgba(255, 255, 255, 0.15)';
       targetCtx.lineWidth = Math.max(1, Math.round(2 * scaleFactor));
       targetCtx.strokeRect(pad, pad, targetWidth - pad * 2, targetHeight - pad * 2);
 
       // Title Block Box
-      targetCtx.fillStyle = 'rgba(9, 13, 22, 0.92)';
-      targetCtx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
+      targetCtx.fillStyle = bgConfig.isLight ? 'rgba(255, 255, 255, 0.94)' : 'rgba(9, 13, 22, 0.92)';
+      targetCtx.strokeStyle = bgConfig.isLight ? 'rgba(37, 99, 235, 0.6)' : 'rgba(59, 130, 246, 0.6)';
       targetCtx.lineWidth = Math.max(1, Math.round(1.5 * scaleFactor));
       targetCtx.beginPath();
       targetCtx.roundRect(tbX, tbY, tbWidth, tbHeight, Math.round(10 * scaleFactor));
@@ -1344,15 +1561,15 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
       targetCtx.stroke();
 
       // Title text
-      targetCtx.fillStyle = '#ffffff';
+      targetCtx.fillStyle = bgConfig.isLight ? '#0f172a' : '#ffffff';
       targetCtx.font = `bold ${Math.round(15 * scaleFactor)}px sans-serif`;
       targetCtx.fillText(project.title, tbX + 16 * scaleFactor, tbY + 28 * scaleFactor);
 
-      targetCtx.fillStyle = '#60a5fa';
+      targetCtx.fillStyle = bgConfig.isLight ? '#2563eb' : '#60a5fa';
       targetCtx.font = `bold ${Math.round(11 * scaleFactor)}px sans-serif`;
       targetCtx.fillText('FIZA HAYAT ARCHITECTURAL & STRUCTURAL ENGINEERING', tbX + 16 * scaleFactor, tbY + 48 * scaleFactor);
 
-      targetCtx.fillStyle = '#94a3b8';
+      targetCtx.fillStyle = bgConfig.isLight ? '#475569' : '#94a3b8';
       targetCtx.font = `${Math.round(10 * scaleFactor)}px monospace`;
       const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
       const angleStr = `Pitch: ${(cam.rotX * 180 / Math.PI).toFixed(0)}° | Yaw: ${(cam.rotY * 180 / Math.PI).toFixed(0)}° | Zoom: ${(cam.zoom * 100).toFixed(0)}%`;
@@ -1361,7 +1578,7 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
 
       targetCtx.restore();
     }
-  }, [selectedAsset, renderMode, timeOfDay, showGrid, explodeValue, project.title]);
+  }, [selectedAsset, renderMode, timeOfDay, showGrid, explodeValue, project.title, bgColorPreset, customBgColor]);
 
   // Capture High-Res Snapshot Handler with Custom Resolution & Title Block
   const handleCaptureSnapshot = (res: 'viewport' | '2k' | '4k' = snapshotResolution, withTitleBlock = includeTitleBlock) => {
@@ -1604,6 +1821,180 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
                     </button>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+          {/* Background Color / Tone Dropdown Menu */}
+          <div className="relative" ref={bgColorMenuRef}>
+            <div className="flex items-center space-x-1 p-0.5 rounded-xl bg-neutral-950 border border-white/10">
+              <button
+                onClick={() => setShowBgColorMenu(!showBgColorMenu)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
+                  showBgColorMenu 
+                    ? 'bg-blue-600/30 border border-blue-500/40 text-white shadow-sm' 
+                    : 'text-neutral-300 hover:text-white hover:bg-neutral-900/80'
+                }`}
+                title="Customize Scene Background Tone (Pure White, Warm Neutral, Concrete, Slate, Black, Custom)"
+              >
+                <Palette className="w-3.5 h-3.5 text-pink-400" />
+                <span className="text-[11px] font-bold">
+                  {bgColorPreset === 'custom' ? 'Custom' : currentBgColorOpt.shortLabel}
+                </span>
+                {/* Color indicator swatch chip */}
+                <span 
+                  className="w-2.5 h-2.5 rounded-full border border-white/30 shadow-inner inline-block shrink-0"
+                  style={{
+                    background: bgColorPreset === 'custom' 
+                      ? customBgColor 
+                      : (bgColorPreset === 'default' ? 'linear-gradient(135deg, #1e1b38, #090d16)' : currentBgColorOpt.swatch)
+                  }}
+                />
+                <ChevronDown className={`w-3 h-3 text-neutral-400 transition-transform duration-200 ${showBgColorMenu ? 'rotate-180 text-white' : ''}`} />
+              </button>
+
+              {/* Quick cycle button */}
+              <button
+                onClick={cycleBackgroundColor}
+                className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 cursor-pointer transition-all"
+                title="Quick cycle backdrop tone (Atmosphere → White → Alabaster → Warm Sand → Concrete → Slate → Black)"
+              >
+                <RefreshCw className="w-3 h-3" />
+              </button>
+            </div>
+
+            {/* FLOATING BACKGROUND COLOR DROPDOWN MENU */}
+            {showBgColorMenu && (
+              <div className="absolute top-full left-0 mt-2 z-50 w-80 p-3 rounded-2xl bg-neutral-950/95 backdrop-blur-xl border border-white/15 shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between pb-1.5 border-b border-white/10 text-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-neutral-200">
+                    <Palette className="w-4 h-4 text-pink-400" />
+                    <span>Scene Background Tone</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-neutral-400 bg-neutral-900 px-1.5 py-0.5 rounded border border-white/5">
+                    Live & Export
+                  </span>
+                </div>
+
+                {/* Preset Swatches List */}
+                <div className="space-y-1">
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 px-1">
+                    Neutral Presets
+                  </div>
+                  <div className="grid grid-cols-1 gap-1 max-h-52 overflow-y-auto pr-1">
+                    {BACKGROUND_COLOR_OPTIONS.map(opt => {
+                      const isSelected = bgColorPreset === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          onClick={() => {
+                            setBgColorPreset(opt.id);
+                          }}
+                          className={`w-full p-1.5 rounded-xl text-left flex items-center justify-between gap-2.5 cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-blue-600/20 border border-blue-500/50 text-white shadow-sm'
+                              : 'hover:bg-neutral-900/80 text-neutral-300 hover:text-white border border-transparent'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div 
+                              className="w-5 h-5 rounded-lg border border-white/20 shadow-sm shrink-0"
+                              style={{ background: opt.swatch }}
+                            />
+                            <div className="min-w-0">
+                              <span className="font-bold text-xs block leading-none">{opt.label}</span>
+                              <span className="text-[9px] text-neutral-400 truncate block mt-0.5">{opt.tagline}</span>
+                            </div>
+                          </div>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Custom Color Picker Section */}
+                <div className="pt-2 border-t border-white/10 space-y-2">
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 px-1 flex items-center justify-between">
+                    <span>Custom Neutral / Tone</span>
+                    <Pipette className="w-3 h-3 text-neutral-400" />
+                  </div>
+
+                  <div className="flex items-center gap-2 p-1.5 rounded-xl bg-neutral-900 border border-white/10">
+                    <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-white/20 shrink-0 cursor-pointer shadow-inner">
+                      <input
+                        type="color"
+                        value={customBgColor}
+                        onChange={(e) => {
+                          setCustomBgColor(e.target.value);
+                          setBgColorPreset('custom');
+                        }}
+                        className="absolute -top-2 -left-2 w-12 h-12 cursor-pointer opacity-100"
+                        title="Click to choose custom RGB color"
+                      />
+                    </div>
+
+                    <div className="flex-1 flex items-center gap-1.5">
+                      <span className="text-xs font-mono text-neutral-400">HEX</span>
+                      <input
+                        type="text"
+                        value={customBgColor}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomBgColor(val);
+                          if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                            setBgColorPreset('custom');
+                          }
+                        }}
+                        onBlur={() => {
+                          if (!customBgColor.startsWith('#')) {
+                            setCustomBgColor(`#${customBgColor}`);
+                          }
+                          setBgColorPreset('custom');
+                        }}
+                        placeholder="#FFFFFF"
+                        maxLength={7}
+                        className="w-full bg-neutral-950 border border-white/10 rounded-lg px-2 py-1 text-xs font-mono text-neutral-100 focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    {/* Quick preset color chips */}
+                    <div className="flex items-center gap-1">
+                      {['#FFFFFF', '#F5F5F0', '#E2E8F0', '#CBD5E1', '#334155', '#09090B'].map(chip => (
+                        <button
+                          key={chip}
+                          onClick={() => {
+                            setCustomBgColor(chip);
+                            setBgColorPreset('custom');
+                          }}
+                          className="w-4 h-4 rounded-full border border-white/30 cursor-pointer hover:scale-110 transition-transform shadow-sm"
+                          style={{ backgroundColor: chip }}
+                          title={`Select ${chip}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reset to Atmosphere button */}
+                <div className="pt-1 flex items-center justify-between text-[11px]">
+                  <button
+                    onClick={() => {
+                      setBgColorPreset('default');
+                      setShowBgColorMenu(false);
+                    }}
+                    className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <RotateCw className="w-3 h-3" />
+                    <span>Reset to Atmosphere</span>
+                  </button>
+                  <button
+                    onClick={() => setShowBgColorMenu(false)}
+                    className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs cursor-pointer transition-all"
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1903,6 +2294,19 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
             {React.createElement(currentLightingOpt.icon, { className: 'w-4 h-4' })}
           </button>
 
+          {/* Quick Background Color Tone Cycle & Picker */}
+          <button
+            onClick={cycleBackgroundColor}
+            className={`p-2 rounded-xl backdrop-blur-md border cursor-pointer transition-all ${
+              bgColorPreset !== 'default'
+                ? 'bg-neutral-800 border-white/25 text-white shadow-sm'
+                : 'bg-neutral-950/80 border-white/10 text-neutral-400 hover:text-white'
+            }`}
+            title={`Scene Backdrop: ${bgColorPreset === 'custom' ? customBgColor : currentBgColorOpt.label} (Click to cycle backdrop: Atmosphere → White → Alabaster → Warm Sand → Concrete → Slate → Black)`}
+          >
+            <Palette className="w-4 h-4 text-pink-400" />
+          </button>
+
           {/* Take Snapshot Button in Bottom Dock */}
           <button
             onClick={() => handleCaptureSnapshot(snapshotResolution, includeTitleBlock)}
@@ -1979,6 +2383,38 @@ export const ArchitecturalModelViewer: React.FC<ArchitecturalModelViewerProps> =
                   >
                     <div className="font-bold text-xs">{r.label}</div>
                     <div className="text-[9px] text-neutral-500 font-mono mt-0.5">{r.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Background Tone in Snapshot */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block">
+                  Backdrop Tone:
+                </label>
+                <span className="text-[10px] text-blue-400 font-bold">
+                  {bgColorPreset === 'custom' ? customBgColor : currentBgColorOpt.shortLabel}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                {BACKGROUND_COLOR_OPTIONS.map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setBgColorPreset(opt.id)}
+                    className={`p-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-semibold cursor-pointer shrink-0 transition-all ${
+                      bgColorPreset === opt.id
+                        ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm'
+                        : 'bg-neutral-900/60 border-white/5 text-neutral-400 hover:border-white/20'
+                    }`}
+                    title={opt.label}
+                  >
+                    <div 
+                      className="w-3.5 h-3.5 rounded-md border border-white/20 shadow-inner"
+                      style={{ background: opt.swatch }}
+                    />
+                    <span className="text-[10px]">{opt.shortLabel}</span>
                   </button>
                 ))}
               </div>
