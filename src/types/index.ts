@@ -28,6 +28,7 @@ export interface Project {
   views?: number;
   likes?: number;
   createdAt: string;
+  modelUrl?: string; // Optional glTF / GLB 3D BIM model URL or asset link
 
   // Specifications & Cost Attributes for Comparisons
   estimatedCost?: string;

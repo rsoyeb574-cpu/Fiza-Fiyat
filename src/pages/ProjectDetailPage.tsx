@@ -29,6 +29,7 @@ import {
 import { Project } from '../types';
 import { BeforeAfterSlider } from '../components/common/BeforeAfterSlider';
 import { ArchitecturalModelViewer } from '../components/common/ArchitecturalModelViewer';
+import { Bim3DViewer } from '../components/bim/Bim3DViewer';
 import { getProjectSpecs } from '../utils/projectComparison';
 import { downloadProjectSummaryPdf, openProjectSummaryPrintView } from '../utils/projectPdfGenerator';
 
@@ -56,6 +57,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
   isComparing = () => false
 }) => {
   const [mediaViewMode, setMediaViewMode] = useState<'3d' | 'gallery' | 'video' | 'beforeAfter'>('3d');
+  const [viewerEngine, setViewerEngine] = useState<'webgl' | 'architectural'>('webgl');
   const [activeImage, setActiveImage] = useState<string>(project.coverImage || project.images?.[0]);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
@@ -258,8 +260,48 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
 
         {/* 1. INTERACTIVE 3D BIM MODEL VIEWER */}
         {mediaViewMode === '3d' && (
-          <div className="space-y-4 animate-in fade-in duration-300">
-            <ArchitecturalModelViewer project={project} />
+          <div className="space-y-3 animate-in fade-in duration-300">
+            {/* 3D Engine Sub-Toggle */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-neutral-900/60 p-2.5 rounded-2xl border border-white/5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <Move3d className="w-3.5 h-3.5 text-blue-400" />
+                  <span>3D Engine:</span>
+                </span>
+                <button
+                  onClick={() => setViewerEngine('webgl')}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    viewerEngine === 'webgl'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                      : 'bg-neutral-800 text-neutral-400 hover:text-white border border-white/5'
+                  }`}
+                >
+                  WebGL 3D (glTF / GLB)
+                </button>
+                <button
+                  onClick={() => setViewerEngine('architectural')}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    viewerEngine === 'architectural'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                      : 'bg-neutral-800 text-neutral-400 hover:text-white border border-white/5'
+                  }`}
+                >
+                  Architectural Schematic
+                </button>
+              </div>
+
+              <span className="text-[11px] text-neutral-400 hidden md:inline">
+                {viewerEngine === 'webgl' 
+                  ? 'WebGL glTF/GLB Engine with live floor section slicing, PBR shaders & file upload' 
+                  : 'Multi-layer isometric massing with lighting and material rebar schedules'}
+              </span>
+            </div>
+
+            {viewerEngine === 'webgl' ? (
+              <Bim3DViewer project={project} />
+            ) : (
+              <ArchitecturalModelViewer project={project} />
+            )}
           </div>
         )}
 
