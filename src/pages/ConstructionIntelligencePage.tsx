@@ -69,6 +69,7 @@ import { AIProjectAdvisor } from '../components/ai/AIProjectAdvisor';
 import { AIContentAssistant } from '../components/ai/AIContentAssistant';
 import { AIImageOrganizer } from '../components/ai/AIImageOrganizer';
 import { AIStructuralDamageInspector } from '../components/structural/AIStructuralDamageInspector';
+import { CivilCalculatorsSuite } from '../components/calculators/CivilCalculatorsSuite';
 import { ShieldAlert } from 'lucide-react';
 
 export const ConstructionIntelligencePage: React.FC = () => {
@@ -169,6 +170,7 @@ export const ConstructionIntelligencePage: React.FC = () => {
     { id: 'ai-content', label: 'AI Marketing Copy', icon: Sparkles, desc: 'Project Copy, Blogs & SEO Meta' },
     { id: 'ai-organizer', label: 'AI Image Organizer', icon: ImageIcon, desc: 'Computer Vision Media Categorization' },
     { id: 'house-planning', label: 'House Planning & 2D/3D', icon: Compass, desc: '2D Floor Plans & 3D Renderings' },
+    { id: 'civil-calculators', label: 'Civil Calculators (11-in-1)', icon: Calculator, desc: 'Concrete, Steel, Brick, Plaster, Tank, EMI' },
     { id: 'material-estimator', label: 'Material Estimator', icon: Package, desc: 'Cement, Steel, Bricks & Sand Formulas' },
     { id: 'cost-estimator', label: 'Construction Cost Estimator', icon: DollarSign, desc: 'Detailed Cost Distribution' },
     { id: 'building-knowledge', label: 'Building Knowledge Hub', icon: BookOpen, desc: 'Engineering Rationale & Standards' },
@@ -911,8 +913,21 @@ export const ConstructionIntelligencePage: React.FC = () => {
             </motion.div>
           )}
 
+          {/* TAB: CIVIL CALCULATORS (11-IN-1) */}
+          {activeTab === 'civil-calculators' && (
+            <motion.div
+              key="civil-calculators"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CivilCalculatorsSuite />
+            </motion.div>
+          )}
+
           {/* TAB: MATERIAL ESTIMATOR */}
-          {activeTab === 'material-estimator' && currentPlan && (
+          {activeTab === 'material-estimator' && (
             <motion.div
               key="material-estimator"
               initial={{ opacity: 0, y: 10 }}
@@ -921,34 +936,38 @@ export const ConstructionIntelligencePage: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="space-y-8"
             >
-              <div className="glass-card rounded-3xl p-8 border border-white/10 bg-slate-900/80">
-                <h2 className="text-2xl font-bold text-white mb-2">Material Quantity Estimator</h2>
-                <p className="text-xs text-slate-400 mb-6">Material quantities calculated using IS code consumption constants per sq.ft of built-up area.</p>
+              <CivilCalculatorsSuite initialTab="material" />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {(currentPlan.materials || []).map(mat => (
-                    <div key={mat.id} className="p-6 rounded-2xl bg-slate-950/80 border border-white/10 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-white">{mat.name}</span>
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 font-mono font-bold">{mat.quantity} {mat.unit}</span>
+              {currentPlan && (
+                <div className="glass-card rounded-3xl p-8 border border-white/10 bg-slate-900/80">
+                  <h2 className="text-2xl font-bold text-white mb-2">Plot Plan Material Quantities</h2>
+                  <p className="text-xs text-slate-400 mb-6">Material quantities calculated using IS code consumption constants for your current active plot configuration.</p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {(currentPlan.materials || []).map(mat => (
+                      <div key={mat.id} className="p-6 rounded-2xl bg-slate-950/80 border border-white/10 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-white">{mat.name}</span>
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 font-mono font-bold">{mat.quantity} {mat.unit}</span>
+                        </div>
+                        <div className="text-xs text-emerald-400 font-mono font-bold">Total Est: ₹{mat.totalCostINR.toLocaleString()} (@ ₹{mat.ratePerUnitINR}/{mat.unit})</div>
+                        <p className="text-xs text-slate-300">{mat.purpose}</p>
+                        
+                        <div className="pt-2 border-t border-white/10 text-[11px] text-slate-400 space-y-1">
+                          <div><strong className="text-slate-200">Why Used:</strong> {mat.whyUsed}</div>
+                          <div><strong className="text-slate-200">Life Expectancy:</strong> {mat.lifeExpectancyYears}</div>
+                          <div><strong className="text-amber-400">Cost Tip:</strong> {mat.costSavingTip}</div>
+                        </div>
                       </div>
-                      <div className="text-xs text-emerald-400 font-mono font-bold">Total Est: ₹{mat.totalCostINR.toLocaleString()} (@ ₹{mat.ratePerUnitINR}/{mat.unit})</div>
-                      <p className="text-xs text-slate-300">{mat.purpose}</p>
-                      
-                      <div className="pt-2 border-t border-white/10 text-[11px] text-slate-400 space-y-1">
-                        <div><strong className="text-slate-200">Why Used:</strong> {mat.whyUsed}</div>
-                        <div><strong className="text-slate-200">Life Expectancy:</strong> {mat.lifeExpectancyYears}</div>
-                        <div><strong className="text-amber-400">Cost Tip:</strong> {mat.costSavingTip}</div>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
           )}
 
           {/* TAB: COST ESTIMATOR */}
-          {activeTab === 'cost-estimator' && currentPlan && (
+          {activeTab === 'cost-estimator' && (
             <motion.div
               key="cost-estimator"
               initial={{ opacity: 0, y: 10 }}
@@ -957,9 +976,12 @@ export const ConstructionIntelligencePage: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="space-y-8"
             >
-              <div className="glass-card rounded-3xl p-8 border border-white/10 bg-slate-900/80">
-                <h2 className="text-2xl font-bold text-white mb-2">Construction Cost Distribution Analysis</h2>
-                <p className="text-xs text-slate-400 mb-6">Percentage cost breakdown across civil, finishing, MEP, interior, and contingency heads.</p>
+              <CivilCalculatorsSuite initialTab="cost" />
+
+              {currentPlan && (
+                <div className="glass-card rounded-3xl p-8 border border-white/10 bg-slate-900/80">
+                  <h2 className="text-2xl font-bold text-white mb-2">Plot Plan Cost Distribution Analysis</h2>
+                  <p className="text-xs text-slate-400 mb-6">Percentage cost breakdown across civil, finishing, MEP, interior, and contingency heads.</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
@@ -998,8 +1020,9 @@ export const ConstructionIntelligencePage: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </motion.div>
-          )}
+            )}
+          </motion.div>
+        )}
 
           {/* TAB: BUILDING KNOWLEDGE HUB */}
           {activeTab === 'building-knowledge' && (

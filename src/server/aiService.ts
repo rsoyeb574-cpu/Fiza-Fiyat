@@ -34,13 +34,23 @@ export function getAIClient(): GoogleGenAI {
 
 function getModelCandidates(): string[] {
   const configured = process.env.GEMINI_MODEL?.trim();
-  // Filter out any deprecated model strings that would return 404
-  const isDeprecated = (m?: string) => !m || m.includes('2.5') || m.includes('2.0') || m.includes('1.5');
+
+  // Prioritize configured model if provided, including both standard and models/ prefixed versions
+  const configuredCandidates = configured ? [
+    configured,
+    configured.startsWith('models/') ? configured.replace(/^models\//, '') : `models/${configured}`
+  ] : [];
 
   const models = [
-    ...(configured && !isDeprecated(configured) ? [configured] : []),
+    ...configuredCandidates,
+    'models/gemini-3.8-flash',
+    'models/gemini-3.7-flash',
     'gemini-3.7-flash',
     'gemini-3.1-flash-lite',
+    'models/gemini-2.5-flash',
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
     'gemini-flash-latest'
   ];
   return Array.from(new Set(models.filter(Boolean)));
@@ -113,6 +123,7 @@ Core Directives:
 2. For greetings like "Hi", "Hello", "Hey", give a warm, natural greeting reflecting your active tone without repeating lengthy sales pitches.
 3. For building, interior, structural, or estimation questions, deliver structured, clear, and informative insights.
 4. Keep formatting clean with bullet points or numbered lists where appropriate.
+5. You are a TEXT-BASED architectural and construction conversational assistant. Provide thorough, descriptive textual answers, specifications, and layout descriptions. Do NOT attempt or promise to generate images or call external image generation tools in this chat. Image and video generation is handled exclusively in the dedicated AI Media Studio.
 ${pageContext ? `Current Active Page Context: ${pageContext}` : ''}`;
 }
 
@@ -229,23 +240,29 @@ export function sanitizeErrorMessage(err: any): string {
 }
 
 export async function handleConstructionAIRequest(body: any): Promise<any> {
-  const { type, location, qualityLevel, budgetINR, promptExtra } = body || {};
+  const { type, location, qualityLevel, budgetINR, plotSize, promptExtra } = body || {};
 
-  const promptText = `You are the lead AI Structural Engineer and Interior Design Specialist for Fiza Hayat Construction Intelligence Platform.
+  const promptText = `You are the lead AI Structural Engineer, BOQ Specialist, and Interior Design Architect for Fiza Hayat Construction Intelligence Platform.
 
-User Request Type: ${type || 'general'}
-Location: ${location || 'India'}
-Quality Level: ${qualityLevel || 'Standard'}
-Budget: ${budgetINR ? '₹' + budgetINR : 'Standard'}
-Additional Context: ${promptExtra || 'None'}
+Request Details:
+- Analysis Type: ${type || 'materials'}
+- Location: ${location || 'Regional India'}
+- Quality Level: ${qualityLevel || 'Standard'}
+- Budget: ${budgetINR ? '₹' + Number(budgetINR).toLocaleString('en-IN') : 'Standard market rate'}
+- Plot Size / Area: ${plotSize || 'Standard Residential Unit'}
+- Context / Specific User Notes: ${promptExtra || 'Standard civil engineering & architectural guidance'}
 
-Return a valid JSON object matching this schema:
+Return a valid, well-structured JSON object matching this schema:
 {
-  "title": "Clear Title",
-  "summary": "1-2 sentence engineering summary",
-  "recommendations": ["4 bullet points"],
-  "suggestedMaterials": ["3-5 recommended material names"],
-  "estimatedCostImpact": "1 sentence cost impact"
+  "title": "Precise, professional engineering/design title",
+  "summary": "2-3 sentence technical and realistic summary",
+  "recommendations": ["4-5 detailed, highly specific, code-compliant bullet points"],
+  "suggestedMaterials": ["4-6 specific branded or grade-specified construction materials"],
+  "colorPalette": [
+    { "name": "Color Name", "hex": "#HEXCODE", "usage": "Specific architectural or interior location" }
+  ],
+  "layoutAdvice": ["2-3 ergonomic and spatial circulation recommendations"],
+  "estimatedCostImpact": "Realistic cost optimization or budget impact sentence"
 }`;
 
   try {
@@ -259,23 +276,35 @@ Return a valid JSON object matching this schema:
     const cleanText = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
     const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.title && Array.isArray(parsed.recommendations)) {
+        return parsed;
+      }
     }
   } catch (err: any) {
     console.warn('Gemini Construction AI JSON parsing error, returning fallback schema:', err?.message || err);
   }
 
   return {
-    title: `AI Recommendation for ${location || 'Project'}`,
-    summary: `Engineered structural and material guidance for ${qualityLevel || 'Standard'} quality construction.`,
+    title: `AI Structural & Material Specification for ${location || 'Project'}`,
+    summary: `Engineered structural and material guidance for ${qualityLevel || 'Standard'} quality construction complying with national building codes.`,
     recommendations: [
-      'Utilize PPC grade cement for enhanced durability and crack resistance.',
-      'Specify high-ductility Fe500D TMT bars for seismic resilience.',
-      'Incorporate thermal-efficient AAC blocks to reduce dead loads.',
-      'Apply waterproofing coatings to foundations and exposed roof slabs.'
+      'Utilize PPC grade cement (IS 1489) for enhanced durability, low heat of hydration, and crack resistance.',
+      'Specify high-ductility Fe500D TMT bars (IS 1786) for seismic resilience with >16% elongation.',
+      'Incorporate thermal-efficient AAC blocks to reduce structural dead loads by 20% compared to red bricks.',
+      'Apply 2-coat polymer modified cementitious elastomeric waterproofing membrane to foundations and exposed roof slabs.'
     ],
-    suggestedMaterials: ['PPC Cement', 'Fe500D TMT Rebar', 'AAC Blocks', 'Polymer Adhesive'],
-    estimatedCostImpact: 'Optimizes raw material usage by up to 10-12%.'
+    suggestedMaterials: ['UltraTech / ACC PPC Cement', 'Tata Tiscon Fe500D TMT Rebar', 'Magicrete 6" AAC Blocks', 'Dr. Fixit Fastflex Elastomeric Waterproofing'],
+    colorPalette: [
+      { name: 'Warm Cream Base', hex: '#F8F6F0', usage: 'Primary Interior Walls' },
+      { name: 'Slate Gray Accent', hex: '#334155', usage: 'Window Frames & Architectural Grooves' },
+      { name: 'Natural Teak Wood', hex: '#8C5221', usage: 'Main Entry Doors & Louvers' }
+    ],
+    layoutAdvice: [
+      'Maintain clear 3.5 ft circulation paths between main living furniture and dining entrances.',
+      'Position master bedroom on the southern or south-western corner for optimal ventilation.'
+    ],
+    estimatedCostImpact: 'Optimizes raw material procurement and reduces structural wastage by 10-14%.'
   };
 }
 

@@ -304,6 +304,10 @@ export default function App() {
                   <ConstructionIntelligencePage />
                 )}
 
+                {activePage === 'structural-inspector' && (
+                  <StructuralInspectorPage onNavigate={setActivePage} />
+                )}
+
                 {activePage === 'services' && (
                   <ServicesPage
                     services={services}

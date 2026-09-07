@@ -3,6 +3,7 @@ import {
   Eye, 
   Layers, 
   Download, 
+  FileText,
   Maximize2, 
   X, 
   ChevronLeft, 
@@ -22,6 +23,9 @@ interface AnnotatedMediaViewerProps {
   structureType?: string;
   onSelectFinding?: (findingId: string) => void;
   selectedFindingId?: string | null;
+  onDownloadPdf?: () => void;
+  activeImageIndex?: number;
+  onActiveImageIndexChange?: (index: number) => void;
 }
 
 export const AnnotatedMediaViewer: React.FC<AnnotatedMediaViewerProps> = ({
@@ -30,9 +34,35 @@ export const AnnotatedMediaViewer: React.FC<AnnotatedMediaViewerProps> = ({
   findings = [],
   structureType = 'Building',
   onSelectFinding,
-  selectedFindingId
+  selectedFindingId,
+  onDownloadPdf,
+  activeImageIndex: externalActiveImageIndex,
+  onActiveImageIndexChange
 }) => {
-  const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
+  const [internalActiveImageIndex, setInternalActiveImageIndex] = useState<number>(0);
+  
+  const activeImageIndex = typeof externalActiveImageIndex === 'number' 
+    ? externalActiveImageIndex 
+    : internalActiveImageIndex;
+
+  const setActiveImageIndex = (idxOrFn: number | ((prev: number) => number)) => {
+    const nextIdx = typeof idxOrFn === 'function' ? idxOrFn(activeImageIndex) : idxOrFn;
+    setInternalActiveImageIndex(nextIdx);
+    if (onActiveImageIndexChange) {
+      onActiveImageIndexChange(nextIdx);
+    }
+  };
+
+  // Sync image index when selected finding changes
+  useEffect(() => {
+    if (selectedFindingId && findings.length > 0) {
+      const matchedFinding = findings.find(f => f.id === selectedFindingId);
+      if (matchedFinding && typeof matchedFinding.imageIndex === 'number' && matchedFinding.imageIndex >= 0 && matchedFinding.imageIndex < imageUrls.length) {
+        setActiveImageIndex(matchedFinding.imageIndex);
+      }
+    }
+  }, [selectedFindingId, findings, imageUrls.length]);
+
   const [showAnnotations, setShowAnnotations] = useState<boolean>(true);
   const [hoveredAnnotationId, setHoveredAnnotationId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -206,8 +236,20 @@ export const AnnotatedMediaViewer: React.FC<AnnotatedMediaViewerProps> = ({
             title="Download Annotated Image"
           >
             <Download className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Save Annotated Image</span>
+            <span className="hidden sm:inline">Save Image</span>
           </button>
+
+          {/* Download PDF Report if handler provided */}
+          {onDownloadPdf && (
+            <button
+              onClick={onDownloadPdf}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600/90 hover:bg-blue-500 border border-blue-400/30 text-white shadow-sm shadow-blue-500/30 transition-all flex items-center gap-1.5 cursor-pointer"
+              title="Download Full Formatted PDF Inspection Report"
+            >
+              <FileText className="w-3.5 h-3.5 text-sky-200" />
+              <span className="hidden sm:inline">PDF Report</span>
+            </button>
+          )}
 
           {/* Fullscreen Button */}
           <button

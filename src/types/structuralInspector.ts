@@ -57,6 +57,24 @@ export interface DetectedProblem {
   possibleCauses: string[];
   annotationId?: string;
   imageIndex?: number;
+  associatedImageIndices?: number[];
+}
+
+export interface MultiImageSummaryItem {
+  imageIndex: number;
+  label: string;
+  observedView: string;
+  primaryFindingsCount: number;
+  distressSummary: string;
+  keySeverity: ConcernLevel;
+}
+
+export interface MultiImageBatchAssessment {
+  totalImagesAnalyzed: number;
+  consolidatedDiagnosis: string;
+  spatialSpreadEvaluation: string;
+  crossImageCorrelations: string[];
+  imageSummaries: MultiImageSummaryItem[];
 }
 
 export interface VideoFinding {
@@ -65,6 +83,10 @@ export interface VideoFinding {
   problem: string;
   evidence: string;
   concernLevel: ConcernLevel;
+  category?: DamageCategory;
+  location?: string;
+  possibleCauses?: string[];
+  recommendedAction?: string;
   frameThumbnail?: string;
   annotations?: DamageAnnotation[];
 }
@@ -81,6 +103,9 @@ export interface StructuralInspectionResult {
   id: string;
   timestamp: string;
   mediaType: 'image' | 'multi_image' | 'video';
+  reportTitle?: string;
+  isMultiImage?: boolean;
+  multiImageAssessment?: MultiImageBatchAssessment;
   structureType: string;
   detectedStructureType?: string;
   overallAssessment: string;
@@ -97,6 +122,8 @@ export interface StructuralInspectionResult {
   imageUrls?: string[];
   annotatedImageUrls?: string[];
   summaryParagraph?: string;
+  videoUrl?: string;
+  videoDurationSeconds?: number;
 }
 
 export interface StructuralQAInput {

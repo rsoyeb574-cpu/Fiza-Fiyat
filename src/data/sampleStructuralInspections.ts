@@ -109,6 +109,173 @@ export const SAMPLE_STRUCTURAL_CASES: SampleStructuralInspectionCase[] = [
     }
   },
   {
+    id: 'sample-multi-image-batch',
+    title: 'Multi-Image Batch: Commercial Building Distress (3 Angles)',
+    structureType: 'building',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1584467735815-f778f274e296?auto=format&fit=crop&w=1200&q=80',
+    description: 'Consolidated batch inspection across 3 perspectives: exterior facade, column joint shear, and foundation interface.',
+    mockResult: {
+      id: 'insp-multi-batch-01',
+      timestamp: new Date().toISOString(),
+      mediaType: 'multi_image',
+      reportTitle: 'Consolidated Multi-Image Structural Assessment Report',
+      isMultiImage: true,
+      structureType: 'Building',
+      detectedStructureType: 'Reinforced Concrete Framed Commercial Building',
+      overallAssessment: 'Consolidated visual analysis across 3 photos confirms systemic foundation settlement driving diagonal stepped shear fractures through the frame.',
+      severity: 'high',
+      confidence: 'High',
+      immediateProfessionalInspection: 'Strongly Recommended',
+      summaryParagraph: 'Multi-image spatial synthesis reveals that localized cracks in individual views are structurally connected. Stepped masonry shear fractures visible on the exterior elevation (Photo 1) correlate directly with perimeter foundation beam rotation at grade (Photo 2) and high shear stresses at the ground-floor column junction (Photo 3).',
+      multiImageAssessment: {
+        totalImagesAnalyzed: 3,
+        consolidatedDiagnosis: 'Multi-angle evaluation diagnoses progressive differential settlement along the eastern structural axis, causing connected diagonal shear propagation from foundation to exterior frame.',
+        spatialSpreadEvaluation: 'Distress is not isolated to an individual member. It exhibits progressive multi-bay spatial spread extending from the foundation plinth through the first-floor beam-column confinement zones.',
+        crossImageCorrelations: [
+          'Diagonal 45° fracture trajectory in Photo #1 directly aligns with the vertical settlement offset measured in Photo #2.',
+          'Column joint spalling in Photo #3 matches the principal tension vector created by ground settlement observed in Photo #2.',
+          'Exterior water staining at slab line in Photo #1 indicates perimeter moisture ingress softening foundation bearing soil.'
+        ],
+        imageSummaries: [
+          {
+            imageIndex: 0,
+            label: 'Photo #1 (East Elevation Overview)',
+            observedView: 'Full 3-story facade elevation & shear wall',
+            primaryFindingsCount: 2,
+            distressSummary: 'Diagonal stepped shear cracks along exterior masonry and beam interfaces',
+            keySeverity: 'High concern'
+          },
+          {
+            imageIndex: 1,
+            label: 'Photo #2 (Foundation Plinth Level)',
+            observedView: 'Grade beam and foundation wall junction',
+            primaryFindingsCount: 1,
+            distressSummary: 'Horizontal shear displacement and ground gap indicating differential settlement',
+            keySeverity: 'Critical concern'
+          },
+          {
+            imageIndex: 2,
+            label: 'Photo #3 (Column-Beam Joint Detail)',
+            observedView: 'Close-up of ground-level structural column',
+            primaryFindingsCount: 1,
+            distressSummary: 'Concrete cover delamination and concentrated tensile microcracks',
+            keySeverity: 'High concern'
+          }
+        ]
+      },
+      findings: [
+        {
+          id: 'finding-mb-1',
+          problem: 'Stepped Diagonal Shear Fracture across Facade',
+          location: 'East elevation between second and third bay',
+          severity: 'High concern',
+          category: 'crack',
+          evidence: 'Continuous stepped crack traversing mortar beds and masonry units with 2.5mm aperture.',
+          possibleCauses: [
+            'Differential settlement of exterior footings',
+            'In-plane shear stress induced by foundation movement',
+            'Thermal-induced expansion joint failure'
+          ],
+          annotationId: 'ann-mb-1',
+          imageIndex: 0,
+          associatedImageIndices: [0, 1]
+        },
+        {
+          id: 'finding-mb-2',
+          problem: 'Foundation Plinth Separation & Settlement Offset',
+          location: 'Grade beam perimeter at soil interface',
+          severity: 'Critical concern',
+          category: 'deformation',
+          evidence: 'Visible downward displacement and 15mm gap between grade beam and perimeter apron slab.',
+          possibleCauses: [
+            'Subgrade soil consolidation or bearing capacity reduction',
+            'Stormwater drainage saturation under footing pad',
+            'Inadequate footing width for structural dead load'
+          ],
+          annotationId: 'ann-mb-2',
+          imageIndex: 1,
+          associatedImageIndices: [1, 0]
+        },
+        {
+          id: 'finding-mb-3',
+          problem: 'Column Joint Confinement Distress & Spalling',
+          location: 'Ground-floor interior column at ceiling beam junction',
+          severity: 'High concern',
+          category: 'spalling',
+          evidence: 'Spalled concrete plaster and exposed diagonal shear fissure under axial stress.',
+          possibleCauses: [
+            'Frame distortion caused by exterior foundation drop',
+            'Excessive localized moment transfer at rigid connection'
+          ],
+          annotationId: 'ann-mb-3',
+          imageIndex: 2,
+          associatedImageIndices: [2, 0]
+        }
+      ],
+      annotations: [
+        {
+          id: 'ann-mb-1',
+          type: 'crack',
+          label: '[STEPPED SHEAR CRACK]',
+          box2d: [280, 240, 720, 680],
+          severity: 'High concern',
+          description: 'Stepped shear fracture across facade wall',
+          imageIndex: 0
+        },
+        {
+          id: 'ann-mb-2',
+          type: 'deformation',
+          label: '[SETTLEMENT OFFSET]',
+          box2d: [420, 280, 800, 750],
+          severity: 'Critical concern',
+          description: 'Plinth gap and vertical settlement offset',
+          imageIndex: 1
+        },
+        {
+          id: 'ann-mb-3',
+          type: 'spalling',
+          label: '[JOINT SPALLING]',
+          box2d: [250, 310, 690, 720],
+          severity: 'High concern',
+          description: 'Concrete distress at column-beam connection',
+          imageIndex: 2
+        }
+      ],
+      whatMayBeRequired: [
+        'Immediate geotechnical soil boring and plate load testing adjacent to footing',
+        'Optical leveling survey of building corners to quantify differential settlement slope',
+        'Installation of calibrated crack tell-tales across facade cracks to monitor rate of motion',
+        'Foundation underpinning feasibility study (helical piles or micro-piles)'
+      ],
+      possibleRepairApproaches: [
+        {
+          issueType: 'Foundation Settlement Stabilization',
+          repairClassification: 'Potential Structural Issue (Requires Professional Assessment)',
+          steps: [
+            'Install temporary heavy hydraulic needle beams to stabilize load-bearing wall',
+            'Drill and install hydraulically driven steel micro-piles into stable bedrock stratum',
+            'Pressure grout foundation subgrade with high-density expanding structural polyurethane',
+            'Re-level structure gradually and lock pile brackets',
+            'Pressure inject epoxy into facade and column shear cracks once motion ceases'
+          ],
+          materialsInvolved: ['Steel Micro-piles', 'Expanding Geotechnical Polyurethane', 'Structural Injection Epoxy'],
+          professionalWarning: 'CRITICAL: Cosmetic crack repairs will fail immediately if foundation subgrade movement is not permanently arrested first.'
+        }
+      ],
+      questionsForEngineer: [
+        'Is the foundation settlement active or has it reached consolidation equilibrium?',
+        'Are helical underpinning piles required to arrest future downward displacement?',
+        'Does the column joint in Photo #3 require structural steel or CFRP jacketing?'
+      ],
+      safetyDisclaimer: 'CRITICAL LIMITATION: This AI visual inspection is a preliminary screening based strictly on visible pixels. It CANNOT measure subsurface concrete strength, internal reinforcement corrosion, foundation settlement dynamics, or seismic compliance. An on-site physical inspection by a licensed structural engineer is mandatory before any repair, modification, or occupancy conclusion.',
+      imageUrls: [
+        'https://images.unsplash.com/photo-1584467735815-f778f274e296?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80'
+      ]
+    }
+  },
+  {
     id: 'sample-concrete-spalling',
     title: 'Slab Soffit Spalling & Exposed Rebar',
     structureType: 'slab',
@@ -279,6 +446,198 @@ export const SAMPLE_STRUCTURAL_CASES: SampleStructuralInspectionCase[] = [
       ],
       safetyDisclaimer: 'CRITICAL LIMITATION: This AI visual inspection is a preliminary screening based strictly on visible pixels. It CANNOT measure subsurface concrete strength, internal reinforcement corrosion, foundation settlement dynamics, or seismic compliance. An on-site physical inspection by a licensed structural engineer is mandatory before any repair, modification, or occupancy conclusion.',
       imageUrls: ['https://images.unsplash.com/photo-1584467735815-f778f274e296?auto=format&fit=crop&w=1200&q=80']
+    }
+  },
+  {
+    id: 'sample-bridge-video-inspection',
+    title: 'Bridge Pier & Flyover Video Walkthrough',
+    structureType: 'bridge',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?auto=format&fit=crop&w=1200&q=80',
+    description: 'Dynamic walkthrough video scanning bridge pier concrete cracking, elastomeric bearing distress, and deck underside spalling.',
+    mockResult: {
+      id: 'insp-sample-bridge-vid-04',
+      timestamp: new Date().toISOString(),
+      mediaType: 'video',
+      structureType: 'Bridge',
+      detectedStructureType: 'RC Highway Overpass & Bridge Substructure',
+      overallAssessment: 'Multi-point visual distress detected across bridge substructure during video walkthrough, including longitudinal pier cracking and elastomeric bearing extrusion.',
+      severity: 'high',
+      confidence: 'High',
+      immediateProfessionalInspection: 'Strongly Recommended',
+      summaryParagraph: 'The walkthrough video captures progressive deterioration across the bridge support system. At 00:03, vertical flexural-compression fissures are identified along Pier 2; at 00:08, severe elastomeric bearing deformation and corrosion of steel rocker plates are observed; at 00:14, deck underside concrete spalling exposes transverse stirrups; and at 00:19, abutment wing-wall weeping and efflorescence indicate sustained drainage leakage.',
+      videoDurationSeconds: 24,
+      videoFindings: [
+        {
+          timestamp: '00:03',
+          timestampSeconds: 3,
+          problem: 'Vertical Fissure on Bridge Pier Shaft',
+          location: 'Pier 2 stem, 1.8m above waterline',
+          category: 'crack',
+          concernLevel: 'High concern',
+          evidence: 'Continuous vertical split with light water seepage along concrete formwork seams.',
+          possibleCauses: [
+            'Heavy cyclical traffic overloading',
+            'Differential thermal contraction in massive concrete',
+            'Subsurface pier footing rotation'
+          ],
+          recommendedAction: 'Install vibrating wire crack gauges and perform pulse echo tomography.',
+          frameThumbnail: 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?auto=format&fit=crop&w=600&q=80'
+        },
+        {
+          timestamp: '00:08',
+          timestampSeconds: 8,
+          problem: 'Bearing Pad Extrusion & Steel Corrosion',
+          location: 'Pier cap seat below western girder bearing',
+          category: 'joint_damage',
+          concernLevel: 'Critical concern',
+          evidence: 'Neoprene bearing pad bulging irregularly with heavy ferric rust flaking on steel sole plate.',
+          possibleCauses: [
+            'Age degradation of elastomeric polymer',
+            'Uneven longitudinal expansion joint movement',
+            'De-icing chemical salt spray ingress'
+          ],
+          recommendedAction: 'Jacking feasibility study for bearing pad replacement.',
+          frameThumbnail: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=600&q=80'
+        },
+        {
+          timestamp: '00:14',
+          timestampSeconds: 14,
+          problem: 'Soffit Concrete Spalling & Exposed Rebar',
+          location: 'Bridge deck underside adjacent to transverse diaphragm',
+          category: 'spalling',
+          concernLevel: 'High concern',
+          evidence: 'Delaminated concrete fragment dislodged, revealing 2 rows of rusted steel rebars.',
+          possibleCauses: [
+            'Chloride-induced pitting corrosion',
+            'Water dripping from faulty deck expansion joint seal'
+          ],
+          recommendedAction: 'Sounding hammer survey to map delamination boundary and test carbonation depth.',
+          frameThumbnail: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80'
+        },
+        {
+          timestamp: '00:19',
+          timestampSeconds: 19,
+          problem: 'Abutment Efflorescence & Water Seepage',
+          location: 'East abutment wing-wall ballast curb',
+          category: 'water_moisture',
+          concernLevel: 'Moderate concern',
+          evidence: 'Heavy white calcite deposits and active damp patches leaching down wall face.',
+          possibleCauses: [
+            'Clogged abutment drainage weep holes',
+            'Failure of waterproofing membrane behind backfill'
+          ],
+          recommendedAction: 'Flush and core weep pipes; inspect approach slab drainage gutters.',
+          frameThumbnail: 'https://images.unsplash.com/photo-1584467735815-f778f274e296?auto=format&fit=crop&w=600&q=80'
+        }
+      ],
+      findings: [
+        {
+          id: 'finding-v1',
+          problem: 'Vertical Fissure on Bridge Pier Shaft (00:03)',
+          location: 'Pier 2 stem, 1.8m above waterline',
+          severity: 'High concern',
+          category: 'crack',
+          evidence: 'Continuous vertical split with light water seepage along concrete formwork seams.',
+          possibleCauses: [
+            'Heavy cyclical traffic overloading',
+            'Differential thermal contraction in massive concrete',
+            'Subsurface pier footing rotation'
+          ],
+          annotationId: 'ann-v1',
+          imageIndex: 0
+        },
+        {
+          id: 'finding-v2',
+          problem: 'Bearing Pad Extrusion & Steel Corrosion (00:08)',
+          location: 'Pier cap seat below western girder bearing',
+          severity: 'Critical concern',
+          category: 'joint_damage',
+          evidence: 'Neoprene bearing pad bulging irregularly with heavy ferric rust flaking on steel sole plate.',
+          possibleCauses: [
+            'Age degradation of elastomeric polymer',
+            'Uneven longitudinal expansion joint movement',
+            'De-icing chemical salt spray ingress'
+          ],
+          annotationId: 'ann-v2',
+          imageIndex: 1
+        },
+        {
+          id: 'finding-v3',
+          problem: 'Soffit Concrete Spalling & Exposed Rebar (00:14)',
+          location: 'Bridge deck underside adjacent to transverse diaphragm',
+          severity: 'High concern',
+          category: 'spalling',
+          evidence: 'Delaminated concrete fragment dislodged, revealing 2 rows of rusted steel rebars.',
+          possibleCauses: [
+            'Chloride-induced pitting corrosion',
+            'Water dripping from faulty deck expansion joint seal'
+          ],
+          annotationId: 'ann-v3',
+          imageIndex: 2
+        }
+      ],
+      annotations: [
+        {
+          id: 'ann-v1',
+          type: 'crack',
+          label: '[PIER CRACK]',
+          box2d: [240, 380, 780, 620],
+          severity: 'High concern',
+          description: 'Vertical fracture along pier stem recorded at 00:03',
+          imageIndex: 0
+        },
+        {
+          id: 'ann-v2',
+          type: 'joint_damage',
+          label: '[BEARING BULGE]',
+          box2d: [420, 310, 680, 720],
+          severity: 'Critical concern',
+          description: 'Deformed elastomeric bearing pad recorded at 00:08',
+          imageIndex: 1
+        },
+        {
+          id: 'ann-v3',
+          type: 'spalling',
+          label: '[DECK SPALLING]',
+          box2d: [290, 240, 720, 760],
+          severity: 'High concern',
+          description: 'Deck soffit spalling with exposed steel rebar at 00:14',
+          imageIndex: 2
+        }
+      ],
+      whatMayBeRequired: [
+        'Bridge structural load rating and dynamic deflection testing under controlled axle loads',
+        'Ultrasonic testing of bridge bearing anchor bolts and ultrasonic pulse velocity on pier shaft',
+        'Core sampling of bridge deck concrete for chloride ion concentration profile',
+        'Hydrostatic inspection of abutment backfill drainage network'
+      ],
+      possibleRepairApproaches: [
+        {
+          issueType: 'Bridge Bearing Replacement & Pier Strengthening',
+          repairClassification: 'Potential Structural Issue (Requires Professional Assessment)',
+          steps: [
+            'Implement lane closure and temporary live load restrictions',
+            'Position synchronized hydraulic climbing jacks to lift girder span 10mm',
+            'Remove deteriorated neoprene pad and prepare bearing plinth seat',
+            'Install new guided pot or spherical bearing assembly and torque anchor bolts',
+            'Lower span and monitor load transfer with load cells'
+          ],
+          materialsInvolved: ['High-capacity Hydraulic Jacks', 'AASHTO-certified Elastomeric Bearings', 'Non-shrink Epoxy Grout'],
+          professionalWarning: 'Bridge span jacking must be carried out exclusively under the continuous direct supervision of a licensed bridge engineer.'
+        }
+      ],
+      questionsForEngineer: [
+        'Does the pier vertical crack affect the axial compression load rating of the bridge?',
+        'Can bearing replacement be executed while maintaining single-lane controlled traffic?',
+        'What chloride remediation is needed to halt electrochemical corrosion in the deck rebar?'
+      ],
+      safetyDisclaimer: 'CRITICAL LIMITATION: This AI visual inspection is a preliminary screening based strictly on visible pixels. It CANNOT measure subsurface concrete strength, internal reinforcement corrosion, foundation settlement dynamics, or seismic compliance. An on-site physical inspection by a licensed structural engineer is mandatory before any repair, modification, or occupancy conclusion.',
+      imageUrls: [
+        'https://images.unsplash.com/photo-1545558014-8692077e9b5c?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1584467735815-f778f274e296?auto=format&fit=crop&w=1200&q=80'
+      ]
     }
   }
 ];

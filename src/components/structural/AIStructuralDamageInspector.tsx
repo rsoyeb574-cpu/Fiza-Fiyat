@@ -27,7 +27,8 @@ import {
   Sliders,
   Compass,
   Zap,
-  Check
+  Check,
+  FileText
 } from 'lucide-react';
 import { 
   StructuralInspectionResult, 
@@ -72,6 +73,14 @@ const LOADING_STAGES = [
   { text: 'Finalizing comprehensive structural damage report...', progress: 98 }
 ];
 
+const MULTI_IMAGE_LOADING_STAGES = [
+  { text: 'Validating and reading multi-image structural batch...', progress: 15 },
+  { text: 'Scanning multi-angle perspectives with Gemini Vision...', progress: 38 },
+  { text: 'Mapping coordinates & bounding boxes across all photos...', progress: 62 },
+  { text: 'Correlating cross-image stress paths & spatial spread...', progress: 82 },
+  { text: 'Synthesizing Consolidated Multi-Image Assessment...', progress: 98 }
+];
+
 export const AIStructuralDamageInspector: React.FC = () => {
   const { user } = useAuth();
   const { plan, usage, refreshPlan } = usePlan();
@@ -94,10 +103,17 @@ export const AIStructuralDamageInspector: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [inspectionResult, setInspectionResult] = useState<StructuralInspectionResult | null>(null);
   const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
+  const [activeViewerImageIndex, setActiveViewerImageIndex] = useState<number>(0);
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
+  const [pdfDownloaded, setPdfDownloaded] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  const activeLoadingStages = (activeMediaType === 'image' && uploadedImages.length > 1)
+    ? MULTI_IMAGE_LOADING_STAGES
+    : LOADING_STAGES;
 
   // Cycle through loading steps during analysis
   useEffect(() => {
@@ -105,14 +121,14 @@ export const AIStructuralDamageInspector: React.FC = () => {
     if (isAnalyzing) {
       setLoadingStageIndex(0);
       timer = setInterval(() => {
-        setLoadingStageIndex(prev => (prev < LOADING_STAGES.length - 1 ? prev + 1 : prev));
+        setLoadingStageIndex(prev => (prev < activeLoadingStages.length - 1 ? prev + 1 : prev));
       }, 1800);
     }
     return () => clearInterval(timer);
-  }, [isAnalyzing]);
+  }, [isAnalyzing, activeLoadingStages.length]);
 
-  // File Upload Handlers
-  const handleImageFiles = (files: FileList | File[]) => {
+  // File Upload Handlers with parallel multi-file reader
+  const handleImageFiles = async (files: FileList | File[]) => {
     setError(null);
     const validFiles = Array.from(files).filter(f => {
       const isImg = f.type.startsWith('image/');
@@ -126,17 +142,27 @@ export const AIStructuralDamageInspector: React.FC = () => {
 
     if (validFiles.length === 0) return;
 
-    validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        setUploadedImages(prev => [
-          ...prev,
-          { data: dataUrl, mimeType: file.type, name: file.name }
-        ]);
-      };
-      reader.readAsDataURL(file);
-    });
+    try {
+      const readPromises = validFiles.map(file => {
+        return new Promise<{ data: string; mimeType: string; name: string }>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            resolve({
+              data: e.target?.result as string,
+              mimeType: file.type || 'image/jpeg',
+              name: file.name
+            });
+          };
+          reader.onerror = () => reject(new Error(`Failed to read file ${file.name}`));
+          reader.readAsDataURL(file);
+        });
+      });
+
+      const loadedImages = await Promise.all(readPromises);
+      setUploadedImages(prev => [...prev, ...loadedImages]);
+    } catch (err: any) {
+      setError(err.message || 'Error uploading images');
+    }
   };
 
   const handleVideoFile = async (file: File) => {
@@ -239,7 +265,7 @@ export const AIStructuralDamageInspector: React.FC = () => {
             frameIndex: i
           })) : undefined,
           notes: notes.trim(),
-          userId: user?.id,
+          userId: user?.uid,
           userEmail: user?.email
         })
       });
@@ -261,6 +287,7 @@ export const AIStructuralDamageInspector: React.FC = () => {
       };
 
       setInspectionResult(completeResult);
+      setActiveViewerImageIndex(0);
       if (refreshPlan) refreshPlan();
 
       // Scroll to result view
@@ -279,12 +306,41 @@ export const AIStructuralDamageInspector: React.FC = () => {
   const handleLoadPreset = (sampleCase: SampleStructuralInspectionCase) => {
     setError(null);
     setInspectionResult(sampleCase.mockResult);
-    setActiveMediaType('image');
-    setUploadedImages([{
-      data: sampleCase.thumbnailUrl,
-      mimeType: 'image/jpeg',
-      name: sampleCase.title
-    }]);
+    setActiveViewerImageIndex(0);
+    const isVideo = sampleCase.mockResult.mediaType === 'video';
+    setActiveMediaType(isVideo ? 'video' : 'image');
+
+    if (isVideo) {
+      setUploadedImages([]);
+      setVideoFile(null);
+      setVideoPreviewUrl(sampleCase.mockResult.videoUrl || null);
+      if (sampleCase.mockResult.videoFindings) {
+        setExtractedVideoFrames(sampleCase.mockResult.videoFindings.map((f, i) => ({
+          data: f.frameThumbnail || sampleCase.mockResult.imageUrls?.[i] || sampleCase.thumbnailUrl,
+          mimeType: 'image/jpeg',
+          label: `Timestamp ${f.timestamp}`,
+          seconds: f.timestampSeconds
+        })));
+      }
+    } else {
+      setVideoFile(null);
+      setVideoPreviewUrl(null);
+      setExtractedVideoFrames([]);
+      if (sampleCase.mockResult.imageUrls && sampleCase.mockResult.imageUrls.length > 1) {
+        setUploadedImages(sampleCase.mockResult.imageUrls.map((url, i) => ({
+          data: url,
+          mimeType: 'image/jpeg',
+          name: sampleCase.mockResult.multiImageAssessment?.imageSummaries?.[i]?.label || `Photo #${i + 1}`
+        })));
+      } else {
+        setUploadedImages([{
+          data: sampleCase.thumbnailUrl,
+          mimeType: 'image/jpeg',
+          name: sampleCase.title
+        }]);
+      }
+    }
+
     setStructureType(sampleCase.structureType as any);
     setTimeout(() => {
       window.scrollTo({ top: 400, behavior: 'smooth' });
@@ -294,22 +350,50 @@ export const AIStructuralDamageInspector: React.FC = () => {
   const handleCopyReportSummary = () => {
     if (!inspectionResult) return;
     const text = `FIZA FIYAT AI STRUCTURAL DAMAGE INSPECTION REPORT
+${inspectionResult.isMultiImage ? 'REPORT TYPE: CONSOLIDATED MULTI-IMAGE BATCH INSPECTION' : ''}
 Structure: ${inspectionResult.structureType}
 Severity: ${inspectionResult.severity.toUpperCase()}
 Confidence: ${inspectionResult.confidence}
 On-Site Inspection: ${inspectionResult.immediateProfessionalInspection}
 
-Assessment:
+Overall Assessment:
 ${inspectionResult.overallAssessment}
-
+${inspectionResult.multiImageAssessment?.spatialSpreadEvaluation ? `\nSpatial Spread & Structural Envelope:\n${inspectionResult.multiImageAssessment.spatialSpreadEvaluation}\n` : ''}${inspectionResult.multiImageAssessment?.crossImageCorrelations?.length ? `\nCross-Photo Correlations:\n${inspectionResult.multiImageAssessment.crossImageCorrelations.map(c => `• ${c}`).join('\n')}\n` : ''}
 Detected Findings:
-${inspectionResult.findings.map((f, i) => `${i + 1}. ${f.problem} (${f.severity}) - Evidence: ${f.evidence}`).join('\n')}
+${inspectionResult.findings.map((f, i) => `${i + 1}. ${f.problem} (${f.severity}) [Photo #${(f.imageIndex ?? 0) + 1}] - Evidence: ${f.evidence}`).join('\n')}
 
 Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a licensed structural engineer is required.`;
 
     navigator.clipboard.writeText(text);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2000);
+  };
+
+  // Download PDF Report Handler
+  const handleDownloadPdf = async () => {
+    if (!inspectionResult) return;
+    setIsGeneratingPdf(true);
+    setPdfDownloaded(false);
+    try {
+      const enrichedResult: StructuralInspectionResult = {
+        ...inspectionResult,
+        imageUrls: (inspectionResult.imageUrls && inspectionResult.imageUrls.length > 0)
+          ? inspectionResult.imageUrls
+          : uploadedImages.length > 0
+            ? uploadedImages.map(img => img.data)
+            : extractedVideoFrames.length > 0
+              ? extractedVideoFrames.map(f => f.data)
+              : undefined
+      };
+      await downloadStructuralInspectionPdf(enrichedResult);
+      setPdfDownloaded(true);
+      setTimeout(() => setPdfDownloaded(false), 5000);
+    } catch (err: any) {
+      console.error('Failed to generate PDF report:', err);
+      setError('Unable to compile PDF report. Please try again.');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const getSeverityBadge = (severity: string) => {
@@ -424,7 +508,7 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
                 if (e.dataTransfer.files) handleImageFiles(e.dataTransfer.files);
               }}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-8 sm:p-10 text-center transition-all cursor-pointer flex flex-col items-center justify-center min-h-[180px] ${
+              className={`border-2 border-dashed rounded-2xl p-8 sm:p-10 text-center transition-all cursor-pointer flex flex-col items-center justify-center min-h-[190px] relative ${
                 isDragOver ? 'border-blue-500 bg-blue-500/10 scale-[1.01]' : 'border-white/15 hover:border-blue-500/50 bg-slate-950/60 hover:bg-slate-950/90'
               }`}
             >
@@ -436,32 +520,80 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
                 className="hidden"
                 onChange={(e) => {
                   if (e.target.files) handleImageFiles(e.target.files);
+                  // Clear value so the same files can be re-selected if needed
+                  e.target.value = '';
                 }}
               />
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[11px] font-semibold flex items-center gap-1.5">
+                  <Layers className="w-3 h-3 text-cyan-400" />
+                  Multi-Image Batch Supported
+                </span>
+                <span className="text-[11px] text-slate-400 font-mono">1 to 10 photos</span>
+              </div>
+
               <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center mb-3">
                 <ImageIcon className="w-6 h-6" />
               </div>
               <div className="text-sm font-bold text-white mb-1">
-                Drop high-resolution damage photos here, or <span className="text-blue-400 underline">browse files</span>
+                Drop multiple damage photos here, or <span className="text-blue-400 underline">browse files</span>
               </div>
-              <div className="text-xs text-slate-400 max-w-md">
-                Supports JPG, PNG, WEBP up to 15MB each. You can upload multiple angles (e.g. Overview, Close-up of crack, Column base).
+              <div className="text-xs text-slate-400 max-w-lg mb-4">
+                Select multiple photos simultaneously (hold Shift or Ctrl/Cmd in the file dialog). Up to 15MB each (JPG, PNG, WEBP). Recommended: Overview, crack close-up, foundation, and beam/column joints.
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 border border-blue-400/40 shadow-md shadow-blue-600/30 flex items-center gap-1.5 cursor-pointer transition-all"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Select Multiple Photos</span>
+                </button>
               </div>
             </div>
 
             {/* Uploaded Images Preview Strip */}
             {uploadedImages.length > 0 && (
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-300 font-medium">
-                  <span>Selected Photos ({uploadedImages.length}):</span>
-                  <button
-                    onClick={() => setUploadedImages([])}
-                    className="text-red-400 hover:text-red-300 text-[11px] flex items-center gap-1 cursor-pointer"
-                  >
-                    <Trash2 className="w-3 h-3" /> Clear All
-                  </button>
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300 font-medium">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white">
+                      Selected Photos ({uploadedImages.length}):
+                    </span>
+                    {uploadedImages.length > 1 ? (
+                      <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold flex items-center gap-1">
+                        <Layers className="w-2.5 h-2.5" /> Consolidated Assessment Mode
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-400">
+                        (Tip: Add 1 or 2 more photos for cross-angle spatial analysis)
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1 font-semibold px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 cursor-pointer transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add More Photos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUploadedImages([])}
+                      className="text-red-400 hover:text-red-300 text-xs flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-red-500/10 border border-transparent hover:border-red-500/20 cursor-pointer transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Clear All
+                    </button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pt-1">
                   {uploadedImages.map((img, idx) => (
                     <div key={idx} className="relative group rounded-xl overflow-hidden border border-white/10 bg-black aspect-video">
                       <img src={img.data} alt={img.name} className="w-full h-full object-cover" />
@@ -470,12 +602,16 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
                           e.stopPropagation();
                           setUploadedImages(prev => prev.filter((_, i) => i !== idx));
                         }}
-                        className="absolute top-1 right-1 p-1 rounded-md bg-red-600/80 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 p-1 rounded-md bg-red-600/90 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        title="Remove photo"
                       >
                         <X className="w-3 h-3" />
                       </button>
-                      <div className="absolute bottom-0 inset-x-0 p-1 bg-black/60 text-[9px] text-white truncate px-1.5">
-                        #{idx + 1} {img.name}
+                      <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/80 font-mono text-[9px] font-bold text-cyan-300 border border-white/10">
+                        #{idx + 1}
+                      </div>
+                      <div className="absolute bottom-0 inset-x-0 p-1 bg-gradient-to-t from-black via-black/80 to-transparent text-[9px] text-white truncate px-1.5">
+                        {img.name}
                       </div>
                     </div>
                   ))}
@@ -612,12 +748,20 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
             {isAnalyzing ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Inspecting Structure...</span>
+                <span>
+                  {activeMediaType === 'image' && uploadedImages.length > 1
+                    ? `Synthesizing Batch (${uploadedImages.length} Photos)...`
+                    : 'Inspecting Structure...'}
+                </span>
               </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Run AI Structural Damage Inspection</span>
+                <span>
+                  {activeMediaType === 'image' && uploadedImages.length > 1
+                    ? `Run Consolidated Batch Inspection (${uploadedImages.length} Photos)`
+                    : 'Run AI Structural Damage Inspection'}
+                </span>
               </>
             )}
           </button>
@@ -638,7 +782,7 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
 
           <div className="space-y-2">
             <h4 className="text-xl font-bold text-white">
-              {LOADING_STAGES[loadingStageIndex].text}
+              {activeLoadingStages[loadingStageIndex]?.text || 'Analyzing structure...'}
             </h4>
             <p className="text-xs text-slate-400">
               Examining structural stress markers, material degradation, and safety risks...
@@ -650,7 +794,7 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
             <motion.div
               className="h-full bg-gradient-to-r from-blue-500 to-cyan-400"
               initial={{ width: '10%' }}
-              animate={{ width: `${LOADING_STAGES[loadingStageIndex].progress}%` }}
+              animate={{ width: `${activeLoadingStages[loadingStageIndex]?.progress || 50}%` }}
               transition={{ duration: 0.5 }}
             />
           </div>
@@ -684,11 +828,26 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
               </button>
 
               <button
-                onClick={() => downloadStructuralInspectionPdf(inspectionResult)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 transition-all flex items-center gap-2 cursor-pointer"
+                onClick={handleDownloadPdf}
+                disabled={isGeneratingPdf}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
               >
-                <Download className="w-4 h-4" />
-                Download Report (PDF)
+                {isGeneratingPdf ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Generating PDF...</span>
+                  </>
+                ) : pdfDownloaded ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-300" />
+                    <span>PDF Downloaded</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    <span>Download Report (PDF)</span>
+                  </>
+                )}
               </button>
 
               <button
@@ -704,6 +863,29 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
               </button>
             </div>
           </div>
+
+          {/* VIDEO ANALYSIS RESULTS: Visual Timeline Scrubber mapped to detected structural anomalies */}
+          {inspectionResult.videoFindings && inspectionResult.videoFindings.length > 0 && (
+            <VideoFindingsTimeline
+              findings={inspectionResult.videoFindings}
+              videoUrl={videoPreviewUrl || inspectionResult.videoUrl}
+              videoDurationSeconds={inspectionResult.videoDurationSeconds}
+              extractedFrames={extractedVideoFrames}
+              onSelectTimestamp={(sec) => {
+                const matched = inspectionResult.findings.find(f => 
+                  f.problem.includes(`00:${Math.round(sec).toString().padStart(2, '0')}`)
+                );
+                if (matched) setSelectedFindingId(matched.id);
+              }}
+              onSelectFinding={(problemText) => {
+                const matched = inspectionResult.findings.find(f => 
+                  f.problem.toLowerCase().includes(problemText.toLowerCase()) || 
+                  problemText.toLowerCase().includes(f.problem.toLowerCase())
+                );
+                if (matched) setSelectedFindingId(matched.id);
+              }}
+            />
+          )}
 
           {/* MAIN 2-COLUMN INSPECTION LAYOUT */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -723,18 +905,24 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
 
                 {/* Annotated Media Viewer Component */}
                 <AnnotatedMediaViewer
-                  imageUrls={inspectionResult.imageUrls || []}
+                  imageUrls={
+                    (inspectionResult.imageUrls && inspectionResult.imageUrls.length > 0)
+                      ? inspectionResult.imageUrls
+                      : uploadedImages.length > 0
+                        ? uploadedImages.map(img => img.data)
+                        : extractedVideoFrames.length > 0
+                          ? extractedVideoFrames.map(f => f.data)
+                          : []
+                  }
                   annotations={inspectionResult.annotations}
                   findings={inspectionResult.findings}
                   structureType={inspectionResult.structureType}
                   selectedFindingId={selectedFindingId}
                   onSelectFinding={(fId) => setSelectedFindingId(fId)}
+                  onDownloadPdf={handleDownloadPdf}
+                  activeImageIndex={activeViewerImageIndex}
+                  onActiveImageIndexChange={setActiveViewerImageIndex}
                 />
-
-                {/* If Video: Keyframe Timeline */}
-                {inspectionResult.videoFindings && inspectionResult.videoFindings.length > 0 && (
-                  <VideoFindingsTimeline findings={inspectionResult.videoFindings} />
-                )}
               </div>
             </div>
 
@@ -795,6 +983,96 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
                 </div>
               </div>
 
+              {/* CONSOLIDATED MULTI-IMAGE BATCH ASSESSMENT PANEL */}
+              {(inspectionResult.isMultiImage || inspectionResult.multiImageAssessment) && (
+                <div className="glass-card rounded-3xl p-6 sm:p-7 border border-cyan-500/30 bg-gradient-to-br from-slate-900/90 via-slate-950/90 to-blue-950/30 space-y-5 shadow-xl">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-cyan-500/20">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white text-base">Consolidated Multi-Image Assessment</h4>
+                        <p className="text-xs text-slate-400">
+                          Cross-perspective civil synthesis across {inspectionResult.multiImageAssessment?.totalImagesAnalyzed || inspectionResult.imageUrls?.length || uploadedImages.length} photographic angles
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 text-xs font-semibold flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-cyan-400" /> Batch Mode
+                    </span>
+                  </div>
+
+                  {/* Spatial Spread Evaluation */}
+                  {inspectionResult.multiImageAssessment?.spatialSpreadEvaluation && (
+                    <div className="space-y-1.5 bg-slate-950/70 p-4 rounded-2xl border border-white/5">
+                      <div className="text-xs font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
+                        <ShieldAlert className="w-3.5 h-3.5 text-cyan-400" />
+                        Spatial Spread & Structural Envelope Evaluation:
+                      </div>
+                      <p className="text-xs text-slate-200 leading-relaxed">
+                        {inspectionResult.multiImageAssessment.spatialSpreadEvaluation}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Cross-Image Defect Correlations */}
+                  {inspectionResult.multiImageAssessment?.crossImageCorrelations && inspectionResult.multiImageAssessment.crossImageCorrelations.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                        Cross-Photo Stress Path & Defect Correlations:
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {inspectionResult.multiImageAssessment.crossImageCorrelations.map((correlation, cIdx) => (
+                          <div key={cIdx} className="flex items-start gap-2 bg-blue-950/20 border border-blue-500/15 p-3 rounded-xl text-xs text-slate-200">
+                            <span className="text-cyan-400 font-bold shrink-0">&bull;</span>
+                            <span>{correlation}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Photo-by-Photo Analysis Matrix */}
+                  {inspectionResult.multiImageAssessment?.imageSummaries && inspectionResult.multiImageAssessment.imageSummaries.length > 0 && (
+                    <div className="space-y-2.5 pt-1">
+                      <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-300">
+                        <span>Photo-by-Photo Breakdown (Click to View):</span>
+                        <span className="text-slate-500 font-normal">Syncs with visual viewer</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        {inspectionResult.multiImageAssessment.imageSummaries.map((summary, sIdx) => {
+                          const isCurrentActive = activeViewerImageIndex === sIdx;
+                          return (
+                            <div
+                              key={sIdx}
+                              onClick={() => setActiveViewerImageIndex(sIdx)}
+                              className={`p-3 rounded-xl border transition-all cursor-pointer space-y-1.5 ${
+                                isCurrentActive
+                                  ? 'bg-blue-900/40 border-blue-400 shadow-md shadow-blue-500/20'
+                                  : 'bg-slate-950/60 hover:bg-slate-950 border-white/5 hover:border-white/15'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-white text-xs">
+                                  #{sIdx + 1} {summary.label}
+                                </span>
+                                <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono">
+                                  {summary.primaryFindingsCount} issues
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-300 line-clamp-2 leading-snug">
+                                {summary.distressSummary}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* DETECTED PROBLEMS LIST */}
               <div className="glass-card rounded-3xl p-6 sm:p-7 border border-white/10 bg-slate-900/80 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-white/10">
@@ -829,13 +1107,31 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
                             </span>
                             <span className="text-sm font-bold text-white">{f.problem}</span>
                           </div>
-                          <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
-                            f.severity.includes('Critical') || f.severity.includes('High')
-                              ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                              : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                          }`}>
-                            {f.severity}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            {/* Photo switch badge if multi-image */}
+                            {(inspectionResult.isMultiImage || (inspectionResult.imageUrls && inspectionResult.imageUrls.length > 1)) && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveViewerImageIndex(f.imageIndex ?? 0);
+                                  setSelectedFindingId(f.id);
+                                }}
+                                className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 hover:bg-blue-500/40 border border-blue-500/30 flex items-center gap-1 transition-all cursor-pointer"
+                                title={`Focus Photo #${(f.imageIndex ?? 0) + 1}`}
+                              >
+                                <ImageIcon className="w-3 h-3" />
+                                <span>Photo #{(f.imageIndex ?? 0) + 1}</span>
+                              </button>
+                            )}
+                            <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
+                              f.severity.includes('Critical') || f.severity.includes('High')
+                                ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                                : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                            }`}>
+                              {f.severity}
+                            </span>
+                          </div>
                         </div>
 
                         <div className="text-xs text-slate-400">
@@ -964,6 +1260,43 @@ Disclaimer: Preliminary visual assessment only. Physical on-site inspection by a
 
               {/* INTERACTIVE AI Q&A CHAT */}
               <StructuralInspectionQABox inspectionResult={inspectionResult} />
+
+              {/* PDF REPORT DOWNLOAD ACTION BANNER */}
+              <div className="glass-card rounded-3xl p-6 sm:p-7 border border-blue-500/30 bg-gradient-to-r from-blue-950/40 via-slate-900/80 to-slate-900/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 rounded-2xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white text-base">Download Complete PDF Inspection Report</h4>
+                    <p className="text-xs text-slate-300">
+                      Includes executive AI assessment, {inspectionResult.findings.length} detected issues, coordinate-annotated photographic evidence, recommended tests, and repair sequence.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={isGeneratingPdf}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 shrink-0"
+                >
+                  {isGeneratingPdf ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Compiling PDF...</span>
+                    </>
+                  ) : pdfDownloaded ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-300" />
+                      <span>Report Downloaded</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      <span>Download PDF Report</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
               {/* MANDATORY LEGAL & SAFETY DISCLAIMER CARD */}
               <div className="p-5 rounded-2xl bg-red-950/30 border border-red-500/30 space-y-2">

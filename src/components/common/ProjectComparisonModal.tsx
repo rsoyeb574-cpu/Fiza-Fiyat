@@ -23,6 +23,7 @@ import {
 import { Project } from '../../types';
 import { getProjectSpecs, calculateComparisonDelta } from '../../utils/projectComparison';
 import { downloadProposalReport } from '../../utils/proposalPdfGenerator';
+import { downloadProjectSummaryPdf } from '../../utils/projectPdfGenerator';
 
 interface ProjectComparisonModalProps {
   isOpen: boolean;
@@ -51,12 +52,25 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [downloadingSummaryId, setDownloadingSummaryId] = useState<string | null>(null);
 
   if (!isOpen || !project1 || !project2) return null;
 
   const specs1 = getProjectSpecs(project1);
   const specs2 = getProjectSpecs(project2);
   const delta = calculateComparisonDelta(project1, project2);
+
+  const handleDownloadSingleSummary = async (p: Project) => {
+    if (downloadingSummaryId) return;
+    setDownloadingSummaryId(p.id);
+    try {
+      await downloadProjectSummaryPdf(p);
+    } catch (err) {
+      console.error('Download summary error:', err);
+    } finally {
+      setDownloadingSummaryId(null);
+    }
+  };
 
   const handleSwap = () => {
     const temp = project1;
@@ -242,6 +256,15 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
                   <ExternalLink className="w-3.5 h-3.5" />
                   View Case Study
                 </button>
+                <button
+                  onClick={() => handleDownloadSingleSummary(project1)}
+                  disabled={downloadingSummaryId === project1.id}
+                  className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs transition-all cursor-pointer flex items-center gap-1.5 border border-slate-700 disabled:opacity-50"
+                  title="Download Project Summary (PDF) with specifications & images"
+                >
+                  <FileDown className="w-3.5 h-3.5 text-violet-400" />
+                  <span>{downloadingSummaryId === project1.id ? 'PDF...' : 'Summary'}</span>
+                </button>
                 {onInquireProject && (
                   <button
                     onClick={() => onInquireProject(project1)}
@@ -331,6 +354,15 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   View Case Study
+                </button>
+                <button
+                  onClick={() => handleDownloadSingleSummary(project2)}
+                  disabled={downloadingSummaryId === project2.id}
+                  className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs transition-all cursor-pointer flex items-center gap-1.5 border border-slate-700 disabled:opacity-50"
+                  title="Download Project Summary (PDF) with specifications & images"
+                >
+                  <FileDown className="w-3.5 h-3.5 text-blue-400" />
+                  <span>{downloadingSummaryId === project2.id ? 'PDF...' : 'Summary'}</span>
                 </button>
                 {onInquireProject && (
                   <button

@@ -190,7 +190,23 @@ export const NewFileRequestModal: React.FC<NewFileRequestModalProps> = ({
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const newAttachments: FileRequestAttachment[] = Array.from(files).map((f, idx) => {
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    const validFiles: File[] = [];
+    const oversizedFiles: string[] = [];
+
+    Array.from(files).forEach(f => {
+      if (f.size > MAX_FILE_SIZE) {
+        oversizedFiles.push(f.name);
+      } else {
+        validFiles.push(f);
+      }
+    });
+
+    if (oversizedFiles.length > 0) {
+      alert(`The following files exceed the 50MB size limit and were skipped:\n${oversizedFiles.join('\n')}`);
+    }
+
+    const newAttachments: FileRequestAttachment[] = validFiles.map((f, idx) => {
       const ext = f.name.split('.').pop()?.toLowerCase() || 'file';
       let fileType: FileRequestAttachment['fileType'] = 'pdf';
       if (['dwg', 'dxf'].includes(ext)) fileType = 'dwg';

@@ -61,7 +61,15 @@ Respond in JSON ONLY:
 {"isValid": boolean, "reason": "brief explanation if invalid"}`;
 
     let jsonText = '';
-    const modelsToTry = ['gemini-3.7-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
+    const configured = process.env.GEMINI_MODEL?.trim();
+    const modelsToTry = [
+      ...(configured ? [configured] : []),
+      'models/gemini-3.8-flash',
+      'models/gemini-3.7-flash',
+      'gemini-3.7-flash',
+      'gemini-3.1-flash-lite',
+      'gemini-flash-latest'
+    ];
     for (const m of modelsToTry) {
       try {
         const response = await ai.models.generateContent({

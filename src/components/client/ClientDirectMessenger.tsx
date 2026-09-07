@@ -297,6 +297,13 @@ export const ClientDirectMessenger: React.FC<ClientDirectMessengerProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const MAX_SIZE = 25 * 1024 * 1024; // 25MB
+    if (file.size > MAX_SIZE) {
+      alert('File size exceeds the 25MB limit. Please upload a smaller file or compressed archive.');
+      e.target.value = '';
+      return;
+    }
+
     const extension = file.name.split('.').pop()?.toLowerCase() || 'pdf';
     let detectedType: 'dwg' | 'rvt' | 'pdf' | 'jpg' | 'png' | 'zip' | 'doc' = 'pdf';
     if (['dwg', 'rvt', 'pdf', 'jpg', 'png', 'zip', 'doc'].includes(extension)) {

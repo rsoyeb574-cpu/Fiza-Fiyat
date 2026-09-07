@@ -20,12 +20,17 @@ import {
   CheckCircle2,
   Move3d,
   Image as ImageIcon,
-  Sliders
+  Sliders,
+  FileText,
+  Printer,
+  Check,
+  Loader2
 } from 'lucide-react';
 import { Project } from '../types';
 import { BeforeAfterSlider } from '../components/common/BeforeAfterSlider';
 import { ArchitecturalModelViewer } from '../components/common/ArchitecturalModelViewer';
 import { getProjectSpecs } from '../utils/projectComparison';
+import { downloadProjectSummaryPdf, openProjectSummaryPrintView } from '../utils/projectPdfGenerator';
 
 interface ProjectDetailPageProps {
   project: Project;
@@ -52,8 +57,27 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
 }) => {
   const [mediaViewMode, setMediaViewMode] = useState<'3d' | 'gallery' | 'video' | 'beforeAfter'>('3d');
   const [activeImage, setActiveImage] = useState<string>(project.coverImage || project.images?.[0]);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+
   const specs = getProjectSpecs(project);
   const comparing = isComparing(project.id);
+
+  const handleDownloadSummary = async () => {
+    if (isDownloadingPdf) return;
+    setIsDownloadingPdf(true);
+    try {
+      await downloadProjectSummaryPdf(project);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3500);
+    } catch (err) {
+      console.error('Error generating project summary PDF:', err);
+      // Fallback to high-res printable preview if direct canvas export encountered an issue
+      openProjectSummaryPrintView(project);
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   return (
     <div className="pt-28 pb-20 space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -96,6 +120,34 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
             )}
 
             <button
+              onClick={handleDownloadSummary}
+              disabled={isDownloadingPdf}
+              className={`px-4 py-3 rounded-2xl font-semibold text-xs flex items-center space-x-2 shadow-lg cursor-pointer transition-all ${
+                downloadSuccess
+                  ? 'bg-emerald-600 text-white shadow-emerald-600/30'
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-600/20'
+              } disabled:opacity-60`}
+              title="Download Polished PDF Project Summary (Specs, Imagery, Cost Breakdown)"
+            >
+              {isDownloadingPdf ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Generating PDF...</span>
+                </>
+              ) : downloadSuccess ? (
+                <>
+                  <Check className="w-4 h-4 text-white" />
+                  <span>Summary Downloaded!</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 text-white" />
+                  <span>Download Summary</span>
+                </>
+              )}
+            </button>
+
+            <button
               onClick={() => onToggleFavorite(project)}
               className="p-3 rounded-2xl bg-neutral-900 border border-white/10 text-white hover:text-red-400 cursor-pointer transition-all"
               title="Bookmark Project"
@@ -104,7 +156,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
             </button>
             <button
               onClick={() => onOpenShare(project)}
-              className="px-4 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg cursor-pointer transition-all"
+              className="px-4 py-3 rounded-2xl bg-neutral-800 hover:bg-neutral-700 text-white font-semibold text-xs flex items-center space-x-2 border border-white/10 shadow-lg cursor-pointer transition-all"
             >
               <Share2 className="w-4 h-4" />
               <span>Share Project</span>
@@ -371,6 +423,57 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
                   #{t}
                 </span>
               ))}
+            </div>
+          </div>
+
+          {/* Official Project Summary Dossier Card */}
+          <div className="p-6 rounded-3xl bg-gradient-to-b from-blue-950/40 via-neutral-900/80 to-neutral-900/90 border border-blue-500/20 space-y-3.5 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h4 className="text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-400" />
+                Project Summary Dossier
+              </h4>
+              <span className="text-[10px] text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded font-bold">
+                PDF Report
+              </span>
+            </div>
+            
+            <p className="text-neutral-400 text-xs leading-relaxed">
+              Official architectural report compiling complete technical specifications, high-res renders, structural parameters, LOD rating, and full cost distribution.
+            </p>
+
+            <div className="space-y-2 pt-1">
+              <button
+                onClick={handleDownloadSummary}
+                disabled={isDownloadingPdf}
+                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-blue-600/20 disabled:opacity-60"
+              >
+                {isDownloadingPdf ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Compiling PDF Report...</span>
+                  </>
+                ) : downloadSuccess ? (
+                  <>
+                    <Check className="w-4 h-4 text-white" />
+                    <span>PDF Downloaded!</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 text-white" />
+                    <span>Download Project Summary (PDF)</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => openProjectSummaryPrintView(project)}
+                className="w-full py-2 px-3 rounded-xl bg-neutral-950/80 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-white/10 text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                title="Open high-resolution printable report in browser tab"
+              >
+                <Printer className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Open Print / Web Preview</span>
+              </button>
             </div>
           </div>
 

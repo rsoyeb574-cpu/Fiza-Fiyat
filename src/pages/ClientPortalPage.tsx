@@ -45,6 +45,7 @@ import {
   ClientNotification,
   ClientFileRequest
 } from '../types/enterprise';
+import { downloadEnterpriseProjectSummaryPdf } from '../utils/projectPdfGenerator';
 import { 
   fetchEnterpriseProjects, 
   fetchInvoices, 
@@ -111,6 +112,22 @@ export const ClientPortalPage: React.FC = () => {
   const [targetFileRequestId, setTargetFileRequestId] = useState<string | null>(null);
   const [targetFileRequestTab, setTargetFileRequestTab] = useState<'details' | 'deliverables' | 'discussion'>('details');
   const [lastNotificationTimestamp, setLastNotificationTimestamp] = useState<number>(Date.now());
+  const [isDownloadingSummary, setIsDownloadingSummary] = useState(false);
+  const [summaryDownloaded, setSummaryDownloaded] = useState(false);
+
+  const handleDownloadProjectSummaryDossier = async () => {
+    if (!selectedProject || isDownloadingSummary) return;
+    setIsDownloadingSummary(true);
+    try {
+      await downloadEnterpriseProjectSummaryPdf(selectedProject);
+      setSummaryDownloaded(true);
+      setTimeout(() => setSummaryDownloaded(false), 3000);
+    } catch (err) {
+      console.error('Error downloading summary PDF:', err);
+    } finally {
+      setIsDownloadingSummary(false);
+    }
+  };
 
   // Chat State
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -879,11 +896,33 @@ export const ClientPortalPage: React.FC = () => {
 
       {/* TAB 3: DOWNLOAD CENTER */}
       {activeTab === 'downloads' && selectedProject && (
-        <div className="p-6 rounded-3xl bg-slate-900 border border-white/10 space-y-4">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-white/10 pb-3">
-            <Download className="w-4 h-4 text-blue-400" />
-            <span>Drawings, CAD, Revit 3D & Invoice Downloads</span>
-          </h3>
+        <div className="p-6 rounded-3xl bg-slate-900 border border-white/10 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Download className="w-4 h-4 text-blue-400" />
+                <span>Drawings, CAD, Revit 3D & Technical Dossiers</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Download project drawings, models, and comprehensive PDF executive reports for {selectedProject.title}
+              </p>
+            </div>
+
+            {/* Direct Project Summary Download Button */}
+            <button
+              onClick={handleDownloadProjectSummaryDossier}
+              disabled={isDownloadingSummary}
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 cursor-pointer transition-all ${
+                summaryDownloaded
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/20'
+              } disabled:opacity-60 shrink-0`}
+              title="Download polished PDF report of project specs and progress"
+            >
+              <Download className="w-4 h-4" />
+              <span>{isDownloadingSummary ? 'Generating Dossier...' : summaryDownloaded ? 'Dossier Downloaded!' : 'Download Project Summary (PDF)'}</span>
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(selectedProject.drawings || []).map(dwg => (
