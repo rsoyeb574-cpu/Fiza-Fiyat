@@ -24,13 +24,15 @@ import {
   FileText,
   Printer,
   Check,
-  Loader2
+  Loader2,
+  Wand2
 } from 'lucide-react';
 import { Project } from '../types';
 import { BeforeAfterSlider } from '../components/common/BeforeAfterSlider';
 import { ArchitecturalModelViewer } from '../components/common/ArchitecturalModelViewer';
 import { Bim3DViewer } from '../components/bim/Bim3DViewer';
 import { ProjectResourceAllocationView } from '../components/project/ProjectResourceAllocationView';
+import { AIDesignVariationModal } from '../components/project/AIDesignVariationModal';
 import { getProjectSpecs } from '../utils/projectComparison';
 import { downloadProjectSummaryPdf, openProjectSummaryPrintView } from '../utils/projectPdfGenerator';
 
@@ -62,6 +64,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
   const [activeImage, setActiveImage] = useState<string>(project.coverImage || project.images?.[0]);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [isVariationModalOpen, setIsVariationModalOpen] = useState(false);
 
   const specs = getProjectSpecs(project);
   const comparing = isComparing(project.id);
@@ -121,6 +124,19 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
                 <span>{comparing ? 'In Comparison Tray' : 'Compare Project'}</span>
               </button>
             )}
+
+            {/* AI Generate Design Variation Button */}
+            <button
+              onClick={() => setIsVariationModalOpen(true)}
+              className="px-4 py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold text-xs flex items-center space-x-2 border border-purple-400/30 shadow-lg shadow-purple-600/25 cursor-pointer transition-all"
+              title="Generate Design Variation using AI Assistant (Modernist, Minimalist, Industrial styles)"
+            >
+              <Sparkles className="w-4 h-4 text-purple-200" />
+              <span>Generate Design Variation</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-[10px] font-extrabold uppercase">
+                AI
+              </span>
+            </button>
 
             <button
               onClick={handleDownloadSummary}
@@ -252,6 +268,19 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
                 <span>Before & After</span>
               </button>
             )}
+
+            {/* AI Design Variation Modal Trigger */}
+            <button
+              onClick={() => setIsVariationModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all bg-gradient-to-r from-purple-950/70 to-indigo-950/70 hover:from-purple-900 hover:to-indigo-900 text-purple-200 border border-purple-500/30 shadow-md shadow-purple-950/40"
+              title="Re-render project imagery into Modernist, Minimalist, or Industrial styles"
+            >
+              <Wand2 className="w-3.5 h-3.5 text-purple-300" />
+              <span>Design Variation</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-extrabold border border-purple-500/30">
+                AI
+              </span>
+            </button>
           </div>
 
           <span className="text-xs text-neutral-400 hidden sm:inline">
@@ -315,6 +344,15 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
                 alt={project.title}
                 className="w-full h-full object-cover transition-all duration-300"
               />
+
+              {/* Floating Variation Shortcut */}
+              <button
+                onClick={() => setIsVariationModalOpen(true)}
+                className="absolute bottom-4 right-4 px-3.5 py-2 rounded-2xl bg-neutral-950/85 backdrop-blur-md border border-purple-500/30 text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-900 hover:border-purple-400 cursor-pointer transition-all shadow-2xl group"
+              >
+                <Sparkles className="w-4 h-4 text-purple-400 group-hover:rotate-12 transition-transform" />
+                <span>Re-render in Style</span>
+              </button>
             </div>
 
             {/* Thumbnail Strip */}
@@ -606,6 +644,18 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
           </div>
         </div>
       )}
+
+      {/* AI Design Variation Modal */}
+      <AIDesignVariationModal
+        isOpen={isVariationModalOpen}
+        onClose={() => setIsVariationModalOpen(false)}
+        project={project}
+        currentImage={activeImage}
+        onApplyVariationImage={(newImageUrl) => {
+          setActiveImage(newImageUrl);
+          setMediaViewMode('gallery');
+        }}
+      />
 
     </div>
   );

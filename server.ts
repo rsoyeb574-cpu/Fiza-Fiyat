@@ -339,6 +339,103 @@ async function startServer() {
     }
   });
 
+  // MS / Mild Steel / Sheet Metal & Structural Steel Image Diagnosis Endpoint
+  app.post('/api/steel/inspect', async (req, res) => {
+    try {
+      if (!isGeminiConfigured()) {
+        return res.status(500).json({
+          success: false,
+          status: 'error',
+          error: 'GEMINI_API_KEY is not configured on the server.'
+        });
+      }
+
+      const { image, userNotes, componentHint, userId, userEmail } = req.body || {};
+
+      if (!image || typeof image !== 'string') {
+        return res.status(400).json({
+          success: false,
+          status: 'error',
+          error: 'Image is required for steel diagnosis analysis.'
+        });
+      }
+
+      // Usage entitlement verification
+      const usageCheck = await verifyAndIncrementServerUsage(userId, userEmail, 'concept');
+      if (!usageCheck.allowed) {
+        return res.status(429).json(usageCheck.errorResponse);
+      }
+
+      const { analyzeSteelMedia } = await import('./src/server/steelDiagnosisService');
+      const report = await analyzeSteelMedia({
+        image,
+        userNotes,
+        componentHint
+      });
+
+      return res.json({
+        success: true,
+        status: 'success',
+        report,
+        usage: usageCheck.profile.usage
+      });
+    } catch (error: any) {
+      console.error('API /api/steel/inspect error:', error);
+      const isQuota = error?.status === 429 || `${error?.message || ''}`.toLowerCase().includes('quota');
+      return res.status(isQuota ? 429 : 500).json({
+        success: false,
+        status: 'error',
+        error: isQuota
+          ? 'AI inspection limit temporarily reached. Please retry shortly.'
+          : (sanitizeErrorMessage(error) || 'Failed to complete steel diagnostic analysis.')
+      });
+    }
+  });
+
+  // MS / Steel Technical Q&A Endpoint
+  app.post('/api/steel/qa', async (req, res) => {
+    try {
+      if (!isGeminiConfigured()) {
+        return res.status(500).json({
+          success: false,
+          status: 'error',
+          error: 'GEMINI_API_KEY is not configured on the server.'
+        });
+      }
+
+      const { question, language, inspectionContext, conversationHistory, userId, userEmail } = req.body || {};
+
+      if (!question || typeof question !== 'string' || !question.trim()) {
+        return res.status(400).json({
+          success: false,
+          status: 'error',
+          error: 'Question parameter is required.'
+        });
+      }
+
+      const { handleSteelQA } = await import('./src/server/steelDiagnosisService');
+      const qaResponse = await handleSteelQA({
+        question: question.trim(),
+        language: language || 'en',
+        inspectionContext: inspectionContext || {},
+        conversationHistory
+      });
+
+      return res.json({
+        success: true,
+        status: 'success',
+        response: qaResponse
+      });
+    } catch (error: any) {
+      console.error('API /api/steel/qa error:', error);
+      return res.status(500).json({
+        success: false,
+        status: 'error',
+        error: sanitizeErrorMessage(error) || 'Failed to generate answer for steel technical question.'
+      });
+    }
+  });
+
   // AI Image Generation Endpoint
   app.post('/api/ai/generate-image', async (req, res) => {
     try {
