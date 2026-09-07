@@ -48,6 +48,38 @@ export interface Project {
     engineering?: string;
     constructionEst?: string;
   };
+  resourceAllocation?: ProjectResourceAllocation;
+}
+
+export interface ProjectTeamMemberAllocation {
+  id: string;
+  name: string;
+  role: string;
+  discipline: 'Architecture' | 'Structural' | 'BIM & 3D' | 'Interior' | 'MEP & Environmental' | 'Project Management';
+  avatar: string;
+  allocationPercent: number; // e.g. 100%, 75%, 50%
+  hoursCommitted: number;
+  assignedTasks: string[];
+  status: 'active' | 'completed' | 'scheduled';
+}
+
+export interface ProjectMaterialRequirement {
+  id: string;
+  name: string;
+  category: 'Structural' | 'Enclosure & Glass' | 'Interior & Finishes' | 'Thermal & Acoustic' | 'Metals & Hardware';
+  specification: string;
+  quantity: string;
+  unit: string;
+  estimatedCost: number;
+  sustainabilityRating: 'A+' | 'A' | 'B' | 'LEED Certified';
+  procurementStatus: 'Procured' | 'In Fabrication' | 'Specified' | 'Delivered';
+}
+
+export interface ProjectResourceAllocation {
+  team: ProjectTeamMemberAllocation[];
+  materials: ProjectMaterialRequirement[];
+  totalTeamHours: number;
+  totalMaterialsBudget: number;
 }
 
 export interface Category {

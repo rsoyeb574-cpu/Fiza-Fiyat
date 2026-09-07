@@ -30,6 +30,7 @@ import { Project } from '../types';
 import { BeforeAfterSlider } from '../components/common/BeforeAfterSlider';
 import { ArchitecturalModelViewer } from '../components/common/ArchitecturalModelViewer';
 import { Bim3DViewer } from '../components/bim/Bim3DViewer';
+import { ProjectResourceAllocationView } from '../components/project/ProjectResourceAllocationView';
 import { getProjectSpecs } from '../utils/projectComparison';
 import { downloadProjectSummaryPdf, openProjectSummaryPrintView } from '../utils/projectPdfGenerator';
 
@@ -547,6 +548,9 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
 
         </div>
       </div>
+
+      {/* Resource Allocation Breakdown (Staffing & Materials Schedule) */}
+      <ProjectResourceAllocationView project={project} />
 
       {/* Related Projects */}
       {relatedProjects.length > 0 && (
