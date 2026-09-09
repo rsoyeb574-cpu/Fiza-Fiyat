@@ -10,8 +10,8 @@ export interface SteelMaterialSpec {
   tensileStrengthMpa: number;
   elongationPercent: number;
   typicalThicknessRangeMm: string;
-  weldability: 'Excellent' | 'Good' | 'Fair' | 'Requires Preheat / Special Procedure';
-  corrosionResistance: 'Low (Requires Coating)' | 'Moderate' | 'High (Sacrificial Zinc)' | 'Superior';
+  weldability: 'Excellent' | 'Good' | 'Fair' | 'Requires Preheat / Special Procedure' | string;
+  corrosionResistance: 'Low (Requires Coating)' | 'Moderate' | 'High (Sacrificial Zinc)' | 'Superior' | string;
   commonApplications: string[];
   fabricationNotes: string;
   indianStandardRef: string;

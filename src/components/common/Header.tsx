@@ -58,6 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'ai-studio', label: 'AI Studio', featured: true },
     { id: 'marketplace', label: 'Marketplace', featured: true },
     { id: 'construction-intelligence', label: 'Intelligence' },
+    { id: 'steel-diagnosis', label: 'MS & Steel' },
     { id: 'pricing', label: 'Pricing' },
     { id: 'client-portal', label: 'Client Portal' },
     { id: 'community', label: 'Community' },

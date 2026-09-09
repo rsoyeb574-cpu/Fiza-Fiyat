@@ -69,8 +69,10 @@ import { AIProjectAdvisor } from '../components/ai/AIProjectAdvisor';
 import { AIContentAssistant } from '../components/ai/AIContentAssistant';
 import { AIImageOrganizer } from '../components/ai/AIImageOrganizer';
 import { AIStructuralDamageInspector } from '../components/structural/AIStructuralDamageInspector';
+import { SteelDiagnosisView } from '../components/steel/SteelDiagnosisView';
 import { CivilCalculatorsSuite } from '../components/calculators/CivilCalculatorsSuite';
-import { ShieldAlert } from 'lucide-react';
+import { CadEngineeringMasterSuite } from '../components/cad/CadEngineeringMasterSuite';
+import { ShieldAlert, Wrench, FileCode } from 'lucide-react';
 
 export const ConstructionIntelligencePage: React.FC = () => {
   // Navigation active tab
@@ -159,6 +161,8 @@ export const ConstructionIntelligencePage: React.FC = () => {
 
   // Nav Items definition
   const mainNavItems = [
+    { id: 'cad-bim-engineering', label: 'CAD/BIM & Engineering Master', icon: FileCode, desc: 'Drawing QA, DXF Generator, Code Standards & Error Fixer' },
+    { id: 'ms-steel-diagnosis', label: 'MS & Steel Diagnosis Hub', icon: Wrench, desc: 'Metallurgy, Sheet Metal, Welding & Corrosion' },
     { id: 'ai-structural-inspector', label: 'AI Structural Inspector', icon: ShieldAlert, desc: 'Damage Diagnosis & Visual Annotations' },
     { id: 'calculator', label: 'Construction Calculator', icon: Calculator, desc: 'Smart Plot Plan & Estimate Generator' },
     { id: 'ai-architect', label: 'AI Architect Assistant', icon: Compass, desc: 'Conceptual Spatial & Floor Plan Guidance' },
@@ -234,6 +238,14 @@ export const ConstructionIntelligencePage: React.FC = () => {
 
             {/* Quick Action Badges */}
             <div className="flex flex-wrap items-center gap-3">
+              <button 
+                onClick={() => setActiveTab('cad-bim-engineering')}
+                className="px-4 py-3 rounded-xl font-medium text-sm text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/10"
+              >
+                <FileCode className="w-4 h-4 text-cyan-400" />
+                CAD / BIM & Engineering
+              </button>
+
               <button 
                 onClick={() => setActiveTab('ai-structural-inspector')}
                 className="px-4 py-3 rounded-xl font-medium text-sm text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-red-500/10"
@@ -378,6 +390,20 @@ export const ConstructionIntelligencePage: React.FC = () => {
 
         {/* MAIN TAB CONTENT RENDERER */}
         <AnimatePresence mode="wait">
+
+          {/* CAD / BIM & ENGINEERING MASTER SUITE */}
+          {activeTab === 'cad-bim-engineering' && (
+            <motion.div key="cad-bim-engineering" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <CadEngineeringMasterSuite />
+            </motion.div>
+          )}
+
+          {/* MS & STEEL DIAGNOSIS HUB */}
+          {activeTab === 'ms-steel-diagnosis' && (
+            <motion.div key="ms-steel-diagnosis" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <SteelDiagnosisView />
+            </motion.div>
+          )}
 
           {/* AI STRUCTURAL DAMAGE INSPECTOR */}
           {activeTab === 'ai-structural-inspector' && (

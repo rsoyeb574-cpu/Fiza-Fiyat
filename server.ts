@@ -436,6 +436,199 @@ async function startServer() {
     }
   });
 
+  // CAD / BIM Drawing Analysis Endpoint
+  app.post('/api/cad/analyze-drawing', async (req, res) => {
+    try {
+      if (!isGeminiConfigured()) {
+        return res.status(500).json({
+          success: false,
+          status: 'error',
+          error: 'GEMINI_API_KEY is not configured on the server.'
+        });
+      }
+
+      const { image, textDescription, fileFormat, fileName, userNotes, jurisdictionOrCode, userId, userEmail } = req.body || {};
+
+      const usageCheck = await verifyAndIncrementServerUsage(userId, userEmail, 'concept');
+      if (!usageCheck.allowed) {
+        return res.status(429).json(usageCheck.errorResponse);
+      }
+
+      const { analyzeDrawingAI } = await import('./src/server/cadEngineeringAiService');
+      const report = await analyzeDrawingAI({
+        image,
+        textDescription,
+        fileFormat: fileFormat || 'IMAGE/PDF',
+        fileName: fileName || 'Uploaded_Drawing',
+        userNotes,
+        jurisdictionOrCode
+      });
+
+      return res.json({
+        success: true,
+        status: 'success',
+        report,
+        usage: usageCheck.profile.usage
+      });
+    } catch (error: any) {
+      console.error('API /api/cad/analyze-drawing error:', error);
+      const isQuota = error?.status === 429 || `${error?.message || ''}`.toLowerCase().includes('quota');
+      return res.status(isQuota ? 429 : 500).json({
+        success: false,
+        status: 'error',
+        error: isQuota
+          ? 'AI drawing analysis limit temporarily reached. Please retry shortly.'
+          : (sanitizeErrorMessage(error) || 'Failed to complete CAD drawing analysis.')
+      });
+    }
+  });
+
+  // CAD / BIM Parametric Drawing Generation Endpoint
+  app.post('/api/cad/generate-drawing', async (req, res) => {
+    try {
+      if (!isGeminiConfigured()) {
+        return res.status(500).json({
+          success: false,
+          status: 'error',
+          error: 'GEMINI_API_KEY is not configured on the server.'
+        });
+      }
+
+      const { prompt, plotWidthFt, plotLengthFt, roadFacing, floors, requirements, userId, userEmail } = req.body || {};
+
+      if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+        return res.status(400).json({
+          success: false,
+          status: 'error',
+          error: 'Prompt parameter is required.'
+        });
+      }
+
+      const usageCheck = await verifyAndIncrementServerUsage(userId, userEmail, 'concept');
+      if (!usageCheck.allowed) {
+        return res.status(429).json(usageCheck.errorResponse);
+      }
+
+      const { generateDrawingSpecAI } = await import('./src/server/cadEngineeringAiService');
+      const spec = await generateDrawingSpecAI({
+        prompt: prompt.trim(),
+        plotWidthFt: Number(plotWidthFt) || undefined,
+        plotLengthFt: Number(plotLengthFt) || undefined,
+        roadFacing,
+        floors: Number(floors) || 1,
+        requirements
+      });
+
+      return res.json({
+        success: true,
+        status: 'success',
+        spec,
+        usage: usageCheck.profile.usage
+      });
+    } catch (error: any) {
+      console.error('API /api/cad/generate-drawing error:', error);
+      return res.status(500).json({
+        success: false,
+        status: 'error',
+        error: sanitizeErrorMessage(error) || 'Failed to generate CAD drawing specification.'
+      });
+    }
+  });
+
+  // Multidisciplinary Engineering Consultation Endpoint
+  app.post('/api/cad/discipline-consult', async (req, res) => {
+    try {
+      if (!isGeminiConfigured()) {
+        return res.status(500).json({
+          success: false,
+          status: 'error',
+          error: 'GEMINI_API_KEY is not configured on the server.'
+        });
+      }
+
+      const { discipline, query, language, projectContext, userId, userEmail } = req.body || {};
+
+      if (!query || typeof query !== 'string' || !query.trim()) {
+        return res.status(400).json({
+          success: false,
+          status: 'error',
+          error: 'Query parameter is required.'
+        });
+      }
+
+      const usageCheck = await verifyAndIncrementServerUsage(userId, userEmail, 'ai_chat');
+      if (!usageCheck.allowed) {
+        return res.status(429).json(usageCheck.errorResponse);
+      }
+
+      const { disciplineConsultAI } = await import('./src/server/cadEngineeringAiService');
+      const response = await disciplineConsultAI({
+        discipline: discipline || 'Architecture',
+        query: query.trim(),
+        language: language || 'en',
+        projectContext
+      });
+
+      return res.json({
+        success: true,
+        status: 'success',
+        response,
+        usage: usageCheck.profile.usage
+      });
+    } catch (error: any) {
+      console.error('API /api/cad/discipline-consult error:', error);
+      return res.status(500).json({
+        success: false,
+        status: 'error',
+        error: sanitizeErrorMessage(error) || 'Failed to generate engineering consultation response.'
+      });
+    }
+  });
+
+  // Automated Engineering Report Generation Endpoint
+  app.post('/api/cad/generate-report', async (req, res) => {
+    try {
+      if (!isGeminiConfigured()) {
+        return res.status(500).json({
+          success: false,
+          status: 'error',
+          error: 'GEMINI_API_KEY is not configured on the server.'
+        });
+      }
+
+      const { reportType, projectTitle, clientOrLocation, preparedBy, inputData, observationsNotes, userId, userEmail } = req.body || {};
+
+      const usageCheck = await verifyAndIncrementServerUsage(userId, userEmail, 'concept');
+      if (!usageCheck.allowed) {
+        return res.status(429).json(usageCheck.errorResponse);
+      }
+
+      const { generateEngineeringReportAI } = await import('./src/server/cadEngineeringAiService');
+      const report = await generateEngineeringReportAI({
+        reportType: reportType || 'Drawing Review Report',
+        projectTitle: projectTitle || 'Standard Project Engineering Audit',
+        clientOrLocation: clientOrLocation || 'Site Office',
+        preparedBy: preparedBy || 'FIZA FIYAT AI Engineering Assistant',
+        inputData: inputData || {},
+        observationsNotes
+      });
+
+      return res.json({
+        success: true,
+        status: 'success',
+        report,
+        usage: usageCheck.profile.usage
+      });
+    } catch (error: any) {
+      console.error('API /api/cad/generate-report error:', error);
+      return res.status(500).json({
+        success: false,
+        status: 'error',
+        error: sanitizeErrorMessage(error) || 'Failed to generate engineering report.'
+      });
+    }
+  });
+
   // AI Image Generation Endpoint
   app.post('/api/ai/generate-image', async (req, res) => {
     try {
