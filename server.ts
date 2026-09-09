@@ -436,6 +436,53 @@ async function startServer() {
     }
   });
 
+  // Structural Metal & Sheet Metal Knowledge Endpoint
+  app.get('/api/steel/metals', async (req, res) => {
+    try {
+      const { 
+        METAL_KNOWLEDGE_DATABASE, 
+        getMechanicalPropertiesComparison, 
+        getStandardsMappingTable,
+        lookupMetalByStandard,
+        findMetalsByCategory 
+      } = await import('./src/data/metalKnowledge');
+
+      const { query, category, format } = req.query;
+
+      if (format === 'comparison') {
+        return res.json({ success: true, status: 'success', data: getMechanicalPropertiesComparison() });
+      }
+
+      if (format === 'standards') {
+        return res.json({ success: true, status: 'success', data: getStandardsMappingTable() });
+      }
+
+      if (query && typeof query === 'string') {
+        const results = lookupMetalByStandard(query);
+        return res.json({ success: true, status: 'success', count: results.length, data: results });
+      }
+
+      if (category && typeof category === 'string') {
+        const results = findMetalsByCategory(category as any);
+        return res.json({ success: true, status: 'success', count: results.length, data: results });
+      }
+
+      return res.json({
+        success: true,
+        status: 'success',
+        count: METAL_KNOWLEDGE_DATABASE.length,
+        data: METAL_KNOWLEDGE_DATABASE
+      });
+    } catch (error: any) {
+      console.error('API /api/steel/metals error:', error);
+      return res.status(500).json({
+        success: false,
+        status: 'error',
+        error: sanitizeErrorMessage(error) || 'Failed to retrieve metal knowledge database.'
+      });
+    }
+  });
+
   // CAD / BIM Drawing Analysis Endpoint
   app.post('/api/cad/analyze-drawing', async (req, res) => {
     try {

@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { getMetalKnowledgeContextForAI } from '../data/metalKnowledge';
 
 export interface ChatMessageInput {
   sender?: 'user' | 'ai' | 'model';
@@ -14,7 +15,7 @@ export function isGeminiConfigured(): boolean {
 }
 
 export function getConfiguredModel(): string {
-  return process.env.GEMINI_MODEL?.trim() || 'gemini-3.7-flash';
+  return process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash';
 }
 
 export function getAIClient(): GoogleGenAI {
@@ -34,24 +35,12 @@ export function getAIClient(): GoogleGenAI {
 
 function getModelCandidates(): string[] {
   const configured = process.env.GEMINI_MODEL?.trim();
-
-  // Prioritize configured model if provided, including both standard and models/ prefixed versions
-  const configuredCandidates = configured ? [
-    configured,
-    configured.startsWith('models/') ? configured.replace(/^models\//, '') : `models/${configured}`
-  ] : [];
-
   const models = [
-    ...configuredCandidates,
-    'models/gemini-3.8-flash',
-    'models/gemini-3.7-flash',
-    'gemini-3.7-flash',
+    ...(configured ? [configured] : []),
+    'gemini-3.8-flash',
     'gemini-3.1-flash-lite',
-    'models/gemini-2.5-flash',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-flash-latest'
+    'gemini-flash-latest',
+    'gemini-3.1-pro-preview'
   ];
   return Array.from(new Set(models.filter(Boolean)));
 }
@@ -65,23 +54,33 @@ async function generateWithModelFallback(params: {
   const models = getModelCandidates();
 
   for (const modelName of models) {
-    try {
-      const response = await ai.models.generateContent({
-        model: modelName,
-        contents: params.contents,
-        config: params.config
-      });
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: params.contents,
+          config: params.config
+        });
 
-      const text = response.text;
-      if (text && text.trim()) {
-        return text.trim();
+        const text = response.text;
+        if (text && text.trim()) {
+          return text.trim();
+        }
+      } catch (err: any) {
+        lastError = err;
+        const errMsg = err?.message || (typeof err === 'string' ? err : 'Service temporary issue');
+        const is503 = err?.status === 503 || err?.code === 503 || errMsg.includes('503') || errMsg.includes('high demand');
+
+        if (is503 && attempt === 1) {
+          console.info(`[AI Retry] Model ${modelName} experiencing high demand (503), retrying in 600ms...`);
+          await new Promise(r => setTimeout(r, 600));
+          continue;
+        }
+
+        console.info(`[AI Fallback] Model ${modelName} encountered: ${errMsg.slice(0, 100)} -> trying next available model.`);
+        await new Promise(r => setTimeout(r, 300));
+        break;
       }
-    } catch (err: any) {
-      const errMsg = err?.message || (typeof err === 'string' ? err : 'Service temporary issue');
-      console.info(`[AI Fallback] Model ${modelName} encountered: ${errMsg.slice(0, 100)} -> trying next available model.`);
-      lastError = err;
-      // Brief 150ms pause before trying next fallback model to relieve instantaneous spikes
-      await new Promise(r => setTimeout(r, 150));
     }
   }
 
@@ -216,7 +215,14 @@ export async function handleChatRequest(
     }
   }
 
-  const systemInstruction = getPersonalitySystemInstruction(personality, pageContext);
+  let systemInstruction = getPersonalitySystemInstruction(personality, pageContext);
+
+  const metalKeywords = ['steel', 'metal', 'ms', 'mild steel', 'sheet', 'galvanized', 'stainless', 'welding', 'weld', 'aisc', 'aws', 'bis', 'is 2062', 'is 1079', 'is 513', 'is 277', 'is 6911', 'astm a36', 'astm a572', 'yield strength', 'tensile strength', 'ductility', 'elongation'];
+  const isMetalQuery = metalKeywords.some(kw => trimmedPrompt.toLowerCase().includes(kw) || (pageContext && pageContext.toLowerCase().includes(kw)));
+  if (isMetalQuery) {
+    const metalContext = getMetalKnowledgeContextForAI(trimmedPrompt);
+    systemInstruction += `\n\nAUTHORITATIVE STRUCTURAL METAL & SHEET METAL METALLURGICAL DATABASE:\n${metalContext}`;
+  }
 
   return await generateWithModelFallback({
     contents,

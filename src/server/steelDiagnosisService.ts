@@ -8,6 +8,7 @@ import {
   SteelSeverityLevel
 } from '../types/steelDiagnosis';
 import { STEEL_DEFECTS_DATABASE, NDT_METHODS_DATABASE } from '../data/steelKnowledgeBase';
+import { getMetalKnowledgeContextForAI, METAL_KNOWLEDGE_DATABASE } from '../data/metalKnowledge';
 
 function getAIClient(): GoogleGenAI {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -26,22 +27,12 @@ function getAIClient(): GoogleGenAI {
 
 function getCandidateModels(): string[] {
   const configured = process.env.GEMINI_MODEL?.trim();
-  const configuredCandidates = configured ? [
-    configured,
-    configured.startsWith('models/') ? configured.replace(/^models\//, '') : `models/${configured}`
-  ] : [];
-
   const models = [
-    ...configuredCandidates,
-    'models/gemini-3.8-flash',
-    'models/gemini-3.7-flash',
-    'gemini-3.7-flash',
+    ...(configured ? [configured] : []),
+    'gemini-3.8-flash',
     'gemini-3.1-flash-lite',
-    'models/gemini-2.5-flash',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-flash-latest'
+    'gemini-flash-latest',
+    'gemini-3.1-pro-preview'
   ];
   return Array.from(new Set(models.filter(Boolean)));
 }
@@ -165,38 +156,50 @@ Return ONLY raw JSON, with no markdown code fences.`;
   let lastError: any = null;
 
   for (const model of models) {
-    try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                inlineData: {
-                  mimeType,
-                  data: base64Data
-                }
-              },
-              { text: promptText }
-            ]
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  inlineData: {
+                    mimeType,
+                    data: base64Data
+                  }
+                },
+                { text: promptText }
+              ]
+            }
+          ],
+          config: {
+            systemInstruction: STEEL_SYSTEM_INSTRUCTION,
+            temperature: 0.2, // Low temperature for high engineering consistency
+            responseMimeType: 'application/json'
           }
-        ],
-        config: {
-          systemInstruction: STEEL_SYSTEM_INSTRUCTION,
-          temperature: 0.2, // Low temperature for high engineering consistency
-          responseMimeType: 'application/json'
-        }
-      });
+        });
 
-      rawJson = response.text || '';
-      if (rawJson.trim()) {
+        rawJson = response.text || '';
+        if (rawJson.trim()) {
+          break;
+        }
+      } catch (err: any) {
+        lastError = err;
+        const errMsg = err?.message || (typeof err === 'string' ? err : 'Error');
+        const is503 = err?.status === 503 || err?.code === 503 || errMsg.includes('503') || errMsg.includes('high demand');
+        if (is503 && attempt === 1) {
+          console.info(`[Steel AI] Model ${model} experiencing high demand (503), retrying in 600ms...`);
+          await new Promise(r => setTimeout(r, 600));
+          continue;
+        }
+        console.warn(`Model ${model} failed for analyzeSteelMedia, trying next:`, errMsg.slice(0, 100));
+        await new Promise(r => setTimeout(r, 300));
         break;
       }
-    } catch (err: any) {
-      lastError = err;
-      console.warn(`Model ${model} failed for analyzeSteelMedia, trying next:`, err?.message || err);
     }
+    if (rawJson.trim()) break;
   }
 
   if (!rawJson || !rawJson.trim()) {
@@ -258,8 +261,13 @@ export async function handleSteelQA(input: SteelQAInput): Promise<SteelQARespons
     ? `Active Inspection Context:\nComponent: ${inspectionContext.componentType || 'Steel member'}\nMaterial: ${inspectionContext.materialInferred || 'Mild steel'}\nSeverity: ${inspectionContext.overallSeverity || 'Unknown'}\nKey Note: ${inspectionContext.preliminaryAssessmentNote || 'None'}\n`
     : '';
 
+  const metalKnowledgeContext = getMetalKnowledgeContextForAI(question);
+
   const promptText = `${historyPrompt}${contextPrompt}
 User Technical Question: "${question}"
+
+Metallurgical & Engineering Standards Reference Data:
+${metalKnowledgeContext}
 
 Respond to this inquiry in ${language === 'hi' ? 'Hindi' : language === 'hinglish' ? 'Hinglish (Natural conversational Hindi written in Latin script with standard English engineering terms)' : 'English'}.
 

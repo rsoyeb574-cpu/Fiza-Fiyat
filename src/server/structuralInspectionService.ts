@@ -25,22 +25,12 @@ function getAIClient(): GoogleGenAI {
 
 function getCandidateModels(): string[] {
   const configured = process.env.GEMINI_MODEL?.trim();
-  const configuredCandidates = configured ? [
-    configured,
-    configured.startsWith('models/') ? configured.replace(/^models\//, '') : `models/${configured}`
-  ] : [];
-
   const models = [
-    ...configuredCandidates,
-    'models/gemini-3.8-flash',
-    'models/gemini-3.7-flash',
-    'gemini-3.7-flash',
+    ...(configured ? [configured] : []),
+    'gemini-3.8-flash',
     'gemini-3.1-flash-lite',
-    'models/gemini-2.5-flash',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-flash-latest'
+    'gemini-flash-latest',
+    'gemini-3.1-pro-preview'
   ];
   return Array.from(new Set(models.filter(Boolean)));
 }
@@ -246,26 +236,37 @@ Respond with a complete, valid JSON object matching the following structure:
   let lastError: any = null;
 
   for (const modelName of models) {
-    try {
-      const result = await ai.models.generateContent({
-        model: modelName,
-        contents: { parts },
-        config: {
-          systemInstruction: SYSTEM_PROMPT,
-          responseMimeType: 'application/json',
-          temperature: 0.2
-        }
-      });
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const result = await ai.models.generateContent({
+          model: modelName,
+          contents: { parts },
+          config: {
+            systemInstruction: SYSTEM_PROMPT,
+            responseMimeType: 'application/json',
+            temperature: 0.2
+          }
+        });
 
-      if (result.text && result.text.trim()) {
-        rawResponseText = result.text.trim();
+        if (result.text && result.text.trim()) {
+          rawResponseText = result.text.trim();
+          break;
+        }
+      } catch (err: any) {
+        lastError = err;
+        const errMsg = err?.message || (typeof err === 'string' ? err : 'Error');
+        const is503 = err?.status === 503 || err?.code === 503 || errMsg.includes('503') || errMsg.includes('high demand');
+        if (is503 && attempt === 1) {
+          console.info(`[Structural AI] Model ${modelName} experiencing high demand (503), retrying in 600ms...`);
+          await new Promise(r => setTimeout(r, 600));
+          continue;
+        }
+        console.warn(`[Structural AI] Model ${modelName} encountered error:`, errMsg.slice(0, 100));
+        await new Promise(r => setTimeout(r, 300));
         break;
       }
-    } catch (err: any) {
-      console.warn(`[Structural AI] Model ${modelName} encountered error:`, err?.message || err);
-      lastError = err;
-      await new Promise(r => setTimeout(r, 200));
     }
+    if (rawResponseText) break;
   }
 
   if (!rawResponseText) {

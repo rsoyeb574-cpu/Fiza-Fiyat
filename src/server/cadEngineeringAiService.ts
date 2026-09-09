@@ -99,7 +99,7 @@ Additional Text Description / OCR: ${textDescription || 'Examine the visual elem
 
   promptParts.push({ text: promptText });
 
-  const models = ['models/gemini-3.1-pro-preview', 'models/gemini-3.8-flash', 'gemini-2.5-flash'];
+  const models = ['gemini-3.1-pro-preview', 'gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
   let rawJson = '';
 
   for (const modelName of models) {

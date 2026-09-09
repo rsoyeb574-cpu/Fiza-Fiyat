@@ -64,9 +64,7 @@ Respond in JSON ONLY:
     const configured = process.env.GEMINI_MODEL?.trim();
     const modelsToTry = [
       ...(configured ? [configured] : []),
-      'models/gemini-3.8-flash',
-      'models/gemini-3.7-flash',
-      'gemini-3.7-flash',
+      'gemini-3.8-flash',
       'gemini-3.1-flash-lite',
       'gemini-flash-latest'
     ];
@@ -84,6 +82,7 @@ Respond in JSON ONLY:
         if (jsonText) break;
       } catch (mErr: any) {
         console.info(`[Validation Fallback] Model ${m} encountered issue: ${mErr?.message?.slice(0, 100) || 'busy'} -> trying next model`);
+        await new Promise(r => setTimeout(r, 200));
       }
     }
     if (jsonText) {

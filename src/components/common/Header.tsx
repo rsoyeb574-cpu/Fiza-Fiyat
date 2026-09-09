@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'directory', label: 'Directory' },
     { id: 'services', label: 'Services' },
     { id: 'portfolio', label: 'Portfolio' },
-    { id: 'blog', label: 'Blog' }
+    { id: 'blog', label: 'Knowledge Hub' }
   ];
 
   const handleNavClick = (id: string) => {

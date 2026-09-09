@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, updateDoc, runTransaction } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import { PLANS, getPlanLimits, PlanTier } from '../config/plans';
 
 export interface UserServerUsage {
@@ -134,8 +134,8 @@ export async function getUserServerProfile(userId: string | null, userEmail: str
       };
       serverMemoryUserStore.set(uid, cached);
 
-      // Save reset back if changed
-      if (JSON.stringify(normalizedUsage) !== JSON.stringify(data.usage || {})) {
+      // Save reset back if changed and authenticated session exists
+      if (auth.currentUser && JSON.stringify(normalizedUsage) !== JSON.stringify(data.usage || {})) {
         await updateDoc(userRef, { usage: normalizedUsage, updatedAt: new Date().toISOString() }).catch(() => {});
       }
 
@@ -214,7 +214,7 @@ export async function verifyAndIncrementServerUsage(
   serverMemoryUserStore.set(profile.uid, profile);
 
   // Sync to Firestore if authenticated/permitted
-  if (profile.uid && profile.uid !== 'anonymous_guest_user') {
+  if (auth.currentUser && profile.uid && profile.uid !== 'anonymous_guest_user') {
     try {
       const userRef = doc(db, 'users', profile.uid);
       await updateDoc(userRef, { usage, updatedAt: new Date().toISOString() }).catch(() => {});
@@ -319,7 +319,7 @@ export async function incrementServerMediaUsage(
   profile.usage = usage;
   serverMemoryUserStore.set(profile.uid, profile);
 
-  if (profile.uid && profile.uid !== 'anonymous_guest_user') {
+  if (auth.currentUser && profile.uid && profile.uid !== 'anonymous_guest_user') {
     try {
       const userRef = doc(db, 'users', profile.uid);
       await updateDoc(userRef, { usage, updatedAt: new Date().toISOString() }).catch(() => {});

@@ -362,9 +362,7 @@ service cloud.firestore {
     }
 
     match /aiGenerations/{generationId} {
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if true;
-      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow read, write: if true;
     }
   }
 }
