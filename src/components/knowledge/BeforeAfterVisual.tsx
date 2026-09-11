@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Columns2, SlidersHorizontal, Info } from 'lucide-react';
 import { BeforeAfterPair } from '../../types/visualKnowledge';
+import { SafeImage } from '../common/SafeImage';
 
 interface BeforeAfterVisualProps {
   data: BeforeAfterPair;
@@ -87,13 +88,14 @@ export const BeforeAfterVisual: React.FC<BeforeAfterVisualProps> = ({ data }) =>
             onTouchMove={handleTouchMove}
           >
             {/* After Image (Full background) */}
-            <img
+            <SafeImage
               src={data.afterImage}
               alt={data.afterLabel}
+              topicType={data.title}
+              fallbackTitle={data.afterLabel}
               className="absolute inset-0 w-full h-full object-cover"
-              loading="lazy"
             />
-            <div className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-emerald-950/90 backdrop-blur-md text-emerald-300 text-xs font-bold border border-emerald-500/40 shadow-lg flex items-center gap-1.5">
+            <div className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-emerald-950/90 backdrop-blur-md text-emerald-300 text-xs font-bold border border-emerald-500/40 shadow-lg flex items-center gap-1.5 z-10 pointer-events-none">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               {data.afterLabel}
             </div>
@@ -103,14 +105,15 @@ export const BeforeAfterVisual: React.FC<BeforeAfterVisualProps> = ({ data }) =>
               className="absolute inset-y-0 left-0 overflow-hidden"
               style={{ width: `${sliderPosition}%` }}
             >
-              <img
+              <SafeImage
                 src={data.beforeImage}
                 alt={data.beforeLabel}
+                topicType={data.title}
+                fallbackTitle={data.beforeLabel}
                 className="absolute inset-0 w-full h-full object-cover"
-                style={{ width: containerRef.current ? `${containerRef.current.offsetWidth}px` : '100%' }}
-                loading="lazy"
+                style={{ width: containerRef.current ? `${containerRef.current.offsetWidth}px` : '100%', maxWidth: 'none' }}
               />
-              <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-rose-950/90 backdrop-blur-md text-rose-300 text-xs font-bold border border-rose-500/40 shadow-lg flex items-center gap-1.5">
+              <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-rose-950/90 backdrop-blur-md text-rose-300 text-xs font-bold border border-rose-500/40 shadow-lg flex items-center gap-1.5 z-10 pointer-events-none">
                 <span className="w-2 h-2 rounded-full bg-rose-400"></span>
                 {data.beforeLabel}
               </div>
@@ -144,13 +147,14 @@ export const BeforeAfterVisual: React.FC<BeforeAfterVisualProps> = ({ data }) =>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2 rounded-2xl overflow-hidden bg-neutral-950 border border-rose-500/30 p-3">
             <div className="relative h-64 rounded-xl overflow-hidden">
-              <img
+              <SafeImage
                 src={data.beforeImage}
                 alt={data.beforeLabel}
+                topicType={data.title}
+                fallbackTitle={data.beforeLabel}
                 className="w-full h-full object-cover"
-                loading="lazy"
               />
-              <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-rose-950/90 text-rose-300 text-xs font-bold border border-rose-500/40">
+              <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-rose-950/90 text-rose-300 text-xs font-bold border border-rose-500/40 z-10 pointer-events-none">
                 ✕ {data.beforeLabel}
               </span>
             </div>
@@ -161,13 +165,14 @@ export const BeforeAfterVisual: React.FC<BeforeAfterVisualProps> = ({ data }) =>
 
           <div className="space-y-2 rounded-2xl overflow-hidden bg-neutral-950 border border-emerald-500/30 p-3">
             <div className="relative h-64 rounded-xl overflow-hidden">
-              <img
+              <SafeImage
                 src={data.afterImage}
                 alt={data.afterLabel}
+                topicType={data.title}
+                fallbackTitle={data.afterLabel}
                 className="w-full h-full object-cover"
-                loading="lazy"
               />
-              <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-emerald-950/90 text-emerald-300 text-xs font-bold border border-emerald-500/40">
+              <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-emerald-950/90 text-emerald-300 text-xs font-bold border border-emerald-500/40 z-10 pointer-events-none">
                 ✓ {data.afterLabel}
               </span>
             </div>

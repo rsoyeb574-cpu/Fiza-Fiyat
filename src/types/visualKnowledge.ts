@@ -1,16 +1,45 @@
 export type KnowledgeCategory = 
   | 'Architecture'
-  | 'Structural Engineering'
   | 'Civil Engineering'
+  | 'Structural Engineering'
   | 'Interior Design'
+  | 'MEP'
+  | 'Mechanical'
+  | 'METALS & SHEET METAL'
+  | 'CAD'
+  | 'BIM'
+  | '3D Visualization'
+  | 'Construction'
+  | 'Materials'
+  | 'Drawing Standards'
+  | 'Inspection & Damage'
+  | 'Software Guides'
+  | 'Calculators'
+  | 'Project Guides'
+  // Backwards compatibility aliases
   | 'MEP Systems'
   | 'Mechanical & Fabrication'
   | 'CAD & Software'
   | 'MS & Sheet Metal'
   | 'Welding & Defects'
-  | 'Drawing Standards'
   | 'Drawing Analysis'
   | 'AI & Architecture';
+
+export interface CategoryDefinition {
+  id: KnowledgeCategory;
+  label: string;
+  shortLabel?: string;
+  description: string;
+  iconName: string;
+  subcategories: string[];
+  themeColor: {
+    accent: string;
+    border: string;
+    bg: string;
+    text: string;
+    gradient: string;
+  };
+}
 
 export interface VisualStep {
   stepNumber: number;

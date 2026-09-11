@@ -26,7 +26,9 @@ import {
   Printer,
   Check,
   Loader2,
-  Wand2
+  Wand2,
+  MessageSquare,
+  QrCode
 } from 'lucide-react';
 import { Project } from '../types';
 import { BeforeAfterSlider } from '../components/common/BeforeAfterSlider';
@@ -37,6 +39,7 @@ import { AIDesignVariationModal } from '../components/project/AIDesignVariationM
 import { AIDesignIterationModal } from '../components/project/AIDesignIterationModal';
 import { BeforeAfter, BeforeAfterScheme } from '../components/project/BeforeAfter';
 import { InteractiveSiteMap } from '../components/project/InteractiveSiteMap';
+import { ProjectRevisionChat } from '../components/project/ProjectRevisionChat';
 import { ArchitecturalDesignConcept } from '../types/designIteration';
 import { getProjectSpecs } from '../utils/projectComparison';
 import { downloadProjectSummaryPdf, openProjectSummaryPrintView } from '../utils/projectPdfGenerator';
@@ -51,6 +54,7 @@ interface ProjectDetailPageProps {
   isFavorite: (id: string) => boolean;
   onToggleCompare?: (project: Project) => void;
   isComparing?: (id: string) => boolean;
+  onOpenBlueprintScanner?: (initialTab?: 'camera' | 'upload' | 'samples' | 'stamp', preselectedProjectId?: string) => void;
 }
 
 export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
@@ -62,9 +66,10 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
   onToggleFavorite,
   isFavorite,
   onToggleCompare,
-  isComparing = () => false
+  isComparing = () => false,
+  onOpenBlueprintScanner
 }) => {
-  const [mediaViewMode, setMediaViewMode] = useState<'3d' | 'gallery' | 'video' | 'beforeAfter' | 'siteMap'>('3d');
+  const [mediaViewMode, setMediaViewMode] = useState<'3d' | 'gallery' | 'video' | 'beforeAfter' | 'siteMap' | 'revisionsChat'>('3d');
   const [viewerEngine, setViewerEngine] = useState<'webgl' | 'architectural'>('webgl');
   const [activeImage, setActiveImage] = useState<string>(project.coverImage || project.images?.[0]);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -175,6 +180,17 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
                 </>
               )}
             </button>
+
+            {onOpenBlueprintScanner && (
+              <button
+                onClick={() => onOpenBlueprintScanner('stamp', project.id)}
+                className="px-4 py-3 rounded-2xl bg-cyan-950/50 hover:bg-cyan-900/70 text-cyan-300 font-semibold text-xs flex items-center space-x-2 border border-cyan-500/40 shadow-lg cursor-pointer transition-all group"
+                title="Generate physical CAD Blueprint QR Stamp or scan drawing sheets"
+              >
+                <QrCode className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+                <span>Blueprint QR Stamp</span>
+              </button>
+            )}
 
             <button
               onClick={() => onToggleFavorite(project)}
@@ -296,6 +312,23 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               <span>Site Master Plan</span>
               <span className="px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-extrabold border border-teal-500/30">
                 SVG Map
+              </span>
+            </button>
+
+            {/* Real-time Project Revision Chat Tab */}
+            <button
+              onClick={() => setMediaViewMode('revisionsChat')}
+              className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all ${
+                mediaViewMode === 'revisionsChat'
+                  ? 'bg-gradient-to-r from-blue-600 via-teal-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Real-time Client & Designer Revision Chat directly within project view"
+            >
+              <MessageSquare className="w-4 h-4 text-blue-300" />
+              <span>Revision Discussions</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-extrabold border border-blue-500/30">
+                Live Collab
               </span>
             </button>
 
@@ -443,6 +476,13 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
         {mediaViewMode === 'siteMap' && (
           <div className="space-y-4 animate-in fade-in duration-300">
             <InteractiveSiteMap project={project} />
+          </div>
+        )}
+
+        {/* 6. REAL-TIME CLIENT & DESIGNER REVISION CHAT WORKSPACE */}
+        {mediaViewMode === 'revisionsChat' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <ProjectRevisionChat project={project} />
           </div>
         )}
       </div>
@@ -715,6 +755,38 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
       {/* Resource Allocation Breakdown (Staffing & Materials Schedule) */}
       <ProjectResourceAllocationView project={project} />
 
+      {/* Dedicated Real-Time Client & Designer Revisions Deliberations Section */}
+      {mediaViewMode !== 'revisionsChat' && (
+        <div id="project-revisions-section" className="space-y-4 pt-6 border-t border-white/10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <span>Client & Designer Revision Deliberations</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/30 text-[11px] font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                  Real-Time Workspace
+                </span>
+              </h3>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Authorized clients and lead architects/engineers collaborate in real-time on ongoing drawing revisions, cantilever adjustments, material selections, and formal BIM sign-offs.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setMediaViewMode('revisionsChat');
+                window.scrollTo({ top: 320, behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 text-xs font-bold cursor-pointer transition-all self-start sm:self-auto"
+            >
+              <span>Focus in Main Showcase</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <ProjectRevisionChat project={project} />
+        </div>
+      )}
+
       {/* Related Projects */}
       {relatedProjects.length > 0 && (
         <div className="space-y-6 pt-8 border-t border-white/10">
@@ -803,11 +875,36 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
 
       {/* Adoption Feedback Toast */}
       {adoptNotification && (
-        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+        <div className="fixed bottom-20 right-6 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
           <div className="px-5 py-3.5 rounded-2xl bg-neutral-900/95 border border-purple-500/40 text-white text-xs font-bold shadow-2xl shadow-purple-950/80 flex items-center gap-3 backdrop-blur-md">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>{adoptNotification}</span>
           </div>
+        </div>
+      )}
+
+      {/* Floating Action Pill to Jump to Revisions Chat */}
+      {mediaViewMode !== 'revisionsChat' && (
+        <div className="fixed bottom-6 right-6 z-40">
+          <button
+            onClick={() => {
+              const el = document.getElementById('project-revisions-section');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                setMediaViewMode('revisionsChat');
+                window.scrollTo({ top: 320, behavior: 'smooth' });
+              }
+            }}
+            className="px-4 py-3 rounded-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-500 hover:to-teal-500 text-white font-bold text-xs shadow-2xl shadow-blue-600/40 border border-white/20 flex items-center gap-2 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            title="Open real-time client & designer revision deliberations"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Revisions Chat</span>
+            <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-extrabold">
+              Live
+            </span>
+          </button>
         </div>
       )}
 

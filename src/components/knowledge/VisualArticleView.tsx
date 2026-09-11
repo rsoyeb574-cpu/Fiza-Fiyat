@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   ArrowLeft, 
   Clock, 
@@ -10,13 +10,18 @@ import {
   Lightbulb, 
   ChevronRight,
   ShieldCheck,
-  FileCheck
+  FileCheck,
+  Printer,
+  Share2,
+  Copy,
+  Check
 } from 'lucide-react';
 import { VisualKnowledgeArticle } from '../../types/visualKnowledge';
 import { BeforeAfterVisual } from './BeforeAfterVisual';
 import { StepVisualTutorial } from './StepVisualTutorial';
 import { DefectVisualCard } from './DefectVisualCard';
-import { VISUAL_KNOWLEDGE_ARTICLES } from '../../data/visualKnowledgeData';
+import { SafeImage } from '../common/SafeImage';
+import { getAllKnowledgeArticles } from '../../services/knowledgeAdapter';
 
 interface VisualArticleViewProps {
   article: VisualKnowledgeArticle;
@@ -29,28 +34,52 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
   onBack,
   onSelectArticle
 }) => {
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [article.id]);
 
-  const relatedArticles = VISUAL_KNOWLEDGE_ARTICLES.filter(
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const allArticles = getAllKnowledgeArticles();
+  const relatedArticles = allArticles.filter(
     (a) => article.relatedTopicIds?.includes(a.id) || (a.category === article.category && a.id !== article.id)
   ).slice(0, 3);
 
   return (
     <article className="max-w-5xl mx-auto space-y-12 pb-24 text-neutral-200">
       {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between py-4 border-b border-white/10">
+      <div className="flex flex-wrap items-center justify-between gap-3 py-4 border-b border-white/10">
         <button
           onClick={onBack}
-          className="px-4 py-2 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 text-xs font-bold flex items-center gap-2 border border-white/10 transition-all cursor-pointer"
+          className="px-4 py-2 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 text-neutral-200 text-xs font-bold flex items-center gap-2 border border-white/10 transition-all cursor-pointer hover:border-violet-500/50"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Knowledge Hub</span>
+          <span>Back to Engineering Hub</span>
         </button>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-neutral-400 font-mono">
+          <button
+            onClick={() => window.print()}
+            className="px-3 py-1.5 rounded-xl bg-neutral-900/60 hover:bg-neutral-800 text-neutral-300 text-xs font-medium flex items-center gap-1.5 border border-white/10 transition-colors"
+            title="Print or Save PDF"
+          >
+            <Printer className="w-3.5 h-3.5 text-neutral-400" />
+            <span className="hidden sm:inline">Print / PDF</span>
+          </button>
+          <button
+            onClick={handleCopyLink}
+            className="px-3 py-1.5 rounded-xl bg-neutral-900/60 hover:bg-neutral-800 text-neutral-300 text-xs font-medium flex items-center gap-1.5 border border-white/10 transition-colors"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-neutral-400" />}
+            <span>{copied ? 'Copied' : 'Share Link'}</span>
+          </button>
+          <span className="text-xs text-neutral-400 font-mono hidden md:inline px-2 py-1 rounded bg-white/5 border border-white/5">
             {article.category} • {article.id}
           </span>
         </div>
@@ -64,8 +93,13 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
               {article.category}
             </span>
             {article.subCategory && (
-              <span className="text-xs text-neutral-400 font-medium">
+              <span className="text-xs text-neutral-300 font-semibold px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10">
                 {article.subCategory}
+              </span>
+            )}
+            {article.heroBadge && (
+              <span className="text-xs text-amber-300 font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30">
+                {article.heroBadge}
               </span>
             )}
           </div>
@@ -96,23 +130,25 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
 
         {/* Hero Image with Overlay Badges */}
         <div className="relative h-[340px] sm:h-[460px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-950">
-          <img
+          <SafeImage
             src={article.heroImage}
             alt={article.heroImageAlt || article.title}
+            topicType={`${article.category} ${article.subCategory || ''} ${article.title}`}
+            fallbackTitle={article.title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent pointer-events-none"></div>
 
           {/* Floating Standards Pill */}
           {article.relevantCodesAndStandards && article.relevantCodesAndStandards.length > 0 && (
-            <div className="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2 items-center">
-              <span className="text-xs font-bold text-white uppercase tracking-wider bg-black/70 px-3 py-1 rounded-xl backdrop-blur-md border border-white/10">
-                Governing Standards:
+            <div className="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2 items-center z-10 pointer-events-none">
+              <span className="text-xs font-bold text-white uppercase tracking-wider bg-black/80 px-3 py-1 rounded-xl backdrop-blur-md border border-white/10">
+                Governing Codes:
               </span>
               {article.relevantCodesAndStandards.map((std, i) => (
                 <span
                   key={i}
-                  className="px-3 py-1 rounded-xl bg-emerald-950/80 text-emerald-300 text-xs font-mono font-bold border border-emerald-500/30 backdrop-blur-md"
+                  className="px-3 py-1 rounded-xl bg-emerald-950/90 text-emerald-300 text-xs font-mono font-bold border border-emerald-500/40 backdrop-blur-md shadow-lg"
                 >
                   {std}
                 </span>
@@ -168,13 +204,15 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
 
           <div className="lg:col-span-6 space-y-2">
             <div className="relative h-64 sm:h-72 rounded-2xl overflow-hidden border border-white/10 shadow-xl bg-neutral-950 group">
-              <img
+              <SafeImage
                 src={article.whatIsIt.diagramImage}
                 alt={article.whatIsIt.diagramImageAlt}
+                topicType={article.title}
+                fallbackTitle={`${article.title} Diagram`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              <span className="absolute bottom-3 left-3 px-3 py-1 rounded-xl bg-neutral-950/80 text-white text-[10px] font-semibold backdrop-blur-md border border-white/10">
-                Figure 1.0 • Technical Blueprint
+              <span className="absolute bottom-3 left-3 px-3 py-1 rounded-xl bg-neutral-950/80 text-white text-[10px] font-semibold backdrop-blur-md border border-white/10 z-10 pointer-events-none">
+                Technical Diagram & Specifications
               </span>
             </div>
             {article.whatIsIt.diagramCaption && (
@@ -211,9 +249,11 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
             <div className="lg:col-span-7 space-y-2">
               <div className="relative h-72 sm:h-96 rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-950">
-                <img
+                <SafeImage
                   src={article.practicalExample.image}
                   alt={article.practicalExample.imageAlt}
+                  topicType={article.practicalExample.title}
+                  fallbackTitle={article.practicalExample.title}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -281,12 +321,14 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
 
           {/* Workspace Visual */}
           <div className="relative h-72 sm:h-80 rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-950">
-            <img
+            <SafeImage
               src={article.softwareGuide.workspaceImage}
               alt={`${article.softwareGuide.softwareName} Workspace`}
+              topicType="cad software"
+              fallbackTitle={`${article.softwareGuide.softwareName} Interface`}
               className="w-full h-full object-cover"
             />
-            <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-neutral-950/90 text-purple-300 text-xs font-bold border border-purple-500/40">
+            <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-neutral-950/90 text-purple-300 text-xs font-bold border border-purple-500/40 z-10 pointer-events-none">
               Interactive Viewport & Coordinate System
             </div>
           </div>
@@ -347,12 +389,14 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
               {/* Problem Visual & Info */}
               <div className="space-y-3">
                 <div className="relative h-56 rounded-2xl overflow-hidden border border-rose-500/30 bg-neutral-900">
-                  <img
+                  <SafeImage
                     src={article.problemSolution.problemImage}
                     alt={article.problemSolution.problemTitle}
+                    topicType="damage"
+                    fallbackTitle={article.problemSolution.problemTitle}
                     className="w-full h-full object-cover"
                   />
-                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-rose-950/90 text-rose-300 text-xs font-bold border border-rose-500/40 flex items-center gap-1.5">
+                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-rose-950/90 text-rose-300 text-xs font-bold border border-rose-500/40 flex items-center gap-1.5 z-10 pointer-events-none">
                     <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
                     Problem Identified
                   </span>
@@ -381,12 +425,14 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
               {/* Solution Visual & Info */}
               <div className="space-y-3">
                 <div className="relative h-56 rounded-2xl overflow-hidden border border-emerald-500/30 bg-neutral-900">
-                  <img
+                  <SafeImage
                     src={article.problemSolution.solutionImage}
                     alt={article.problemSolution.solutionTitle}
+                    topicType="welding"
+                    fallbackTitle={article.problemSolution.solutionTitle}
                     className="w-full h-full object-cover"
                   />
-                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-emerald-950/90 text-emerald-300 text-xs font-bold border border-emerald-500/40 flex items-center gap-1.5">
+                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-emerald-950/90 text-emerald-300 text-xs font-bold border border-emerald-500/40 flex items-center gap-1.5 z-10 pointer-events-none">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     Correct Engineering Solution
                   </span>
@@ -420,7 +466,7 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {article.engineeringTips.map((tip, idx) => (
-              <div key={idx} className="flex items-start gap-2 text-xs text-neutral-300 p-2 rounded-xl bg-white/5">
+              <div key={idx} className="flex items-start gap-2 text-xs text-neutral-300 p-2.5 rounded-xl bg-white/5 border border-white/5">
                 <span className="text-violet-400 font-bold">•</span>
                 <span>{tip}</span>
               </div>
@@ -429,12 +475,27 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
         </section>
       )}
 
-      {/* 11. RELATED TOPICS (Cards linking to related articles) */}
+      {/* 11. PROFESSIONAL ENGINEERING SAFETY DISCLAIMER */}
+      <section className="p-5 sm:p-6 rounded-3xl bg-amber-950/20 border border-amber-500/30 space-y-2 text-xs text-amber-200/90 backdrop-blur-md">
+        <div className="flex items-center gap-2 text-amber-400 font-bold uppercase tracking-wider">
+          <ShieldCheck className="w-4 h-4" />
+          <span>Professional Engineering & Safety Notice</span>
+        </div>
+        <p className="leading-relaxed">
+          The technical illustrations, dimensions, procedures, and calculations provided in this article are for 
+          <strong> educational and preliminary engineering reference only</strong>. Structural designs, weld procedures, 
+          and defect remediations must be verified by a qualified Professional Engineer (PE / SE) or certified Welding Inspector 
+          (CSWIP / AWS CWI) in compliance with local governing codes (e.g. BIS IS 800, IS 456, AWS D1.1, Eurocode, AISC). 
+          Never assume site safety without independent verification.
+        </p>
+      </section>
+
+      {/* 12. RELATED TOPICS (Cards linking to related articles) */}
       {relatedArticles.length > 0 && (
         <section className="space-y-6 pt-6 border-t border-white/10">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-white tracking-tight">
-              Related Visual Topics
+              Related Engineering Topics
             </h3>
             <span className="text-xs text-neutral-400">Expand Your Knowledge</span>
           </div>
@@ -447,12 +508,14 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
                 className="group p-3 rounded-2xl bg-neutral-950/60 border border-white/10 hover:border-violet-500/50 transition-all cursor-pointer space-y-2.5"
               >
                 <div className="relative h-36 rounded-xl overflow-hidden bg-neutral-900">
-                  <img
+                  <SafeImage
                     src={rel.heroImage}
                     alt={rel.title}
+                    topicType={rel.category}
+                    fallbackTitle={rel.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/80 text-[10px] font-bold text-violet-300 border border-white/10">
+                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/80 text-[10px] font-bold text-violet-300 border border-white/10 z-10 pointer-events-none">
                     {rel.category}
                   </span>
                 </div>

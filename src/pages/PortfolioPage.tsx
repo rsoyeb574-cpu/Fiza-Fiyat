@@ -14,7 +14,8 @@ import {
   DollarSign,
   FileText,
   Loader2,
-  Check
+  Check,
+  QrCode
 } from 'lucide-react';
 import { Project, Category } from '../types';
 import { getProjectSpecs } from '../utils/projectComparison';
@@ -28,6 +29,7 @@ interface PortfolioPageProps {
   isFavorite: (id: string) => boolean;
   onToggleCompare?: (project: Project) => void;
   isComparing?: (id: string) => boolean;
+  onOpenBlueprintScanner?: (initialTab?: 'camera' | 'upload' | 'samples' | 'stamp') => void;
 }
 
 export const PortfolioPage: React.FC<PortfolioPageProps> = ({
@@ -37,7 +39,8 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
   onToggleFavorite,
   isFavorite,
   onToggleCompare,
-  isComparing = () => false
+  isComparing = () => false,
+  onOpenBlueprintScanner
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSoftware, setSelectedSoftware] = useState<string>('all');
@@ -137,6 +140,18 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                 <List className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Scan Physical Blueprint QR Button */}
+            {onOpenBlueprintScanner && (
+              <button
+                onClick={() => onOpenBlueprintScanner('camera')}
+                className="px-3 py-2 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 hover:text-cyan-100 border border-cyan-500/40 text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer transition-all shrink-0"
+                title="Scan physical blueprint drawing sheet to open project details"
+              >
+                <QrCode className="w-4 h-4 text-cyan-400" />
+                <span>Scan Blueprint QR</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -167,6 +182,44 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Physical Blueprint QR Banner */}
+      {onOpenBlueprintScanner && (
+        <div className="bg-gradient-to-r from-cyan-950/40 via-blue-950/30 to-indigo-950/40 p-4 rounded-2xl border border-cyan-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center text-cyan-400 shrink-0">
+              <QrCode className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Hold a Physical CAD Blueprint or Drawing Sheet?</span>
+                <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-mono font-bold">
+                  Instant Match
+                </span>
+              </h4>
+              <p className="text-xs text-neutral-300">
+                Scan the title block QR stamp with your device camera or upload a drawing photo to jump directly to its 3D BIM model & specifications.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <button
+              onClick={() => onOpenBlueprintScanner('camera')}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-neutral-950 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/30 cursor-pointer transition-all"
+            >
+              <QrCode className="w-4 h-4" />
+              <span>Open Blueprint Scanner</span>
+            </button>
+            <button
+              onClick={() => onOpenBlueprintScanner('samples')}
+              className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-white/10 text-xs font-semibold cursor-pointer transition-colors"
+            >
+              Sample Sheets
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Projects View */}
       {viewMode === 'grid' ? (

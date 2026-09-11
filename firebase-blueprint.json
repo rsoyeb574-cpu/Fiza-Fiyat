@@ -261,6 +261,38 @@
         "isEncrypted": { "type": "boolean" }
       },
       "required": ["senderUid", "text", "createdAt"]
+    },
+    "project_revision_chats": {
+      "title": "Project Revision Chats",
+      "description": "Real-time project-specific chat messages between authorized clients and lead designers/engineers to discuss architectural and structural revisions directly within the project detail view",
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string" },
+        "projectTitle": { "type": "string" },
+        "revisionId": { "type": "string" },
+        "revisionTitle": { "type": "string" },
+        "drawingSheetRef": { "type": "string" },
+        "senderUid": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderRole": { "type": "string" },
+        "senderRoleLabel": { "type": "string" },
+        "senderAvatar": { "type": "string" },
+        "isAuthorizedClient": { "type": "boolean" },
+        "isVerifiedDesigner": { "type": "boolean" },
+        "text": { "type": "string" },
+        "priority": { "type": "string" },
+        "revisionStatus": { "type": "string" },
+        "resolved": { "type": "boolean" },
+        "resolvedBy": { "type": "string" },
+        "resolvedAt": { "type": "string" },
+        "attachment": { "type": "object" },
+        "suggestedChange": { "type": "object" },
+        "clientSignoff": { "type": "object" },
+        "reactions": { "type": "object" },
+        "createdAt": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["projectId", "senderUid", "text", "createdAt"]
     }
   }
 }

@@ -15,7 +15,8 @@ import {
   Building2,
   FileText,
   Zap,
-  Bell
+  Bell,
+  QrCode
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -28,6 +29,7 @@ interface HeaderProps {
   onOpenSearch: () => void;
   onOpenFavorites: () => void;
   onOpenCalculator: () => void;
+  onOpenBlueprintScanner?: () => void;
   favoritesCount: number;
 }
 
@@ -37,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSearch,
   onOpenFavorites,
   onOpenCalculator,
+  onOpenBlueprintScanner,
   favoritesCount
 }) => {
   const { theme, toggleTheme } = useTheme();
@@ -157,6 +160,19 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Cost Estimator</span>
             </button>
 
+            {/* Blueprint QR Scanner Trigger */}
+            <button
+              onClick={onOpenBlueprintScanner}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 text-cyan-300 hover:text-cyan-200 text-xs font-semibold transition-all cursor-pointer shadow-sm group"
+              title="Scan Physical Blueprint Drawing Sheet QR Code"
+            >
+              <QrCode className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+              <span>Scan Blueprint</span>
+              <span className="hidden xl:inline-block px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-[9px] font-mono font-bold text-cyan-200">
+                BIM
+              </span>
+            </button>
+
             {/* Favorites Drawer Trigger */}
             <button
               onClick={onOpenFavorites}
@@ -273,6 +289,19 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="flex flex-col space-y-2 pt-2">
+            <button
+              onClick={() => { onOpenBlueprintScanner?.(); setMobileMenuOpen(false); }}
+              className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-cyan-950/40 text-cyan-300 border border-cyan-500/30 text-xs font-semibold shadow-sm"
+            >
+              <span className="flex items-center gap-2">
+                <QrCode className="w-4 h-4 text-cyan-400" />
+                Scan Physical Blueprint QR
+              </span>
+              <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full font-mono font-bold">
+                Camera Sync
+              </span>
+            </button>
+
             <button
               onClick={() => { onOpenCalculator(); setMobileMenuOpen(false); }}
               className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-neutral-900 text-blue-400 border border-white/10 text-xs font-medium"

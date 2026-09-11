@@ -18,6 +18,7 @@ import { UserExperienceDashboard } from './components/common/UserExperienceDashb
 import { UpgradeModal } from './components/common/UpgradeModal';
 import { ProjectComparisonModal } from './components/common/ProjectComparisonModal';
 import { ProjectComparisonBar } from './components/common/ProjectComparisonBar';
+import { BlueprintQRScannerModal } from './components/blueprint/BlueprintQRScannerModal';
 
 import { HomePage } from './pages/HomePage';
 import { AboutPage } from './pages/AboutPage';
@@ -87,6 +88,20 @@ export default function App() {
   const [compareProjects, setCompareProjects] = useState<Project[]>([]);
   const [compareModalOpen, setCompareModalOpen] = useState<boolean>(false);
 
+  // Blueprint QR Scanner State
+  const [blueprintScannerOpen, setBlueprintScannerOpen] = useState<boolean>(false);
+  const [blueprintScannerTab, setBlueprintScannerTab] = useState<'camera' | 'upload' | 'samples' | 'stamp'>('camera');
+  const [blueprintScannerProjectId, setBlueprintScannerProjectId] = useState<string | undefined>(undefined);
+
+  const handleOpenBlueprintScanner = (
+    tab: 'camera' | 'upload' | 'samples' | 'stamp' = 'camera',
+    projectId?: string
+  ) => {
+    setBlueprintScannerTab(tab);
+    setBlueprintScannerProjectId(projectId);
+    setBlueprintScannerOpen(true);
+  };
+
   // Favorites state
   const [favorites, setFavorites] = useState<Project[]>(() => {
     try {
@@ -152,6 +167,26 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('fh_favorites', JSON.stringify(favorites));
   }, [favorites]);
+
+  // Handle URL query parameters on mount (e.g., ?scan=true or ?project=p1)
+  useEffect(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const projectIdParam = searchParams.get('project');
+      const scanParam = searchParams.get('scan');
+
+      if (projectIdParam && projects.length > 0) {
+        const matched = projects.find(p => p.id === projectIdParam || p.slug === projectIdParam);
+        if (matched) {
+          handleSelectProject(matched.id);
+        }
+      } else if (scanParam === 'true' || scanParam === 'blueprint' || scanParam === 'qr') {
+        handleOpenBlueprintScanner('camera');
+      }
+    } catch {
+      // Ignore URL parsing errors
+    }
+  }, [projects]);
 
   const toggleFavorite = (project: Project) => {
     setFavorites(prev => {
@@ -227,6 +262,7 @@ export default function App() {
                 onOpenSearch={() => setSearchModalOpen(true)}
                 onOpenFavorites={() => setFavoritesDrawerOpen(true)}
                 onOpenCalculator={() => setCostCalculatorOpen(true)}
+                onOpenBlueprintScanner={() => handleOpenBlueprintScanner('camera')}
                 favoritesCount={favorites.length}
               />
             </ErrorBoundary>
@@ -330,6 +366,7 @@ export default function App() {
                     isFavorite={isFavorite}
                     onToggleCompare={handleToggleCompare}
                     isComparing={isComparing}
+                    onOpenBlueprintScanner={handleOpenBlueprintScanner}
                   />
                 )}
 
@@ -344,6 +381,7 @@ export default function App() {
                     isFavorite={isFavorite}
                     onToggleCompare={handleToggleCompare}
                     isComparing={isComparing}
+                    onOpenBlueprintScanner={handleOpenBlueprintScanner}
                   />
                 )}
 
@@ -480,6 +518,16 @@ export default function App() {
 
           {/* Upgrade Modal */}
           <UpgradeModal onNavigateToPricing={() => setActivePage('pricing')} />
+
+          {/* Blueprint QR Scanner Modal */}
+          <BlueprintQRScannerModal
+            isOpen={blueprintScannerOpen}
+            onClose={() => setBlueprintScannerOpen(false)}
+            projects={projects}
+            onSelectProject={handleSelectProject}
+            initialTab={blueprintScannerTab}
+            preselectedProjectId={blueprintScannerProjectId}
+          />
 
         </div>
       </ThemeProvider>

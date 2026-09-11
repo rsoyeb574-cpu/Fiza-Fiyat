@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, ChevronRight, ChevronLeft, Sparkles, Lightbulb } from 'lucide-react';
 import { VisualStep } from '../../types/visualKnowledge';
+import { SafeImage } from '../common/SafeImage';
 
 interface StepVisualTutorialProps {
   title?: string;
@@ -54,13 +55,14 @@ export const StepVisualTutorial: React.FC<StepVisualTutorialProps> = ({
         {/* Step Image */}
         <div className="lg:col-span-7 space-y-2">
           <div className="relative h-[280px] sm:h-[360px] rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-950 group">
-            <img
+            <SafeImage
               src={currentStep.image}
               alt={currentStep.imageAlt}
+              topicType={title + ' ' + currentStep.title}
+              fallbackTitle={currentStep.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-              loading="lazy"
             />
-            <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-neutral-950/85 backdrop-blur-md text-white text-xs font-bold border border-violet-500/40 shadow-lg flex items-center gap-2">
+            <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-neutral-950/85 backdrop-blur-md text-white text-xs font-bold border border-violet-500/40 shadow-lg flex items-center gap-2 z-10 pointer-events-none">
               <span className="w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center text-[10px] font-black">
                 {currentStep.stepNumber}
               </span>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Search, Wrench, ShieldAlert, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Search, Wrench, ShieldAlert, Sparkles, Info as InfoIcon } from 'lucide-react';
 import { DefectAnalysis } from '../../types/visualKnowledge';
+import { SafeImage } from '../common/SafeImage';
 
 interface DefectVisualCardProps {
   defect: DefectAnalysis;
@@ -67,13 +68,14 @@ export const DefectVisualCard: React.FC<DefectVisualCardProps> = ({ defect }) =>
         {/* Normal Image */}
         <div className="space-y-2 rounded-2xl bg-neutral-950 border border-emerald-500/30 p-3.5">
           <div className="relative h-64 rounded-xl overflow-hidden group">
-            <img
+            <SafeImage
               src={defect.normalImage}
               alt="Normal Sound Condition"
+              topicType="welding"
+              fallbackTitle="Normal Sound Structural Condition"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
             />
-            <span className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-emerald-950/90 text-emerald-300 text-xs font-bold border border-emerald-500/50 flex items-center gap-1.5 shadow-lg">
+            <span className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-emerald-950/90 text-emerald-300 text-xs font-bold border border-emerald-500/50 flex items-center gap-1.5 shadow-lg z-10 pointer-events-none">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               NORMAL (Acceptable Baseline)
             </span>
@@ -86,13 +88,14 @@ export const DefectVisualCard: React.FC<DefectVisualCardProps> = ({ defect }) =>
         {/* Damaged Image */}
         <div className="space-y-2 rounded-2xl bg-neutral-950 border border-rose-500/30 p-3.5">
           <div className="relative h-64 rounded-xl overflow-hidden group">
-            <img
+            <SafeImage
               src={defect.damagedImage}
               alt="Damaged Defect Condition"
+              topicType="welding defect"
+              fallbackTitle={`Defective Condition: ${defect.defectName}`}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
             />
-            <span className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-rose-950/90 text-rose-300 text-xs font-bold border border-rose-500/50 flex items-center gap-1.5 shadow-lg">
+            <span className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-rose-950/90 text-rose-300 text-xs font-bold border border-rose-500/50 flex items-center gap-1.5 shadow-lg z-10 pointer-events-none">
               <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
               DAMAGED (Defective Condition)
             </span>
