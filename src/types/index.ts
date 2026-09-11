@@ -49,7 +49,10 @@ export interface Project {
     constructionEst?: string;
   };
   resourceAllocation?: ProjectResourceAllocation;
+  siteMap?: import('./siteMap').ProjectSiteMapData;
 }
+
+export * from './siteMap';
 
 export interface ProjectTeamMemberAllocation {
   id: string;

@@ -676,6 +676,46 @@ async function startServer() {
     }
   });
 
+  // Architectural Design Iterations Endpoint (Gemini API)
+  app.post('/api/project/design-iterations', async (req, res) => {
+    try {
+      if (!isGeminiConfigured()) {
+        return res.status(500).json({
+          status: 'error',
+          error: 'GEMINI_API_KEY is not configured on the server.'
+        });
+      }
+
+      const { projectTitle, currentSpecs, userId, userEmail } = req.body || {};
+
+      if (!projectTitle || !currentSpecs) {
+        return res.status(400).json({
+          status: 'error',
+          error: 'projectTitle and currentSpecs parameters are required.'
+        });
+      }
+
+      const usageCheck = await verifyAndIncrementServerUsage(userId, userEmail, 'concept');
+      if (!usageCheck.allowed) {
+        return res.status(429).json(usageCheck.errorResponse);
+      }
+
+      const { generateArchitecturalDesignIterations } = await import('./src/server/designIterationService');
+      const iterationResult = await generateArchitecturalDesignIterations(req.body);
+
+      return res.json({
+        ...iterationResult,
+        usage: usageCheck.profile.usage
+      });
+    } catch (error: any) {
+      console.error('API /api/project/design-iterations error:', error);
+      return res.status(500).json({
+        status: 'error',
+        error: sanitizeErrorMessage(error) || 'Failed to generate architectural design iterations.'
+      });
+    }
+  });
+
   // AI Image Generation Endpoint
   app.post('/api/ai/generate-image', async (req, res) => {
     try {

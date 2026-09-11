@@ -21,6 +21,7 @@ import {
   Move3d,
   Image as ImageIcon,
   Sliders,
+  Compass,
   FileText,
   Printer,
   Check,
@@ -33,6 +34,10 @@ import { ArchitecturalModelViewer } from '../components/common/ArchitecturalMode
 import { Bim3DViewer } from '../components/bim/Bim3DViewer';
 import { ProjectResourceAllocationView } from '../components/project/ProjectResourceAllocationView';
 import { AIDesignVariationModal } from '../components/project/AIDesignVariationModal';
+import { AIDesignIterationModal } from '../components/project/AIDesignIterationModal';
+import { BeforeAfter, BeforeAfterScheme } from '../components/project/BeforeAfter';
+import { InteractiveSiteMap } from '../components/project/InteractiveSiteMap';
+import { ArchitecturalDesignConcept } from '../types/designIteration';
 import { getProjectSpecs } from '../utils/projectComparison';
 import { downloadProjectSummaryPdf, openProjectSummaryPrintView } from '../utils/projectPdfGenerator';
 
@@ -59,12 +64,16 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
   onToggleCompare,
   isComparing = () => false
 }) => {
-  const [mediaViewMode, setMediaViewMode] = useState<'3d' | 'gallery' | 'video' | 'beforeAfter'>('3d');
+  const [mediaViewMode, setMediaViewMode] = useState<'3d' | 'gallery' | 'video' | 'beforeAfter' | 'siteMap'>('3d');
   const [viewerEngine, setViewerEngine] = useState<'webgl' | 'architectural'>('webgl');
   const [activeImage, setActiveImage] = useState<string>(project.coverImage || project.images?.[0]);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [isVariationModalOpen, setIsVariationModalOpen] = useState(false);
+  const [isIterationModalOpen, setIsIterationModalOpen] = useState(false);
+  const [generatedConcepts, setGeneratedConcepts] = useState<ArchitecturalDesignConcept[]>([]);
+  const [adoptedScheme, setAdoptedScheme] = useState<BeforeAfterScheme | null>(null);
+  const [adoptNotification, setAdoptNotification] = useState<string | null>(null);
 
   const specs = getProjectSpecs(project);
   const comparing = isComparing(project.id);
@@ -125,14 +134,15 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               </button>
             )}
 
-            {/* AI Generate Design Variation Button */}
+            {/* AI Generate Design Iteration Button */}
             <button
-              onClick={() => setIsVariationModalOpen(true)}
+              id="generate-design-iteration-btn"
+              onClick={() => setIsIterationModalOpen(true)}
               className="px-4 py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold text-xs flex items-center space-x-2 border border-purple-400/30 shadow-lg shadow-purple-600/25 cursor-pointer transition-all"
-              title="Generate Design Variation using AI Assistant (Modernist, Minimalist, Industrial styles)"
+              title="Suggest alternative architectural design concepts based on current project parameters using Gemini API"
             >
               <Sparkles className="w-4 h-4 text-purple-200" />
-              <span>Generate Design Variation</span>
+              <span>Generate Design Iteration</span>
               <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-[10px] font-extrabold uppercase">
                 AI
               </span>
@@ -255,28 +265,48 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               </button>
             )}
 
-            {project.beforeAfter && (
-              <button
-                onClick={() => setMediaViewMode('beforeAfter')}
-                className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all ${
-                  mediaViewMode === 'beforeAfter'
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                    : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Sliders className="w-4 h-4" />
-                <span>Before & After</span>
-              </button>
-            )}
-
-            {/* AI Design Variation Modal Trigger */}
+            {/* Concept vs AI Iteration Before/After Tab */}
             <button
-              onClick={() => setIsVariationModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all bg-gradient-to-r from-purple-950/70 to-indigo-950/70 hover:from-purple-900 hover:to-indigo-900 text-purple-200 border border-purple-500/30 shadow-md shadow-purple-950/40"
-              title="Re-render project imagery into Modernist, Minimalist, or Industrial styles"
+              onClick={() => setMediaViewMode('beforeAfter')}
+              className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all ${
+                mediaViewMode === 'beforeAfter'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/30'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Interactive Before/After comparison of Original Concept vs AI Iterations"
             >
-              <Wand2 className="w-3.5 h-3.5 text-purple-300" />
-              <span>Design Variation</span>
+              <Sliders className="w-4 h-4 text-purple-300" />
+              <span>Concept vs AI Iteration</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-extrabold border border-purple-500/30">
+                Before / After
+              </span>
+            </button>
+
+            {/* Site Master Plan Tab */}
+            <button
+              onClick={() => setMediaViewMode('siteMap')}
+              className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all ${
+                mediaViewMode === 'siteMap'
+                  ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-lg shadow-teal-600/30'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Interactive Site Master Plan with SVG Zoning Overlay and Associated Renderings"
+            >
+              <Compass className="w-4 h-4 text-teal-300" />
+              <span>Site Master Plan</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-extrabold border border-teal-500/30">
+                SVG Map
+              </span>
+            </button>
+
+            {/* AI Design Iteration Modal Trigger */}
+            <button
+              onClick={() => setIsIterationModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all bg-gradient-to-r from-purple-950/70 to-indigo-950/70 hover:from-purple-900 hover:to-indigo-900 text-purple-200 border border-purple-500/30 shadow-md shadow-purple-950/40"
+              title="Suggest alternative architectural design concepts based on current project parameters using Gemini API"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+              <span>Design Iteration</span>
               <span className="px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-extrabold border border-purple-500/30">
                 AI
               </span>
@@ -392,16 +422,27 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
           </div>
         )}
 
-        {/* 4. BEFORE & AFTER TRANSFORMATION VIEW */}
-        {mediaViewMode === 'beforeAfter' && project.beforeAfter && (
+        {/* 4. BEFORE & AFTER ARCHITECTURAL CONCEPT COMPARISON VIEW */}
+        {mediaViewMode === 'beforeAfter' && (
           <div className="space-y-4 animate-in fade-in duration-300">
-            <h3 className="text-lg font-bold text-white">Before vs After Transformation</h3>
-            <BeforeAfterSlider
-              beforeImage={project.beforeAfter.before}
-              afterImage={project.beforeAfter.after}
-              labelBefore={project.beforeAfter.labelBefore}
-              labelAfter={project.beforeAfter.labelAfter}
+            <BeforeAfter
+              project={project}
+              specs={specs}
+              onOpenAiIterationModal={() => setIsIterationModalOpen(true)}
+              activeGeneratedConcepts={generatedConcepts}
+              onAdoptIteration={(scheme) => {
+                setAdoptedScheme(scheme);
+                setAdoptNotification(`Adopted Scheme ${scheme.schemeLetter}: ${scheme.name} as preferred architectural scheme!`);
+                setTimeout(() => setAdoptNotification(null), 4000);
+              }}
             />
+          </div>
+        )}
+
+        {/* 5. INTERACTIVE SITE MASTER PLAN SVG OVERLAY */}
+        {mediaViewMode === 'siteMap' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <InteractiveSiteMap project={project} />
           </div>
         )}
       </div>
@@ -481,6 +522,18 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Generate Design Iterations Trigger inside Technical Specs */}
+            <button
+              onClick={() => setIsIterationModalOpen(true)}
+              className="w-full mt-4 py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-600/20 via-indigo-600/20 to-blue-600/20 hover:from-purple-600/30 hover:to-blue-600/30 border border-purple-500/30 text-purple-300 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+              <span>Generate Design Iterations</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-purple-500/30 text-[9px] font-extrabold uppercase text-purple-200">
+                AI
+              </span>
+            </button>
           </div>
           
           {/* Software Used */}
@@ -587,6 +640,78 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
         </div>
       </div>
 
+      {/* Dedicated Interactive Before/After Architectural Comparison Section */}
+      {mediaViewMode !== 'beforeAfter' && (
+        <div id="architectural-concept-comparison" className="space-y-4 pt-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <span>Architectural Evolution: Original Concept vs. AI Iterations</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30 text-[11px] font-bold">
+                  Interactive Toggle
+                </span>
+              </h3>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Assess original baseline geometry against generative structural variations with the interactive before/after comparative engine.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setMediaViewMode('beforeAfter');
+                window.scrollTo({ top: 320, behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-bold cursor-pointer transition-all self-start sm:self-auto"
+            >
+              <span>Focus in Main Showcase</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <BeforeAfter
+            project={project}
+            specs={specs}
+            onOpenAiIterationModal={() => setIsIterationModalOpen(true)}
+            activeGeneratedConcepts={generatedConcepts}
+            onAdoptIteration={(scheme) => {
+              setAdoptedScheme(scheme);
+              setAdoptNotification(`Adopted Scheme ${scheme.schemeLetter}: ${scheme.name} as preferred architectural scheme!`);
+              setTimeout(() => setAdoptNotification(null), 4000);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Dedicated Interactive Site Master Plan & Zoning Breakdown Section */}
+      {mediaViewMode !== 'siteMap' && (
+        <div id="interactive-site-plan" className="space-y-4 pt-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <span>Interactive Site Master Plan & Spatial Zoning</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30 text-[11px] font-bold">
+                  SVG Vector Overlay
+                </span>
+              </h3>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Hover over discrete building footprints, plazas, and pavilions to inspect real-time GFA metrics, structural systems, and associated perspective renderings.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setMediaViewMode('siteMap');
+                window.scrollTo({ top: 320, behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-600/20 hover:bg-teal-600/30 text-teal-300 border border-teal-500/40 text-xs font-bold cursor-pointer transition-all self-start sm:self-auto"
+            >
+              <span>Focus in Main Showcase</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <InteractiveSiteMap project={project} />
+        </div>
+      )}
+
       {/* Resource Allocation Breakdown (Staffing & Materials Schedule) */}
       <ProjectResourceAllocationView project={project} />
 
@@ -656,6 +781,35 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
           setMediaViewMode('gallery');
         }}
       />
+
+      {/* AI Design Iteration Modal (Gemini API Concepts Generator) */}
+      <AIDesignIterationModal
+        isOpen={isIterationModalOpen}
+        onClose={() => setIsIterationModalOpen(false)}
+        project={project}
+        specs={specs}
+        onConceptsGenerated={(concepts) => {
+          setGeneratedConcepts(concepts);
+        }}
+        onOpenBeforeAfter={() => {
+          setMediaViewMode('beforeAfter');
+          window.scrollTo({ top: 320, behavior: 'smooth' });
+        }}
+        onApplyConcept={(concept) => {
+          setAdoptNotification(`Scheme ${concept.schemeLetter}: ${concept.conceptName} adopted for active exploration.`);
+          setTimeout(() => setAdoptNotification(null), 4000);
+        }}
+      />
+
+      {/* Adoption Feedback Toast */}
+      {adoptNotification && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className="px-5 py-3.5 rounded-2xl bg-neutral-900/95 border border-purple-500/40 text-white text-xs font-bold shadow-2xl shadow-purple-950/80 flex items-center gap-3 backdrop-blur-md">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{adoptNotification}</span>
+          </div>
+        </div>
+      )}
 
     </div>
   );
