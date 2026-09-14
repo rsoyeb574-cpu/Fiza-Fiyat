@@ -2,30 +2,26 @@ import React, { useState, useMemo } from 'react';
 import { 
   Search, 
   BookOpen, 
-  Calendar, 
   Clock, 
-  User, 
   ArrowRight, 
   Sparkles, 
-  Layers, 
   Compass, 
-  ShieldAlert, 
-  Wrench, 
-  FileCheck,
-  Building2,
-  Cpu,
-  Home,
-  DraftingCompass,
-  Zap,
-  CheckCircle2,
-  SlidersHorizontal
+  DraftingCompass, 
+  Zap, 
+  Activity, 
+  Cpu, 
+  ArrowLeft,
+  Filter
 } from 'lucide-react';
 import { BlogArticle } from '../types';
-import { VISUAL_KNOWLEDGE_ARTICLES, QUICK_SEARCH_SUGGESTIONS } from '../data/visualKnowledgeData';
+import { QUICK_SEARCH_SUGGESTIONS } from '../data/visualKnowledgeData';
 import { VisualKnowledgeArticle, KnowledgeCategory } from '../types/visualKnowledge';
 import { VisualTopicCard } from '../components/knowledge/VisualTopicCard';
 import { VisualArticleView } from '../components/knowledge/VisualArticleView';
 import { DrawingAnalyzerView } from '../components/knowledge/DrawingAnalyzerView';
+import { MetalIntelligenceSection } from '../components/knowledge/MetalIntelligenceSection';
+import { SteelDiagnosisView } from '../components/steel/SteelDiagnosisView';
+import { getAllKnowledgeArticles } from '../services/knowledgeAdapter';
 
 interface BlogPageProps {
   blogs: BlogArticle[];
@@ -33,26 +29,51 @@ interface BlogPageProps {
 }
 
 export const BlogPage: React.FC<BlogPageProps> = ({ blogs, onSelectBlog }) => {
-  // Tabs: 'visual' (Architecture & Engineering Visual Hub), 'analyzer' (CAD/Blueprint Analyzer), 'journal' (Classic Articles)
-  const [activeTab, setActiveTab] = useState<'visual' | 'analyzer' | 'journal'>('visual');
+  // Tabs: 'visual', 'metal', 'inspector', 'analyzer', 'journal'
+  const [activeTab, setActiveTab] = useState<'visual' | 'metal' | 'inspector' | 'analyzer' | 'journal'>('visual');
   const [selectedArticle, setSelectedArticle] = useState<VisualKnowledgeArticle | null>(null);
 
-  // Search & Filter State
+  // Search & Filter State for Visual tab
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
+  // Master articles from the unified knowledge adapter
+  const allArticles = useMemo(() => {
+    return getAllKnowledgeArticles();
+  }, []);
+
   // Category counts
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: VISUAL_KNOWLEDGE_ARTICLES.length };
-    VISUAL_KNOWLEDGE_ARTICLES.forEach((art) => {
+    const counts: Record<string, number> = { all: allArticles.length };
+    allArticles.forEach((art) => {
       counts[art.category] = (counts[art.category] || 0) + 1;
     });
     return counts;
-  }, []);
+  }, [allArticles]);
+
+  // Metal articles count
+  const metalArticlesCount = useMemo(() => {
+    return allArticles.filter((a) => {
+      const c = (a.category || '').toLowerCase();
+      const s = (a.subCategory || '').toLowerCase();
+      return (
+        c.includes('metal') ||
+        c.includes('steel') ||
+        c.includes('welding') ||
+        s.includes('metal') ||
+        s.includes('steel') ||
+        s.includes('sheet') ||
+        s.includes('welding') ||
+        s.includes('fastener') ||
+        s.includes('corrosion') ||
+        s.includes('inspection')
+      );
+    }).length;
+  }, [allArticles]);
 
   // Filtered Visual Articles
   const filteredArticles = useMemo(() => {
-    return VISUAL_KNOWLEDGE_ARTICLES.filter((article) => {
+    return allArticles.filter((article) => {
       const matchesCategory =
         selectedCategory === 'all' || article.category.toLowerCase() === selectedCategory.toLowerCase();
 
@@ -68,7 +89,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ blogs, onSelectBlog }) => {
 
       return matchesCategory && matchesSearch;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [allArticles, searchQuery, selectedCategory]);
 
   // Filtered Traditional Blog Articles (Preserved)
   const filteredBlogs = useMemo(() => {
@@ -98,6 +119,10 @@ export const BlogPage: React.FC<BlogPageProps> = ({ blogs, onSelectBlog }) => {
           article={selectedArticle}
           onBack={() => setSelectedArticle(null)}
           onSelectArticle={(newArticle) => setSelectedArticle(newArticle)}
+          onLaunchInspector={() => {
+            setSelectedArticle(null);
+            setActiveTab('inspector');
+          }}
         />
       </div>
     );
@@ -122,28 +147,62 @@ export const BlogPage: React.FC<BlogPageProps> = ({ blogs, onSelectBlog }) => {
 
         {/* Mode Switcher Tabs */}
         <div className="flex items-center justify-center pt-2">
-          <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-neutral-950/80 border border-white/10 shadow-2xl backdrop-blur-xl">
+          <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-neutral-950/80 border border-white/10 shadow-2xl backdrop-blur-xl flex-wrap justify-center">
+            {/* Tab 1: Visual Knowledge */}
             <button
               onClick={() => {
                 setActiveTab('visual');
                 setSelectedArticle(null);
               }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
                 activeTab === 'visual'
                   ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-600/30'
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
               <Compass className="w-4 h-4" />
-              <span>Visual Knowledge ({VISUAL_KNOWLEDGE_ARTICLES.length})</span>
+              <span>Visual Knowledge ({allArticles.length})</span>
             </button>
 
+            {/* Tab 2: Metal Intelligence & Machine Learning (NEW PREMIUM TAB) */}
+            <button
+              onClick={() => {
+                setActiveTab('metal');
+                setSelectedArticle(null);
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'metal'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-neutral-950 font-black shadow-lg shadow-amber-500/30'
+                  : 'text-amber-300/90 hover:text-amber-200 bg-amber-500/10 border border-amber-500/20'
+              }`}
+            >
+              <Cpu className="w-4 h-4 text-amber-400" />
+              <span>Metal Intelligence & ML ({metalArticlesCount})</span>
+            </button>
+
+            {/* Tab 3: AI Metal Inspector (Machine Vision) */}
+            <button
+              onClick={() => {
+                setActiveTab('inspector');
+                setSelectedArticle(null);
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'inspector'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/30'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <Activity className="w-4 h-4 text-emerald-400" />
+              <span>AI Metal Inspector</span>
+            </button>
+
+            {/* Tab 4: Drawing Analyzer */}
             <button
               onClick={() => {
                 setActiveTab('analyzer');
                 setSelectedArticle(null);
               }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
                 activeTab === 'analyzer'
                   ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-600/30'
                   : 'text-neutral-400 hover:text-white'
@@ -153,12 +212,13 @@ export const BlogPage: React.FC<BlogPageProps> = ({ blogs, onSelectBlog }) => {
               <span>Drawing Analyzer</span>
             </button>
 
+            {/* Tab 5: Traditional Journal */}
             <button
               onClick={() => {
                 setActiveTab('journal');
                 setSelectedArticle(null);
               }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
                 activeTab === 'journal'
                   ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-600/30'
                   : 'text-neutral-400 hover:text-white'
@@ -171,12 +231,42 @@ export const BlogPage: React.FC<BlogPageProps> = ({ blogs, onSelectBlog }) => {
         </div>
       </div>
 
-      {/* VIEW 1: DRAWING ANALYZER VIEW */}
+      {/* VIEW 1: METAL INTELLIGENCE & MACHINE LEARNING (PREMIUM VIEW) */}
+      {activeTab === 'metal' && (
+        <MetalIntelligenceSection
+          articles={allArticles}
+          onSelectArticle={(article) => setSelectedArticle(article)}
+          onLaunchInspector={() => setActiveTab('inspector')}
+        />
+      )}
+
+      {/* VIEW 2: AI METAL INSPECTOR (FULL MACHINE VISION WORKFLOW) */}
+      {activeTab === 'inspector' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-neutral-900/80 border border-white/10">
+            <button
+              onClick={() => setActiveTab('metal')}
+              className="px-3.5 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Metal Intelligence</span>
+            </button>
+            <span className="text-xs text-amber-400 font-bold flex items-center gap-1.5">
+              <Zap className="w-4 h-4 fill-amber-400" />
+              Live Computer Vision Model: Gemini 2.5 Structural NDT
+            </span>
+          </div>
+
+          <SteelDiagnosisView />
+        </div>
+      )}
+
+      {/* VIEW 3: DRAWING ANALYZER VIEW */}
       {activeTab === 'analyzer' && (
         <DrawingAnalyzerView />
       )}
 
-      {/* VIEW 2: VISUAL KNOWLEDGE PLATFORM (DEFAULT) */}
+      {/* VIEW 4: VISUAL KNOWLEDGE PLATFORM (DEFAULT) */}
       {activeTab === 'visual' && (
         <div className="space-y-8">
           {/* Search Bar & Visual Suggestions (Requirement 12) */}
@@ -233,6 +323,16 @@ export const BlogPage: React.FC<BlogPageProps> = ({ blogs, onSelectBlog }) => {
                 All Topics ({categoryCounts.all || 0})
               </button>
 
+              {/* Special Prominent Metal Intelligence Button */}
+              <button
+                onClick={() => setActiveTab('metal')}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20"
+              >
+                <Cpu className="w-3.5 h-3.5 text-amber-400" />
+                <span>Metal Intelligence & ML</span>
+                <span className="text-[10px] opacity-75">({metalArticlesCount})</span>
+              </button>
+
               {([
                 'Architecture',
                 'Structural Engineering',
@@ -240,8 +340,8 @@ export const BlogPage: React.FC<BlogPageProps> = ({ blogs, onSelectBlog }) => {
                 'Interior Design',
                 'MEP Systems',
                 'CAD & Software',
-                'MS & Sheet Metal',
-                'Welding & Defects'
+                'Drawing Standards',
+                'Inspection & Damage'
               ] as KnowledgeCategory[]).map((cat) => (
                 <button
                   key={cat}
@@ -291,7 +391,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ blogs, onSelectBlog }) => {
         </div>
       )}
 
-      {/* VIEW 3: TRADITIONAL JOURNAL BLOGS (Preserved existing design & content) */}
+      {/* VIEW 5: TRADITIONAL JOURNAL BLOGS (Preserved existing design & content) */}
       {activeTab === 'journal' && (
         <div className="space-y-8">
           <div className="p-4 rounded-2xl bg-neutral-900/60 border border-white/10 backdrop-blur-md">

@@ -511,7 +511,234 @@ export function getTopicFallbackSvg(topicType: string, title?: string): string {
     `;
   }
 
-  // 12. DEFAULT ENGINEERING BLUEPRINT / SCHEMATIC
+  // 12. FASTENERS & CONNECTIONS (HSFG Bolts, Nuts, Washers, Anchors, Rivets)
+  if (norm.includes('bolt') || norm.includes('nut') || norm.includes('washer') || norm.includes('fastener') || norm.includes('anchor') || norm.includes('rivet') || norm.includes('screw') || norm.includes('threaded') || norm.includes('hsfg')) {
+    return `
+      <svg viewBox="0 0 600 400" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <rect width="600" height="400" fill="#0A0F1D"/>
+        <!-- Structural Bolted Lap / Flange Joint Detail -->
+        <g transform="translate(90, 60)">
+          <!-- Top Connecting Plate (t=16mm) -->
+          <rect x="20" y="70" width="280" height="30" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+          <!-- Bottom Connecting Plate (t=16mm) -->
+          <rect x="60" y="100" width="280" height="30" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+          
+          <!-- HSFG Bolt (Grade 8.8 / 10.9) Section -->
+          <!-- Hex Head -->
+          <polygon points="120,40 180,40 170,70 130,70" fill="#475569" stroke="#94A3B8" stroke-width="2"/>
+          <text x="150" y="30" fill="#FDE047" font-size="10" font-family="monospace" text-anchor="middle">GRADE 10.9 HEAD</text>
+          
+          <!-- Hardened Plain Washer (Top) -->
+          <rect x="115" y="66" width="70" height="6" fill="#64748B" stroke="#CBD5E1" stroke-width="1.5"/>
+          
+          <!-- Bolt Shank (d=20mm M20) -->
+          <rect x="135" y="70" width="30" height="60" fill="#334155" stroke="#94A3B8" stroke-width="1.5"/>
+          <!-- Threaded Section -->
+          <g stroke="#94A3B8" stroke-width="1">
+            <line x1="135" y1="130" x2="165" y2="133"/>
+            <line x1="135" y1="138" x2="165" y2="141"/>
+            <line x1="135" y1="146" x2="165" y2="149"/>
+            <line x1="135" y1="154" x2="165" y2="157"/>
+            <line x1="135" y1="162" x2="165" y2="165"/>
+            <line x1="135" y1="170" x2="165" y2="173"/>
+          </g>
+          
+          <!-- Hardened Washer (Bottom) -->
+          <rect x="115" y="130" width="70" height="6" fill="#64748B" stroke="#CBD5E1" stroke-width="1.5"/>
+          
+          <!-- Heavy Hex Nut -->
+          <polygon points="125,136 175,136 185,166 115,166" fill="#475569" stroke="#94A3B8" stroke-width="2"/>
+          <!-- Protruding Bolt Tip (min 2 threads) -->
+          <rect x="138" y="166" width="24" height="18" fill="#334155" stroke="#94A3B8" stroke-width="1.5"/>
+          
+          <!-- Friction-Grip Clamping Force Arrows -->
+          <g stroke="#10B981" stroke-width="2" fill="#10B981">
+            <line x1="110" y1="50" x2="110" y2="85"/><polygon points="110,85 106,77 114,77"/>
+            <line x1="190" y1="50" x2="190" y2="85"/><polygon points="190,85 186,77 194,77"/>
+            <line x1="110" y1="185" x2="110" y2="150"/><polygon points="110,150 106,158 114,158"/>
+            <line x1="190" y1="185" x2="190" y2="150"/><polygon points="190,150 186,158 194,158"/>
+          </g>
+          <text x="75" y="125" fill="#10B981" font-size="10" font-family="monospace">Preload T_0</text>
+          
+          <!-- Fastener Engineering Callout Box -->
+          <g transform="translate(230, 20)">
+            <rect x="0" y="0" width="180" height="150" fill="#1E293B" stroke="#38BDF8" stroke-width="1.5" rx="6"/>
+            <text x="12" y="24" fill="#38BDF8" font-size="11" font-family="sans-serif" font-weight="bold">HSFG M20 SPECIFICATION</text>
+            <text x="12" y="46" fill="#CBD5E1" font-size="9.5" font-family="monospace">• Standard: IS 3757 / ASTM F3125</text>
+            <text x="12" y="66" fill="#CBD5E1" font-size="9.5" font-family="monospace">• Proof Load: 147 kN</text>
+            <text x="12" y="86" fill="#CBD5E1" font-size="9.5" font-family="monospace">• Torque: 450-550 N·m</text>
+            <text x="12" y="106" fill="#CBD5E1" font-size="9.5" font-family="monospace">• Slip Factor (μ): 0.50 (Sa 2.5)</text>
+            <text x="12" y="126" fill="#10B981" font-size="9.5" font-family="monospace">• Type: Friction Grip (No Shear)</text>
+          </g>
+          
+          <text x="180" y="225" fill="#93C5FD" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">HSFG PRELOADED BOLTED CONNECTION</text>
+        </g>
+      </svg>
+    `;
+  }
+
+  // 13. BASE PLATE & FOUNDATION CONNECTIONS
+  if (norm.includes('base plate') || norm.includes('grout') || norm.includes('holding down') || norm.includes('anchor rod')) {
+    return `
+      <svg viewBox="0 0 600 400" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <rect width="600" height="400" fill="#0A101D"/>
+        <g transform="translate(100, 40)">
+          <!-- Steel Column Stem (UC / ISMB) -->
+          <rect x="150" y="10" width="60" height="120" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+          <line x1="180" y1="10" x2="180" y2="130" stroke="#38BDF8" stroke-width="1.5"/>
+          
+          <!-- Gusset Stiffeners -->
+          <polygon points="150,50 110,130 150,130" fill="#334155" stroke="#38BDF8" stroke-width="1.5"/>
+          <polygon points="210,50 250,130 210,130" fill="#334155" stroke="#38BDF8" stroke-width="1.5"/>
+          
+          <!-- Steel Base Plate (t=25-32mm) -->
+          <rect x="70" y="130" width="220" height="22" fill="#475569" stroke="#E2E8F0" stroke-width="2" rx="2"/>
+          <text x="295" y="145" fill="#E2E8F0" font-size="10" font-family="monospace">BASE PLATE 28mm</text>
+          
+          <!-- Non-Shrink High-Strength Grout Bed (30-50mm) -->
+          <rect x="60" y="152" width="240" height="25" fill="#334155" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="4,2"/>
+          <text x="305" y="168" fill="#F59E0B" font-size="10" font-family="monospace">NON-SHRINK GROUT (60 MPa)</text>
+          
+          <!-- RCC Pedestal Foundation -->
+          <rect x="40" y="177" width="280" height="110" fill="#1E293B" stroke="#64748B" stroke-width="2"/>
+          <text x="180" y="270" fill="#94A3B8" font-size="11" font-family="monospace" text-anchor="middle">CONCRETE PEDESTAL (M35)</text>
+          
+          <!-- Cast-in Anchor Rods with Hook/Plate Embedment -->
+          <!-- Left Anchor -->
+          <rect x="85" y="105" width="10" height="150" fill="#94A3B8" stroke="#F87171" stroke-width="1.5"/>
+          <path d="M 90 255 L 70 255" stroke="#F87171" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="90" cy="115" r="7" fill="#F59E0B"/>
+          <!-- Right Anchor -->
+          <rect x="265" y="105" width="10" height="150" fill="#94A3B8" stroke="#F87171" stroke-width="1.5"/>
+          <path d="M 270 255 L 290 255" stroke="#F87171" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="270" cy="115" r="7" fill="#F59E0B"/>
+          
+          <text x="180" y="315" fill="#38BDF8" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">STRUCTURAL BASE PLATE & ANCHOR ROD DETAIL</text>
+        </g>
+      </svg>
+    `;
+  }
+
+  // 14. FABRICATION (Laser Cutting, Press Brake, CNC Machining, Drilling, Rolling)
+  if (norm.includes('cutting') || norm.includes('laser') || norm.includes('plasma') || norm.includes('drill') || norm.includes('punch') || norm.includes('machin') || norm.includes('roll') || norm.includes('fabricat')) {
+    return `
+      <svg viewBox="0 0 600 400" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <rect width="600" height="400" fill="#0A0F1E"/>
+        <g transform="translate(90, 60)">
+          <!-- CNC Fiber Laser Cutting Head & Kerf Section -->
+          <polygon points="120,20 160,20 145,90 135,90" fill="#3B82F6" stroke="#60A5FA" stroke-width="2"/>
+          <rect x="135" y="90" width="10" height="15" fill="#93C5FD"/>
+          <text x="140" y="12" fill="#93C5FD" font-size="10" font-family="monospace" text-anchor="middle">FIBER LASER NOZZLE (1.5mm)</text>
+          
+          <!-- Focused Laser Beam -->
+          <line x1="140" y1="105" x2="140" y2="135" stroke="#EF4444" stroke-width="2.5"/>
+          <circle cx="140" cy="135" r="4" fill="#FDE047"/>
+          
+          <!-- Steel Plate being cut -->
+          <rect x="20" y="135" width="118" height="30" fill="#1E293B" stroke="#94A3B8" stroke-width="2"/>
+          <rect x="142" y="135" width="160" height="30" fill="#1E293B" stroke="#94A3B8" stroke-width="2"/>
+          <line x1="140" y1="135" x2="140" y2="165" stroke="#F59E0B" stroke-width="3" stroke-dasharray="2,2"/>
+          
+          <!-- Assist Gas Stream & Molten Ejection Sparks -->
+          <path d="M 137 165 L 125 210 M 140 165 L 140 220 M 143 165 L 155 210" stroke="#F59E0B" stroke-width="1.5"/>
+          <text x="140" y="235" fill="#F59E0B" font-size="9" font-family="monospace" text-anchor="middle">N2 / O2 EJECTION</text>
+          
+          <!-- Technical Specs Card -->
+          <g transform="translate(230, 20)">
+            <rect x="0" y="0" width="180" height="150" fill="#1E293B" stroke="#3B82F6" stroke-width="1.5" rx="6"/>
+            <text x="12" y="24" fill="#60A5FA" font-size="11" font-family="sans-serif" font-weight="bold">CNC FABRICATION PARAMS</text>
+            <text x="12" y="46" fill="#CBD5E1" font-size="9.5" font-family="monospace">• Kerf Width: 0.25 - 0.40mm</text>
+            <text x="12" y="66" fill="#CBD5E1" font-size="9.5" font-family="monospace">• Cut Speed: 1.8 - 4.5 m/min</text>
+            <text x="12" y="86" fill="#CBD5E1" font-size="9.5" font-family="monospace">• Tolerance: ±0.15 mm</text>
+            <text x="12" y="106" fill="#CBD5E1" font-size="9.5" font-family="monospace">• Assist Gas: High-Purity N2</text>
+            <text x="12" y="126" fill="#10B981" font-size="9.5" font-family="monospace">• HAZ Band: &lt; 0.15mm</text>
+          </g>
+          
+          <text x="180" y="260" fill="#93C5FD" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">PRECISION CNC METAL FABRICATION PROCESS</text>
+        </g>
+      </svg>
+    `;
+  }
+
+  // 15. SURFACE TREATMENT & COATINGS (Galvanizing, Powder Coating, Sand Blasting Sa 2.5)
+  if (norm.includes('surface') || norm.includes('coating') || norm.includes('blasting') || norm.includes('sand blast') || norm.includes('powder') || norm.includes('paint') || norm.includes('anodiz')) {
+    return `
+      <svg viewBox="0 0 600 400" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <rect width="600" height="400" fill="#0C1322"/>
+        <g transform="translate(80, 60)">
+          <!-- Duplex Coating Layers Diagram per ISO 12944 -->
+          <!-- Substrate: Steel Plate with Sa 2.5 profile -->
+          <path d="M 20 180 L 420 180 L 420 230 L 20 230 Z" fill="#292524" stroke="#78716C" stroke-width="2"/>
+          <!-- Sa 2.5 Blast Profile Peak-to-Valley (50-75 microns) -->
+          <path d="M 20 180 Q 25 174 30 180 Q 35 186 40 180 Q 45 174 50 180 Q 55 186 60 180 L 420 180" stroke="#F59E0B" stroke-width="2" fill="none"/>
+          <text x="220" y="210" fill="#CBD5E1" font-size="11" font-family="monospace" text-anchor="middle">STEEL SUBSTRATE (Sa 2.5 BLASTED, Rz = 60μm)</text>
+          
+          <!-- Layer 1: Zinc-Rich Primer (60-80 μm) -->
+          <rect x="20" y="145" width="400" height="30" fill="#0284C7" opacity="0.85" stroke="#38BDF8" stroke-width="1.5"/>
+          <text x="30" y="164" fill="#E0F2FE" font-size="10" font-family="monospace">LAYER 1: Zinc-Rich Epoxy Primer (75μm DFT)</text>
+          
+          <!-- Layer 2: Epoxy MIO Intermediate Barrier (100-125 μm) -->
+          <rect x="20" y="105" width="400" height="35" fill="#4338CA" opacity="0.85" stroke="#818CF8" stroke-width="1.5"/>
+          <text x="30" y="127" fill="#E0E7FF" font-size="10" font-family="monospace">LAYER 2: Epoxy MIO High-Build Barrier (125μm DFT)</text>
+          
+          <!-- Layer 3: Aliphatic Polyurethane (PU) Topcoat (50-60 μm) -->
+          <rect x="20" y="70" width="400" height="30" fill="#059669" opacity="0.85" stroke="#34D399" stroke-width="1.5"/>
+          <text x="30" y="90" fill="#D1FAE5" font-size="10" font-family="monospace">LAYER 3: Aliphatic PU UV-Resistant Finish (60μm DFT)</text>
+          
+          <!-- Total System Bracket -->
+          <line x1="435" y1="70" x2="435" y2="180" stroke="#FDE047" stroke-width="2"/>
+          <text x="445" y="130" fill="#FDE047" font-size="10" font-family="monospace">TOTAL DFT: 260μm (C5-M High Durability)</text>
+          
+          <text x="220" y="260" fill="#38BDF8" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">MULTI-LAYER PROTECTIVE COATING SYSTEM ARCHITECTURE</text>
+        </g>
+      </svg>
+    `;
+  }
+
+  // 16. NDT & METAL INSPECTION (Ultrasonic, Magnetic Particle, Dye Penetrant, Radiography)
+  if (norm.includes('ndt') || norm.includes('inspect') || norm.includes('ultrasonic') || norm.includes('penetrant') || norm.includes('magnetic') || norm.includes('gauge') || norm.includes('radiograph')) {
+    return `
+      <svg viewBox="0 0 600 400" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <rect width="600" height="400" fill="#080F1E"/>
+        <g transform="translate(80, 50)">
+          <!-- Ultrasonic Testing (UT) Probe on Welded Plate -->
+          <rect x="20" y="140" width="400" height="40" fill="#1E293B" stroke="#64748B" stroke-width="2"/>
+          
+          <!-- Angle Beam Transducer (45° / 60° / 70° Shear Wave) -->
+          <polygon points="100,100 150,100 135,140 105,140" fill="#F59E0B" stroke="#FDE68A" stroke-width="2"/>
+          <text x="125" y="90" fill="#FDE68A" font-size="10" font-family="monospace" text-anchor="middle">UT PROBE (4 MHz 60°)</text>
+          
+          <!-- Ultrasonic Sound Path Ray bouncing to defect -->
+          <line x1="120" y1="140" x2="160" y2="180" stroke="#38BDF8" stroke-width="2" stroke-dasharray="3,2"/>
+          <line x1="160" y1="180" x2="200" y2="155" stroke="#38BDF8" stroke-width="2" stroke-dasharray="3,2"/>
+          
+          <!-- Internal Flaw (Lack of Fusion / Crack) -->
+          <line x1="195" y1="150" x2="208" y2="162" stroke="#EF4444" stroke-width="4"/>
+          <circle cx="202" cy="156" r="8" fill="none" stroke="#EF4444" stroke-width="1.5"/>
+          <text x="220" y="150" fill="#EF4444" font-size="9" font-family="monospace">INTERNAL CRACK</text>
+          
+          <!-- A-Scan CRT Display Screen -->
+          <g transform="translate(260, 20)">
+            <rect x="0" y="0" width="160" height="100" fill="#001B3A" stroke="#38BDF8" stroke-width="2" rx="6"/>
+            <!-- Baseline Grid -->
+            <line x1="10" y1="80" x2="150" y2="80" stroke="#005599" stroke-width="1"/>
+            <!-- Initial Pulse -->
+            <path d="M 15 80 L 20 20 L 25 80" fill="none" stroke="#00FFFF" stroke-width="2"/>
+            <!-- Flaw Echo Spike -->
+            <path d="M 75 80 L 82 35 L 89 80" fill="none" stroke="#EF4444" stroke-width="2.5"/>
+            <!-- Backwall Echo Spike -->
+            <path d="M 130 80 L 136 25 L 142 80" fill="none" stroke="#00FFFF" stroke-width="2"/>
+            <text x="82" y="25" fill="#EF4444" font-size="8.5" font-family="monospace" text-anchor="middle">DEFECT ECHO</text>
+            <text x="80" y="95" fill="#93C5FD" font-size="8" font-family="monospace" text-anchor="middle">TIME-OF-FLIGHT (mm)</text>
+          </g>
+          
+          <text x="220" y="240" fill="#38BDF8" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">ULTRASONIC NON-DESTRUCTIVE TESTING (UT A-SCAN)</text>
+        </g>
+      </svg>
+    `;
+  }
+
+  // 17. DEFAULT ENGINEERING BLUEPRINT / SCHEMATIC
   return `
     <svg viewBox="0 0 600 400" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
       <defs>

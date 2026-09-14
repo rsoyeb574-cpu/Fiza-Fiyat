@@ -19,6 +19,7 @@ import { UNIVERSAL_DRAWING_DATABASE } from '../data/universalDrawingDatabase';
 import { ENGINEERING_STANDARDS_DATABASE } from '../data/standardsDatabase';
 import { SOFTWARE_ERROR_DATABASE } from '../data/softwareErrorDatabase';
 import { SAMPLE_STRUCTURAL_CASES } from '../data/sampleStructuralInspections';
+import { ALL_METAL_CATALOG_ARTICLES } from '../data/metalCatalogArticles';
 
 /**
  * 16 Core Primary Knowledge Categories with their subcategories and design styling
@@ -85,9 +86,10 @@ export const KNOWLEDGE_CATEGORY_DEFINITIONS: CategoryDefinition[] = [
     }
   },
   {
-    id: 'MEP',
-    label: 'MEP Systems',
+    id: 'MEP Engineering',
+    label: 'MEP Engineering',
     shortLabel: 'MEP',
+    subtitle: 'Electrical, HVAC, Plumbing & Fire Protection',
     description: 'Electrical conduits & single-line diagrams, plumbing risers, HVAC ducting, and NFPA fire safety.',
     iconName: 'Zap',
     subcategories: ['Electrical', 'Plumbing', 'HVAC', 'Fire Safety'],
@@ -100,9 +102,10 @@ export const KNOWLEDGE_CATEGORY_DEFINITIONS: CategoryDefinition[] = [
     }
   },
   {
-    id: 'Mechanical',
+    id: 'Mechanical Engineering',
     label: 'Mechanical Engineering',
     shortLabel: 'Mechanical',
+    subtitle: 'Machining, Tolerances, Kinematics & Fabrication',
     description: 'Machine components, kinematic linkages, CNC manufacturing, fabrication tolerances, and assembly.',
     iconName: 'Cpu',
     subcategories: ['Components', 'Manufacturing', 'Assembly', 'Machining'],
@@ -115,21 +118,23 @@ export const KNOWLEDGE_CATEGORY_DEFINITIONS: CategoryDefinition[] = [
     }
   },
   {
-    id: 'METALS & SHEET METAL',
-    label: 'Metals & Sheet Metal',
-    shortLabel: 'Metals',
-    description: 'Complete metallurgical encyclopedia: MS, aluminium, sheet metal gauges, hollow sections, welding & defects.',
+    id: 'Metal Intelligence & Machine Learning',
+    label: 'Metal Intelligence & Machine Learning',
+    shortLabel: 'Metal AI',
+    subtitle: 'Metals, Steel, Sheet Metal, Welding, Fabrication & AI Inspection',
+    description: 'Visual engineering knowledge and AI-assisted inspection for metals, steel, sheet metal, welding, fabrication, corrosion and construction applications.',
     iconName: 'ShieldAlert',
     subcategories: [
-      'Metals',
+      'Material',
       'Sheet Metal',
-      'Structural Sections',
+      'Steel Section',
       'Fabrication',
       'Welding',
-      'Welding Defects',
-      'Corrosion & Damage',
-      'Fasteners',
-      'Surface Treatment'
+      'Defect',
+      'Corrosion',
+      'Fastener',
+      'Surface Treatment',
+      'Inspection'
     ],
     themeColor: {
       accent: '#F97316',
@@ -140,9 +145,26 @@ export const KNOWLEDGE_CATEGORY_DEFINITIONS: CategoryDefinition[] = [
     }
   },
   {
-    id: 'CAD',
-    label: 'CAD Engineering',
+    id: 'Welding & Fabrication',
+    label: 'Welding & Fabrication',
+    shortLabel: 'Welding',
+    subtitle: 'WPS, Prequalified Joints, Arc Physics & Fabrication QA',
+    description: 'SMAW, GMAW/MIG, GTAW/TIG, joint bevel geometries, electrode classifications, and weld defect mitigation.',
+    iconName: 'Flame',
+    subcategories: ['SMAW', 'GMAW/MIG', 'GTAW/TIG', 'Joint Geometry', 'Defects', 'Fabrication QA'],
+    themeColor: {
+      accent: '#EF4444',
+      border: 'border-red-500/30',
+      bg: 'bg-red-500/10',
+      text: 'text-red-300',
+      gradient: 'from-red-500/20 to-amber-500/20'
+    }
+  },
+  {
+    id: 'CAD & Drafting',
+    label: 'CAD & Drafting',
     shortLabel: 'CAD',
+    subtitle: 'AutoCAD, Civil 3D, Layer Conventions & Working Drawings',
     description: 'AutoCAD commands, Civil 3D workflows, layer conventions, dimension styles, and 2D working drawings.',
     iconName: 'DraftingCompass',
     subcategories: ['AutoCAD', 'Civil 3D', 'CAD Commands', '2D Drawing'],
@@ -293,12 +315,27 @@ export const KNOWLEDGE_CATEGORY_DEFINITIONS: CategoryDefinition[] = [
 
 /**
  * Normalized Category Mapper
- * Maps legacy/sub-discipline strings to the 16 primary categories
+ * Maps legacy/sub-discipline strings to the canonical primary categories
  */
 export function normalizeCategory(cat: string): KnowledgeCategory {
-  const c = cat.toLowerCase();
-  if (c.includes('metal') || c.includes('steel') || c.includes('welding') || c.includes('sheet') || c.includes('corrosion') || c.includes('iron') || c.includes('alloy') || c.includes('fastener')) {
-    return 'METALS & SHEET METAL';
+  const c = (cat || '').toLowerCase();
+  if (c.includes('welding & fabrication') || (c.includes('welding') && (c.includes('process') || c.includes('joint') || c.includes('wps')))) {
+    return 'Welding & Fabrication';
+  }
+  if (
+    c.includes('metal intelligence') ||
+    c.includes('metals & sheet metal') ||
+    c.includes('metal') ||
+    c.includes('steel') ||
+    c.includes('sheet') ||
+    c.includes('corrosion') ||
+    c.includes('iron') ||
+    c.includes('alloy') ||
+    c.includes('fastener') ||
+    c.includes('galvaniz') ||
+    c.includes('welding')
+  ) {
+    return 'Metal Intelligence & Machine Learning';
   }
   if (c.includes('arch') || c.includes('elevation') || c.includes('floor plan')) {
     return 'Architecture';
@@ -313,13 +350,16 @@ export function normalizeCategory(cat: string): KnowledgeCategory {
     return 'Interior Design';
   }
   if (c.includes('mep') || c.includes('electric') || c.includes('plumb') || c.includes('hvac') || c.includes('fire')) {
-    return 'MEP';
+    return 'MEP Engineering';
+  }
+  if (c.includes('mech') || c.includes('machine') || c.includes('gear') || c.includes('kinematic')) {
+    return 'Mechanical Engineering';
   }
   if (c.includes('bim') || c.includes('revit') || c.includes('tekla') || c.includes('navis')) {
     return 'BIM';
   }
-  if (c.includes('cad') || c.includes('command') || c.includes('autocad')) {
-    return 'CAD';
+  if (c.includes('cad') || c.includes('drafting') || c.includes('command') || c.includes('autocad')) {
+    return 'CAD & Drafting';
   }
   if (c.includes('3d') || c.includes('render') || c.includes('max') || c.includes('sketch') || c.includes('lumion') || c.includes('blender')) {
     return '3D Visualization';
@@ -330,16 +370,540 @@ export function normalizeCategory(cat: string): KnowledgeCategory {
   if (c.includes('material') || c.includes('cement') || c.includes('brick') || c.includes('glass') || c.includes('timber')) {
     return 'Materials';
   }
-  if (c.includes('standard') || c.includes('code')) {
+  if (c.includes('standard') || c.includes('code') || c.includes('layer') || c.includes('symbol')) {
     return 'Drawing Standards';
   }
-  if (c.includes('inspect') || c.includes('defect') || c.includes('damage')) {
+  if (c.includes('inspect') || c.includes('damage') || c.includes('crack') || c.includes('distress')) {
     return 'Inspection & Damage';
   }
-  if (c.includes('calc')) {
+  if (c.includes('soft') || c.includes('guide') || c.includes('troubleshoot')) {
+    return 'Software Guides';
+  }
+  if (c.includes('calc') || c.includes('gauge finder')) {
     return 'Calculators';
   }
-  return 'Architecture';
+  if (c.includes('project') || c.includes('villa') || c.includes('warehouse')) {
+    return 'Project Guides';
+  }
+  return 'Metal Intelligence & Machine Learning';
+}
+
+/**
+ * Metal Intelligence & Machine Learning Filter Options
+ */
+export type MetalSubFilter =
+  | 'All'
+  | 'Material'
+  | 'Sheet Metal'
+  | 'Steel Section'
+  | 'Fabrication'
+  | 'Welding'
+  | 'Defect'
+  | 'Corrosion'
+  | 'Fastener'
+  | 'Surface Treatment'
+  | 'Inspection';
+
+export const METAL_SUB_FILTERS: MetalSubFilter[] = [
+  'All',
+  'Material',
+  'Sheet Metal',
+  'Steel Section',
+  'Fabrication',
+  'Welding',
+  'Defect',
+  'Corrosion',
+  'Fastener',
+  'Surface Treatment',
+  'Inspection'
+];
+
+export type SearchFieldType =
+  | 'all'
+  | 'title'
+  | 'description'
+  | 'tags'
+  | 'material'
+  | 'application'
+  | 'problem'
+  | 'solution';
+
+export interface MatchedFieldResult {
+  title: boolean;
+  description: boolean;
+  tags: boolean;
+  material: boolean;
+  application: boolean;
+  problem: boolean;
+  solution: boolean;
+}
+
+/**
+ * Helper to identify if an article belongs to Metal Intelligence & Machine Learning domain
+ */
+export function isMetalIntelligenceArticle(article: VisualKnowledgeArticle): boolean {
+  const cat = (article.category || '').toLowerCase();
+  const sub = (article.subCategory || '').toLowerCase();
+  const id = (article.id || '').toLowerCase();
+
+  return (
+    cat.includes('metal') ||
+    cat.includes('steel') ||
+    cat.includes('welding') ||
+    cat.includes('sheet') ||
+    sub.includes('metal') ||
+    sub.includes('sheet') ||
+    sub.includes('section') ||
+    sub.includes('weld') ||
+    sub.includes('defect') ||
+    sub.includes('corrosion') ||
+    sub.includes('fastener') ||
+    sub.includes('surface') ||
+    sub.includes('ndt') ||
+    id.startsWith('metal-') ||
+    id.startsWith('steel-') ||
+    id.startsWith('sect-') ||
+    id.startsWith('defect-')
+  );
+}
+
+/**
+ * Filter an article against a specific Metal Intelligence subcategory
+ */
+export function matchMetalSubFilter(article: VisualKnowledgeArticle, filter: MetalSubFilter): boolean {
+  if (filter === 'All') return true;
+
+  const sub = (article.subCategory || '').toLowerCase();
+  const title = (article.title || '').toLowerCase();
+  const tags = (article.tags || []).map((t) => t.toLowerCase());
+  const oneLine = (article.oneLineSummary || '').toLowerCase();
+  const id = (article.id || '').toLowerCase();
+
+  switch (filter) {
+    case 'Material':
+      return (
+        sub === 'metals' ||
+        sub === 'material' ||
+        sub === 'materials' ||
+        sub === 'steel materials' ||
+        article.category === 'Materials' ||
+        id.startsWith('metal-ms') ||
+        id.startsWith('material-') ||
+        id.startsWith('steel-mat') ||
+        tags.some((t) =>
+          [
+            'metals',
+            'steel',
+            'aluminium',
+            'aluminum',
+            'alloy',
+            'is 2062',
+            'stainless steel',
+            'mild steel',
+            'carbon steel',
+            'e250',
+            'e350',
+            'brass',
+            'copper',
+            'titanium',
+            'cast iron'
+          ].includes(t)
+        ) ||
+        ['is 2062', 'e250', 'e350', 'astm a36', 'corten', 'en8', 'stainless', 'aluminium', 'brass', 'copper', 'titanium'].some(
+          (m) => title.includes(m) || oneLine.includes(m)
+        )
+      );
+
+    case 'Sheet Metal':
+      return (
+        sub === 'sheet metal' ||
+        tags.some((t) =>
+          [
+            'sheet metal',
+            'gauge',
+            'press brake',
+            'bending',
+            'k-factor',
+            'crca',
+            'gi sheet',
+            'flat blank',
+            'flat pattern',
+            'punching'
+          ].includes(t)
+        ) ||
+        ['sheet metal', 'gauge', 'crca', 'gi sheet', 'press brake', 'bend deduction', 'k-factor'].some(
+          (m) => title.includes(m) || oneLine.includes(m)
+        )
+      );
+
+    case 'Steel Section':
+      return (
+        sub === 'structural sections' ||
+        sub === 'steel section' ||
+        id.startsWith('sect-') ||
+        tags.some((t) =>
+          [
+            'structural sections',
+            'rhs',
+            'shs',
+            'chs',
+            'hss',
+            'ismb',
+            'ismc',
+            'isa',
+            'ishb',
+            'i-beam',
+            'channel',
+            'angle',
+            'truss'
+          ].includes(t)
+        ) ||
+        ['rhs', 'shs', 'chs', 'hollow section', 'ismb', 'ismc', 'isa', 'ishb', 'i-beam', 'channel', 'angle', 'flange', 'structural section'].some(
+          (m) => title.includes(m) || oneLine.includes(m)
+        )
+      );
+
+    case 'Fabrication':
+      return (
+        sub === 'fabrication' ||
+        tags.some((t) =>
+          [
+            'fabrication',
+            'laser cutting',
+            'plasma cutting',
+            'bending',
+            'rolling',
+            'machining',
+            'cnc',
+            'press brake',
+            'punching',
+            'grit blasting',
+            'assembly'
+          ].includes(t)
+        ) ||
+        ['fabrication', 'cnc', 'laser cutting', 'plasma cutting', 'bending', 'plate rolling', 'machining', 'punching', 'fit-up'].some(
+          (m) => title.includes(m) || oneLine.includes(m)
+        )
+      );
+
+    case 'Welding':
+      return (
+        sub === 'welding' ||
+        sub === 'welding defects' ||
+        article.category === 'Welding & Fabrication' ||
+        tags.some((t) =>
+          [
+            'welding',
+            'weld',
+            'smaw',
+            'gmaw',
+            'mig',
+            'gtaw',
+            'tig',
+            'saw',
+            'fillet weld',
+            'groove weld',
+            'joint geometry',
+            'electrode',
+            'e7018',
+            'er70s-6'
+          ].includes(t)
+        ) ||
+        ['welding', 'weld', 'smaw', 'mig', 'tig', 'gmaw', 'gtaw', 'fillet weld', 'groove weld', 'joint geometry', 'electrode'].some(
+          (m) => title.includes(m) || oneLine.includes(m)
+        )
+      );
+
+    case 'Defect':
+      return (
+        sub === 'welding defects' ||
+        sub === 'defect' ||
+        Boolean(article.defectInfo) ||
+        id.startsWith('steel-defect') ||
+        id.startsWith('defect-') ||
+        tags.some((t) =>
+          [
+            'defect',
+            'cracking',
+            'crack',
+            'porosity',
+            'undercut',
+            'overlap',
+            'lack of fusion',
+            'penetration',
+            'spatter',
+            'slag',
+            'burn-through',
+            'distortion',
+            'lamellar tearing'
+          ].includes(t)
+        ) ||
+        ['defect', 'crack', 'porosity', 'undercut', 'overlap', 'slag', 'burn-through', 'distortion', 'lamellar', 'lack of fusion'].some(
+          (m) => title.includes(m) || oneLine.includes(m)
+        )
+      );
+
+    case 'Corrosion':
+      return (
+        sub === 'corrosion & damage' ||
+        sub === 'corrosion' ||
+        tags.some((t) =>
+          [
+            'corrosion',
+            'rust',
+            'pitting',
+            'galvanic',
+            'section loss',
+            'wet storage stain',
+            'crevice corrosion',
+            'weathering',
+            'rusting',
+            'oxidation'
+          ].includes(t)
+        ) ||
+        ['corrosion', 'rust', 'pitting', 'galvanic', 'section loss', 'wet storage stain', 'crevice', 'oxidation', 'rusting'].some(
+          (m) => title.includes(m) || oneLine.includes(m)
+        )
+      );
+
+    case 'Fastener':
+      return (
+        sub === 'fasteners' ||
+        sub === 'fastener' ||
+        tags.some((t) =>
+          ['fastener', 'fasteners', 'hsfg', 'bolt', 'bolts', 'anchor', 'rivet', 'connection', 'moment connection', 'base plate', 'dti washer'].includes(
+            t
+          )
+        ) ||
+        ['fastener', 'hsfg', 'bolt', 'anchor', 'rivet', 'connection', 'base plate', 'washer', 'torque'].some(
+          (m) => title.includes(m) || oneLine.includes(m)
+        )
+      );
+
+    case 'Surface Treatment':
+      return (
+        sub === 'surface treatment' ||
+        tags.some((t) =>
+          [
+            'surface treatment',
+            'galvanizing',
+            'hot-dip',
+            'powder coating',
+            'anodizing',
+            'blasting',
+            'sa 2.5',
+            'iso 12944',
+            'coating',
+            'passivation'
+          ].includes(t)
+        ) ||
+        ['galvanizing', 'hot-dip', 'powder coating', 'anodizing', 'surface treatment', 'blast cleaning', 'sa 2.5', 'passivation'].some(
+          (m) => title.includes(m) || oneLine.includes(m)
+        )
+      );
+
+    case 'Inspection':
+      return (
+        sub === 'inspection' ||
+        sub === 'ndt' ||
+        Boolean(article.defectInfo) ||
+        article.category === 'Inspection & Damage' ||
+        id.startsWith('steel-ndt') ||
+        id.startsWith('steel-defect') ||
+        tags.some((t) =>
+          [
+            'inspection',
+            'ndt',
+            'visual testing',
+            'dye penetrant',
+            'ultrasonic',
+            'radiography',
+            'magnetic particle',
+            'cwi',
+            'cswip',
+            'gauge',
+            'testing',
+            'quality assurance'
+          ].includes(t)
+        ) ||
+        ['inspection', 'ndt', 'testing', 'dye penetrant', 'ultrasonic', 'radiography', 'magnetic particle', 'gauge', 'cwi'].some(
+          (m) => title.includes(m) || oneLine.includes(m)
+        )
+      );
+
+    default:
+      return true;
+  }
+}
+
+/**
+ * Comprehensive 7-Field Search Matcher
+ * Evaluates across: title, description, tags, material, application, problem, solution
+ */
+export function searchMatchesArticle(
+  article: VisualKnowledgeArticle,
+  query: string,
+  fieldFilter: SearchFieldType = 'all'
+): { matches: boolean; matchedFields: MatchedFieldResult } {
+  const q = query.toLowerCase().trim();
+  const emptyResult: MatchedFieldResult = {
+    title: false,
+    description: false,
+    tags: false,
+    material: false,
+    application: false,
+    problem: false,
+    solution: false
+  };
+
+  if (!q) {
+    return { matches: true, matchedFields: emptyResult };
+  }
+
+  // 1. Title
+  const matchesTitle =
+    article.title.toLowerCase().includes(q) ||
+    (Boolean(article.heroBadge) && article.heroBadge!.toLowerCase().includes(q));
+
+  // 2. Description
+  const descFields = [
+    article.oneLineSummary,
+    article.whatIsIt?.description,
+    article.whatIsIt?.diagramCaption,
+    ...(article.quickOverview || []),
+    article.practicalExample?.description
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  const matchesDescription = descFields.includes(q);
+
+  // 3. Tags
+  const tagFields = [...(article.tags || []), article.category, article.subCategory || '']
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  const matchesTags = tagFields.includes(q);
+
+  // 4. Material
+  const specs = article.practicalExample?.specifications || {};
+  const materialStrings = [
+    article.defectInfo?.material,
+    specs['Material'],
+    specs['Grade'],
+    specs['Alloy'],
+    specs['Sheet Material'],
+    specs['Steel Grade'],
+    specs['Alloy Spec']
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  const metallurgyKeywords = [
+    'steel',
+    'metal',
+    'aluminium',
+    'aluminum',
+    'iron',
+    'e250',
+    'e350',
+    'crca',
+    'gi',
+    'copper',
+    'brass',
+    'bronze',
+    'titanium',
+    'alloy',
+    'is 2062',
+    'astm',
+    '304',
+    '316',
+    '6063',
+    '5052',
+    'gauge',
+    'carbon steel',
+    'mild steel'
+  ];
+
+  const matchesMaterial =
+    materialStrings.includes(q) ||
+    (article.tags.some((t) => t.toLowerCase().includes(q)) &&
+      metallurgyKeywords.some((k) => q.includes(k) || article.tags.some((t) => t.toLowerCase().includes(k)))) ||
+    (metallurgyKeywords.some((k) => q.includes(k)) && article.title.toLowerCase().includes(q));
+
+  // 5. Application
+  const appStrings = [
+    article.practicalExample?.title,
+    article.practicalExample?.description,
+    article.practicalExample?.keyTakeaway,
+    specs['Location'],
+    specs['Application'],
+    specs['Typical Application'],
+    specs['Used In'],
+    specs['Connection Type'],
+    specs['Joint Type']
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  const matchesApplication = appStrings.includes(q);
+
+  // 6. Problem
+  const problemStrings = [
+    article.problemSolution?.problemTitle,
+    article.problemSolution?.problemDescription,
+    ...(article.problemSolution?.possibleCauses || []),
+    article.defectInfo?.defectName,
+    article.defectInfo?.whatHappened,
+    ...(article.defectInfo?.possibleCauses || []),
+    ...(article.defectInfo?.whatToCheck || [])
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  const matchesProblem = problemStrings.includes(q);
+
+  // 7. Solution
+  const solutionStrings = [
+    article.problemSolution?.solutionTitle,
+    article.problemSolution?.solutionDescription,
+    article.problemSolution?.bestPracticeTip,
+    ...(article.defectInfo?.correctiveActions || []),
+    ...(article.defectInfo?.preventionTips || []),
+    ...(article.engineeringTips || []),
+    ...(article.relevantCodesAndStandards || []),
+    ...(article.steps || []).map((s) => `${s.title} ${s.description}`)
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  const matchesSolution = solutionStrings.includes(q);
+
+  const matchedFields: MatchedFieldResult = {
+    title: Boolean(matchesTitle),
+    description: Boolean(matchesDescription),
+    tags: Boolean(matchesTags),
+    material: Boolean(matchesMaterial),
+    application: Boolean(matchesApplication),
+    problem: Boolean(matchesProblem),
+    solution: Boolean(matchesSolution)
+  };
+
+  if (fieldFilter === 'all') {
+    const matches =
+      matchesTitle ||
+      matchesDescription ||
+      matchesTags ||
+      matchesMaterial ||
+      matchesApplication ||
+      matchesProblem ||
+      matchesSolution;
+    return { matches, matchedFields };
+  } else {
+    const matches = Boolean(matchedFields[fieldFilter]);
+    return { matches, matchedFields };
+  }
 }
 
 /**
@@ -571,7 +1135,193 @@ function adaptSteelKnowledge(): VisualKnowledgeArticle[] {
     };
   });
 
-  return defectArticles;
+  const steelMaterialArticles: VisualKnowledgeArticle[] = STEEL_MATERIALS_DATABASE.map((mat) => ({
+    id: `steel-mat-${mat.id}`,
+    slug: `material-${mat.id}`,
+    title: `${mat.name} (${mat.grade})`,
+    category: 'Metal Intelligence & Machine Learning',
+    subCategory: 'Material',
+    oneLineSummary: `${mat.standard} structural steel alloy with yield strength ${mat.yieldStrengthMpa} MPa, density ${mat.densityKgM3} kg/m³. Weldability: ${mat.weldability}.`,
+    author: 'Metallurgical & Materials Engineering Board',
+    readTime: '6 min read',
+    publishDate: '2026-03-01',
+    tags: ['Material', 'Steel', mat.grade, mat.standard, 'IS 2062', 'Yield Strength', 'Tensile Strength'],
+    heroImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+    heroImageAlt: `Structural steel ${mat.name} billets, plates, and beams in staging yard`,
+    heroBadge: `${mat.grade}`,
+    quickOverview: [
+      `Designation & Grade: ${mat.grade} (${mat.standard})`,
+      `Minimum Yield Strength (fy): ${mat.yieldStrengthMpa} MPa`,
+      `Ultimate Tensile Strength (fu): ${mat.tensileStrengthMpa} MPa`,
+      `Elongation: ${mat.elongationPercent}% | Density: ${mat.densityKgM3} kg/m³`,
+      `Weldability Rating: ${mat.weldability}`
+    ],
+    whatIsIt: {
+      description: `${mat.name} is engineered to ${mat.standard}. ${mat.fabricationNotes}`,
+      diagramImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+      diagramImageAlt: `Stress-strain curve and microstructure of ${mat.name}`,
+      diagramCaption: `Figure: Typical stress-strain behavior and yield plateau for ${mat.grade} carbon steel.`
+    },
+    stepsTitle: `Quality & Fabrication Protocol for ${mat.grade}`,
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Mill Test Certificate (MTC) Verification',
+        description: `Check Heat Number, ladle chemical composition (C, Mn, S, P) and CE calculation (CE <= 0.42).`,
+        image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+        imageAlt: 'Mill test certificate inspection'
+      },
+      {
+        stepNumber: 2,
+        title: 'Cutting & Edge Preparation',
+        description: `CNC Plasma or Oxy-fuel cutting. De-burr all cut edges and grind 30-35 deg bevel for groove welds.`,
+        image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+        imageAlt: 'Plate cutting and edge beveling'
+      },
+      {
+        stepNumber: 3,
+        title: 'Fit-up & Pre-heat Check',
+        description: `Preheat if thickness > 25mm or cold weather (< 10°C). Maintain root gap of 2-3mm with tack welds.`,
+        image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+        imageAlt: 'Joint fit-up'
+      },
+      {
+        stepNumber: 4,
+        title: 'Welding & Protective Coating',
+        description: `Deposit weld with AWS E7018 low-hydrogen electrode or ER70S-6 wire. Apply Sa 2.5 blast and epoxy primer.`,
+        image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+        imageAlt: 'Welding execution'
+      }
+    ],
+    practicalExample: {
+      title: `${mat.grade} Structural Applications`,
+      description: `Primary structural use: ${mat.commonApplications.join('; ')}.`,
+      image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+      imageAlt: `${mat.grade} building construction`,
+      specifications: {
+        'Material Grade': mat.grade,
+        'Standard': mat.standard,
+        'Yield Strength': `${mat.yieldStrengthMpa} MPa`,
+        'Tensile Strength': `${mat.tensileStrengthMpa} MPa`,
+        'Density': `${mat.densityKgM3} kg/m³`
+      },
+      keyTakeaway: `${mat.name} offers predictable ductility and reliable weldability for heavy infrastructure and PEB framing.`
+    },
+    problemSolution: {
+      problemTitle: `Common Issues: Rusting & Lamination Defects`,
+      problemDescription: `Atmospheric rust formation on unprotected bare surfaces and internal rolling laminations in thick plates.`,
+      problemImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+      possibleCauses: [
+        'Storage in moist unventilated site areas without tarpaulin or ground elevation',
+        'Improper ingot casting leading to non-metallic oxide inclusions'
+      ],
+      solutionTitle: 'Proper Storage & Ultrasonic Plate Testing',
+      solutionDescription: `Store on timber sleepers at 5% slope. Perform UT straight-beam lamination scanning on plate edges per ASTM A435 before cutting.`,
+      solutionImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+      bestPracticeTip: 'Never store raw steel directly on damp soil or concrete floor.'
+    },
+    engineeringTips: [
+      `Density is ${mat.densityKgM3} kg/m³. Weight formula: Weight (kg) = Length (m) × Width (m) × Thickness (mm) × 7.85.`,
+      `Minimum bending radius is 1.5t for cold forming to avoid tension edge cracking.`
+    ],
+    relevantCodesAndStandards: [mat.indianStandardRef, mat.internationalRef, 'IS 800:2007', 'AWS D1.1'],
+    relatedTopicIds: ['metal-sheet-metal-gauges', 'metal-ms-is2062-e250', 'sect-rhs-hollow']
+  }));
+
+  const ndtArticles: VisualKnowledgeArticle[] = NDT_METHODS_DATABASE.map((ndt) => ({
+    id: `steel-ndt-${ndt.code.toLowerCase()}`,
+    slug: `ndt-method-${ndt.code.toLowerCase()}`,
+    title: `${ndt.fullName} (${ndt.code})`,
+    category: 'Metal Intelligence & Machine Learning',
+    subCategory: 'Inspection',
+    oneLineSummary: `${ndt.description.slice(0, 160)}... Standard: ${ndt.standardReference}`,
+    author: 'ASNT / ISNT Level III NDT Specialist',
+    readTime: '7 min read',
+    publishDate: '2026-03-01',
+    tags: ['Inspection', 'NDT', ndt.code, 'Testing', 'Quality Assurance', 'Weld Inspection', 'Defect'],
+    heroImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+    heroImageAlt: `${ndt.fullName} non-destructive testing on structural steel joint`,
+    heroBadge: `${ndt.code} Testing`,
+    quickOverview: [
+      `Inspection Method: ${ndt.fullName} (${ndt.code})`,
+      `Governing Standard: ${ndt.standardReference}`,
+      `Key Equipment: ${ndt.equipmentRequired.slice(0, 2).join(', ')}`,
+      `Target Defects: ${ndt.detectableDefects.slice(0, 3).join(', ')}`,
+      `Operational Constraint: ${ndt.limitations[0] || 'Surface cleanliness required'}`
+    ],
+    whatIsIt: {
+      description: ndt.description,
+      diagramImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+      diagramImageAlt: `Schematic diagram of ${ndt.code} inspection setup`,
+      diagramCaption: `Figure: Operating principles, probe positioning, and signal response for ${ndt.fullName}.`
+    },
+    stepsTitle: `Step-by-Step Procedure for ${ndt.code} Examination`,
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Surface Cleaning & Preparation',
+        description: `Clean inspection area to bright bare metal (Sa 2.5) free of oil, scale, paint, spatter, or moisture.`,
+        image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+        imageAlt: 'Surface cleaning'
+      },
+      {
+        stepNumber: 2,
+        title: 'Equipment Standardization & Calibration',
+        description: `Calibrate instrument using standard reference calibration blocks (e.g. V1/V2 blocks for UT, pie gauge for MT).`,
+        image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+        imageAlt: 'Instrument calibration'
+      },
+      {
+        stepNumber: 3,
+        title: 'Testing & Indication Scanning',
+        description: `Apply test technique systematically across 100% of the specified weld length or component surface.`,
+        image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+        imageAlt: 'Testing scanning'
+      },
+      {
+        stepNumber: 4,
+        title: 'Evaluation & Reporting',
+        description: `Evaluate all indications against acceptance criteria in AWS D1.1 Clause 6 or ISO 5817 Level B. Record report.`,
+        image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+        imageAlt: 'Report sign-off'
+      }
+    ],
+    practicalExample: {
+      title: `${ndt.code} Field Inspection Case Study`,
+      description: `Applied during crane gantry beam fabrication to verify absence of internal discontinuities and HAZ micro-fissures.`,
+      image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+      imageAlt: `NDT technician evaluating indications`,
+      specifications: {
+        'NDT Method': ndt.code,
+        'Standard': ndt.standardReference,
+        'Application': 'Structural Weldment QA',
+        'Acceptance Code': 'AWS D1.1 Table 6.1'
+      },
+      keyTakeaway: `Proper execution of ${ndt.code} ensures structural safety and compliance before protective coating application.`
+    },
+    problemSolution: {
+      problemTitle: `False Calls & Sensitivity Errors`,
+      problemDescription: `False non-relevant indications caused by surface roughness, couplant bubbles, or magnetic field saturation.`,
+      problemImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+      possibleCauses: [
+        'Insufficient surface dressing before testing',
+        'Incorrect transducer frequency or probe wedge angle',
+        'Improper magnetic yoke field strength or lighting level (< 1000 Lux)'
+      ],
+      solutionTitle: 'Re-dressing & Independent Cross-Check',
+      solutionDescription: `Grind surface smooth, recalibrate on identical test block, and verify ambiguous indications using complementary NDT method (e.g. UT cross-check on MT indications).`,
+      solutionImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+      bestPracticeTip: 'Always verify ambient illumination exceeds 1000 Lux for visible dye/magnetic inspections.'
+    },
+    engineeringTips: [
+      `Detectable defects: ${ndt.detectableDefects.join('; ')}.`,
+      `Limitations: ${ndt.limitations.join('; ')}.`
+    ],
+    relevantCodesAndStandards: [ndt.standardReference, 'AWS D1.1 Clause 6', 'ASME Section V', 'ISO 9712'],
+    relatedTopicIds: ['metal-welding-processes-guide', 'metal-ms-is2062-e250', 'steel-defect-weld-crack']
+  }));
+
+  return [...defectArticles, ...steelMaterialArticles, ...ndtArticles];
 }
 
 /**
@@ -1388,6 +2138,570 @@ function createDedicatedMetalArticles(): VisualKnowledgeArticle[] {
       ],
       relevantCodesAndStandards: ['ASTM A123 / A153', 'ISO 1461', 'IS 2629 / IS 4759', 'ISO 12944'],
       relatedTopicIds: ['metal-sheet-metal-gauges', 'sect-rhs-hollow', 'metal-aluminium-profiles']
+    },
+
+    // 5. HSFG STRUCTURAL FASTENERS & BOLTING
+    {
+      id: 'metal-fasteners-hsfg-bolts',
+      slug: 'hsfg-structural-bolts-grade-8-8-and-10-9',
+      title: 'Structural Fasteners: HSFG Grade 8.8 / 10.9 Bolts & Direct Tension Indicators',
+      category: 'Metal Intelligence & Machine Learning',
+      subCategory: 'Fastener',
+      oneLineSummary: 'High-strength friction grip (HSFG) bolting engineering: snug-tight vs calibrated wrench tightening, DTI gap measurement (0.38mm), slip-critical connections, and torque verification per IS 4000 & AISC 360.',
+      author: 'Structural Steel Bolting Council',
+      readTime: '8 min read',
+      publishDate: '2026-03-03',
+      tags: ['Fastener', 'HSFG', 'Bolts', 'Grade 8.8', 'Grade 10.9', 'DTI Washer', 'Torque', 'Preload', 'Friction Grip'],
+      heroImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+      heroImageAlt: 'Structural steel flange bolted connection with heavy hex HSFG bolts and hardened washers',
+      heroBadge: 'Fasteners & Connections',
+      quickOverview: [
+        'Grade 8.8: Tensile strength 800 MPa, yield stress 640 MPa. Grade 10.9: 1000 MPa tensile, 900 MPa yield.',
+        'Proof load: Minimum clamping tension achieved during controlled installation to prevent joint slip under shear.',
+        'Tightening methods: Turn-of-Nut Method, Calibrated Wrench, and Direct Tension Indicator (DTI) Washers.',
+        'DTI verification: Feeler gauge refusal (0.38mm / 0.015") across >= 50% of protrusions confirms full preload.',
+        'Surface condition: Frictional slip coefficient (mu) = 0.50 for grit-blasted Class A clean mill surfaces.'
+      ],
+      whatIsIt: {
+        description: 'HSFG (High Strength Friction Grip) bolts clamp steel plies together with immense preload tension so shear load is transferred purely via friction between contact surfaces rather than bolt shank bearing.',
+        diagramImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+        diagramImageAlt: 'Cross section of HSFG bolted connection showing friction shear planes and DTI washer compression',
+        diagramCaption: 'Figure: Preload tension distribution, grip length, and DTI washer gap measurement in slip-critical joints.'
+      },
+      stepsTitle: 'Calibrated HSFG Installation in 4 Steps',
+      steps: [
+        {
+          stepNumber: 1,
+          title: 'Fit-Up & Snug-Tightening',
+          description: 'Bring plies into full contact using impact wrench until solid metal-to-metal seating is achieved without gap.',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Snug tightening plies'
+        },
+        {
+          stepNumber: 2,
+          title: 'Direct Tension Indicator Placement',
+          description: 'Install DTI washer under bolt head or nut with protrusions facing outwards toward the hardened washer.',
+          image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'DTI washer positioning'
+        },
+        {
+          stepNumber: 3,
+          title: 'Final Torquing / Turn-of-Nut',
+          description: 'Tighten from the most rigid part of joint outward toward free edges to the required torque specification.',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Torque wrench tightening'
+        },
+        {
+          stepNumber: 4,
+          title: 'Feeler Gauge Inspection & QA Sign-Off',
+          description: 'Insert 0.38mm (0.015 in) leaf feeler gauge. If gauge is refused in more than 50% of the gaps, joint passes.',
+          image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Feeler gauge inspection'
+        }
+      ],
+      practicalExample: {
+        title: 'Bridge Girder Splice Joint (Slip-Critical Connection)',
+        description: 'Multi-bolt flange splice carrying 1200 kN shear and bending moment engineered with M24 Grade 10.9 HSFG bolts.',
+        image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+        imageAlt: 'Bridge girder bolted splice',
+        specifications: {
+          'Bolt Diameter': 'M24 Heavy Hex (Grade 10.9)',
+          'Pretension Load': '257 kN per bolt',
+          'Slip Coefficient (mu)': '0.50 (Sa 2.5 blast cleaned)',
+          'Governing Code': 'IS 4000:1992 / AISC RCSC Specification'
+        },
+        keyTakeaway: 'Never lubricate galvanized HSFG threads unless manufacturer provides specific lubricant with certified tension test report.'
+      },
+      problemSolution: {
+        problemTitle: 'Loose Bolts & Bolt Shank Shear Under Dynamic Fatigue',
+        problemDescription: 'Bolts vibrating loose under crane or traffic cyclic loads due to insufficient initial preload or un-debursed hole edges.',
+        problemImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+        possibleCauses: [
+          'Reliance on operator feel instead of calibrated torque wrench or DTI washers',
+          'Paint or grease on faying surfaces reducing friction coefficient from 0.50 to < 0.20',
+          'Thermal relaxation during fire exposure'
+        ],
+        solutionTitle: '100% Calibrated Audit & Clean Faying Surfaces',
+        solutionDescription: 'Mask off contact plies before painting. Verify minimum 10% of bolts in every joint using a calibrated dial torque wrench.',
+        solutionImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+        bestPracticeTip: 'Reusable galvanized HSFG bolts can only be tensioned ONCE; replace with new bolts if loosened.'
+      },
+      engineeringTips: [
+        'Torque formula estimation: T = K × D × P (K = 0.20 for plain black steel, 0.25 for galvanized).',
+        'Standard hole clearance is 2mm for bolt diameters M16 to M24 per IS 800:2007.'
+      ],
+      relevantCodesAndStandards: ['IS 4000:1992', 'IS 3757 / IS 6649', 'AISC 360-16 Chapter J', 'ASTM F3125 (Grade A325 / A490)'],
+      relatedTopicIds: ['metal-ms-is2062-e250', 'metal-base-plate-connections', 'sect-rhs-hollow']
+    },
+
+    // 6. BASE PLATE & ANCHOR CONNECTIONS
+    {
+      id: 'metal-base-plate-connections',
+      slug: 'column-base-plate-design-anchor-rods-and-grouting',
+      title: 'Column Base Plate Design, Anchor Rods & Grouting Engineering',
+      category: 'Metal Intelligence & Machine Learning',
+      subCategory: 'Fastener',
+      oneLineSummary: 'Engineered base plate sizing, cantilever projection formulas, anchor rod embedment depth (15d - 20d), non-shrink cementitious grouting (50-70 MPa), and leveling nut assemblies.',
+      author: 'Structural Steel Connections Group',
+      readTime: '8 min read',
+      publishDate: '2026-03-03',
+      tags: ['Fastener', 'Base Plate', 'Anchor Rods', 'Grout', 'IS 800', 'AISC Design Guide 1', 'Column Base'],
+      heroImage: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=1200&q=80',
+      heroImageAlt: 'Heavy steel column base plate welded to ISMB column sitting on concrete pedestal with anchor bolts',
+      heroBadge: 'Foundation Joint',
+      quickOverview: [
+        'Base plate distributes column compressive axial load and moment safely to concrete foundation pedestal.',
+        'Bearing pressure limit: q_max <= 0.45 × fck per IS 456 / IS 800 (or 0.85 × f\'c × sqrt(A2/A1) per AISC).',
+        'Plate thickness formula (IS 800): tp = sqrt((2.5 × w × (a² - 0.3b²)) / fy).',
+        'Anchor bolts (IS 5624 / ASTM F1554): Minimum 4 bolts per column base to provide OSHA erection stability.',
+        'Grout thickness: 25mm to 50mm non-shrink high-strength cementitious grout (min 50 MPa at 28 days).'
+      ],
+      whatIsIt: {
+        description: 'The column base plate is the critical structural transition element between the flexible steel superstructure and the rigid reinforced concrete foundation footing.',
+        diagramImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+        diagramImageAlt: 'Engineering diagram of column base plate detailing anchor rod projection, leveling nuts, and grout pack',
+        diagramCaption: 'Figure: Effective bearing area, cantilever projection (c), and anchor rod pull-out cone mechanics.'
+      },
+      stepsTitle: 'Base Plate Erection & Grouting in 4 Steps',
+      steps: [
+        {
+          stepNumber: 1,
+          title: 'Pedestal Chipping & Anchor Rod Template Audit',
+          description: 'Bush-hammer pedestal top to expose aggregate. Check anchor bolt projection and center-to-center spacing against steel fabrication drawings.',
+          image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Concrete pedestal preparation'
+        },
+        {
+          stepNumber: 2,
+          title: 'Leveling Nut Adjustment & Column Setting',
+          description: 'Set leveling nuts on anchor rods with optical level. Crane column into place; install top washers and finger-tight nuts.',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Column setting on leveling nuts'
+        },
+        {
+          stepNumber: 3,
+          title: 'Plumb Adjustment & Anchor Torquing',
+          description: 'Check column verticality in two orthogonal planes with theodolite/laser. Tighten top nuts to design torque.',
+          image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Plumb check and torquing'
+        },
+        {
+          stepNumber: 4,
+          title: 'Non-Shrink Grout Pouring & Curing',
+          description: 'Form perimeter shuttering and pour flowable non-shrink grout from one side only to eliminate trapped air pockets.',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Grout pouring'
+        }
+      ],
+      practicalExample: {
+        title: 'Industrial Warehouse Main Frame Column Base',
+        description: 'ISMB 450 column base supporting 750 kN axial gravity load and 80 kNm wind moment, using 32mm E250 plate and 4x M30 anchor bolts.',
+        image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=1200&q=80',
+        imageAlt: 'Warehouse column base plate',
+        specifications: {
+          'Base Plate Dimensions': '600mm × 450mm × 32mm thick (IS 2062 E250)',
+          'Anchor Rods': '4 Nos. M30 Gr. 8.8 (Embedment: 600mm with anchor plate)',
+          'Grout Specification': 'Free-flow non-shrink cementitious grout (60 MPa)',
+          'Governing Standard': 'IS 800:2007 Clause 7.4 / AISC Design Guide 1'
+        },
+        keyTakeaway: 'Always use oversize holes in base plates (e.g. 40mm hole for M30 bolt) with heavy plate washers (min 8mm thick) to absorb concrete casting tolerances.'
+      },
+      problemSolution: {
+        problemTitle: 'Anchor Rod Misalignment & Grout Cracking / Voids',
+        problemDescription: 'Anchor bolts cast out of position by 15-25mm preventing base plate drop-in, or hollow hollow-sounding grout beneath base.',
+        problemImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+        possibleCauses: [
+          'Pouring foundation concrete without rigid steel bolt template frames',
+          'Mixing grout with excess water causing segregation, bleeding, and shrinkage voids',
+          'Pouring grout from multiple sides trapping air underneath center of plate'
+        ],
+        solutionTitle: 'Slotted Hole Washers & High-Flow Head Box Pouring',
+        solutionDescription: 'Slot plate holes with engineer sign-off and weld thick cover plates. Pour grout using a head box with minimum 150mm hydrostatic head.',
+        solutionImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+        bestPracticeTip: 'Never heat or bend anchor rods on site to fit holes without structural engineer written authorization.'
+      },
+      engineeringTips: [
+        'AISC Design Guide 1 recommends minimum anchor rod embedment of 17 times bolt diameter (17d) for hooked or headed rods in 25 MPa concrete.',
+        'Always chamfer concrete pedestal edges at 45 degrees to prevent corner spalling under thermal shear.'
+      ],
+      relevantCodesAndStandards: ['IS 800:2007 Clause 7.4', 'IS 456:2000', 'AISC Design Guide 1', 'ACI 318 Chapter 17 (Anchoring)'],
+      relatedTopicIds: ['metal-fasteners-hsfg-bolts', 'metal-ms-is2062-e250', 'sect-rhs-hollow']
+    },
+
+    // 7. WELDING PROCESSES COMPARISON (SMAW, GMAW, GTAW, FCAW)
+    {
+      id: 'metal-welding-processes-guide',
+      slug: 'welding-processes-smaw-gmaw-mig-gtaw-tig-fcaw',
+      title: 'Welding Processes Comparison: SMAW, GMAW/MIG, GTAW/TIG & FCAW',
+      category: 'Metal Intelligence & Machine Learning',
+      subCategory: 'Welding',
+      oneLineSummary: 'Complete process comparison for structural and sheet metal: arc physics, deposition rates (kg/hr), shielding gas mixtures (Ar + 18% CO2), electrode designations (E7018 / ER70S-6), and WPS parameters.',
+      author: 'Welding Technology Institute',
+      readTime: '9 min read',
+      publishDate: '2026-03-03',
+      tags: ['Welding', 'SMAW', 'MIG', 'GMAW', 'TIG', 'GTAW', 'FCAW', 'Electrode', 'Shielding Gas', 'WPS'],
+      heroImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+      heroImageAlt: 'MIG/GMAW structural welding in fabrication shop with protective argon shield and bright electric arc',
+      heroBadge: 'Welding Metallurgy',
+      quickOverview: [
+        'SMAW (Stick): Most versatile for site erection; wind-resistant flux; lower deposition rate (1.5-2.5 kg/hr).',
+        'GMAW (MIG/MAG): High shop productivity (4-8 kg/hr); clean welds; requires wind protection; gas: 80% Ar + 20% CO2.',
+        'GTAW (TIG): Highest metallurgical quality and precision; zero spatter; ideal for thin sheet, aluminium, and pipe roots.',
+        'FCAW (Flux Cored): High deposition rate (5-10 kg/hr) in heavy structural plate welding with excellent deep penetration.',
+        'WPS (Welding Procedure Specification): Document governing voltage, current, travel speed, preheat, and interpass temps.'
+      ],
+      whatIsIt: {
+        description: 'Arc welding coalesces metals by heating them with an electric arc struck between a consumable or non-consumable electrode and the workpiece.',
+        diagramImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+        diagramImageAlt: 'Cross sectional diagrams comparing weld pool physics and shielding mechanisms across SMAW, GMAW, and GTAW',
+        diagramCaption: 'Figure: Arc physics, gas shielding envelope, and slag solidifying mechanisms in fusion welding.'
+      },
+      stepsTitle: 'Qualifying a Welding Procedure (WPS) in 4 Steps',
+      steps: [
+        {
+          stepNumber: 1,
+          title: 'Prepare Procedure Qualification Record (PQR)',
+          description: 'Weld standardized test coupon plates (e.g. 25mm thick) recording exact voltage, amperage, and travel speed.',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'PQR welding coupon'
+        },
+        {
+          stepNumber: 2,
+          title: 'NDT Examination (VT, RT / UT)',
+          description: 'Verify coupon has zero cracks, lack of fusion, or rejectable porosity per AWS D1.1 Clause 4.',
+          image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'NDT coupon testing'
+        },
+        {
+          stepNumber: 3,
+          title: 'Destructive Mechanical Testing',
+          description: 'Machine tensile specimens, transverse side bends (180 deg bend), and Charpy V-notch impact tests at -20°C.',
+          image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Tensile and bend mechanical testing'
+        },
+        {
+          stepNumber: 4,
+          title: 'Approve & Issue Production WPS',
+          description: 'Certify certified ranges (e.g. qualified thickness range 3mm to 50mm) and issue to shop floor welders.',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'WPS sign-off'
+        }
+      ],
+      practicalExample: {
+        title: 'Heavy PEB Rafter Flange-to-Web Fillet Welds',
+        description: 'Automated twin-arc Submerged Arc Welding (SAW) and semi-automatic GMAW producing 8mm continuous fillet welds on IS 2062 E350 steel.',
+        image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+        imageAlt: 'PEB rafter welding line',
+        specifications: {
+          'Process': 'GMAW (Pulse Spray Transfer)',
+          'Electrode Wire': 'AWS A5.18 ER70S-6 (1.2mm dia)',
+          'Shielding Gas': '82% Argon + 18% CO2 (Flow: 18 L/min)',
+          'Current & Voltage': '240A, 26V, Travel speed: 380 mm/min'
+        },
+        keyTakeaway: 'Always bake basic SMAW electrodes (E7018) at 350°C for 2 hours and store in 120°C heated quivers to eliminate hydrogen cracking.'
+      },
+      problemSolution: {
+        problemTitle: 'Cold Lapping (Lack of Fusion) & Porosity in GMAW',
+        problemDescription: 'Weld metal resting on base metal without true fusion due to inadequate arc heat or wind blowing shielding gas away.',
+        problemImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+        possibleCauses: [
+          'Using short-circuiting transfer on thick structural plate (> 6mm)',
+          'Ambient wind drafts exceeding 8 km/h blowing away protective gas cone',
+          'Excessive gun angle dragging cold puddle'
+        ],
+        solutionTitle: 'Switch to Spray Arc Transfer & Install Wind Screens',
+        solutionDescription: 'Increase voltage (> 24V) to achieve spray transfer. Erect protective wind curtains around welding zone.',
+        solutionImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+        bestPracticeTip: 'Never use pure CO2 shielding gas for high-speed robotic welding where spatter-free aesthetics are needed.'
+      },
+      engineeringTips: [
+        'Heat Input formula: H = (60 × V × I) / (1000 × Travel Speed mm/min) × Thermal Efficiency factor.',
+        'Thermal efficiency factors: SMAW = 0.80, GMAW = 0.85, GTAW = 0.60, SAW = 1.00.'
+      ],
+      relevantCodesAndStandards: ['AWS D1.1 / D1.1M', 'IS 9595:1996 (Welding of Structural Steel)', 'ISO 15614', 'ASME Section IX'],
+      relatedTopicIds: ['metal-fasteners-hsfg-bolts', 'steel-defect-slag-inclusion', 'steel-defect-undercut']
+    },
+
+    // 8. PREQUALIFIED WELD JOINT GEOMETRY
+    {
+      id: 'metal-welded-joint-geometry',
+      slug: 'prequalified-weld-joint-geometry-bevels-and-throats',
+      title: 'Prequalified Weld Joint Geometry: Bevel Angles, Root Face & Root Gap',
+      category: 'Metal Intelligence & Machine Learning',
+      subCategory: 'Welding',
+      oneLineSummary: 'AWS D1.1 prequalified joint details (B-U2, B-U4, TC-U4): bevel angle (45°-60°), root face (1.5-3mm), root opening (0-3mm), effective throat thickness (0.707 × leg size), and backing bar requirements.',
+      author: 'Welding Design & QA Guild',
+      readTime: '8 min read',
+      publishDate: '2026-03-03',
+      tags: ['Welding', 'Joint Geometry', 'Fillet Weld', 'CJP', 'PJP', 'AWS D1.1', 'Root Gap', 'Bevel Angle'],
+      heroImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+      heroImageAlt: 'Technical macro section showing CJP groove weld and fillet weld joint geometry',
+      heroBadge: 'Joint Design',
+      quickOverview: [
+        'Complete Joint Penetration (CJP) transfers 100% of base metal strength without joint efficiency penalty.',
+        'Partial Joint Penetration (PJP) design requires calculating effective throat (E) based on groove angle.',
+        'Fillet weld throat (tt): For 90° tee joint, tt = 0.707 × leg size (s). Under IS 800: tt = K × s (K = 0.70).',
+        'Single-V Butt Joint with steel backing (B-U2a): Included angle = 45°, root opening = 6mm (1/4 in).',
+        'Root face (land): 1.5mm to 3.0mm prevents burn-through while allowing root penetration.'
+      ],
+      whatIsIt: {
+        description: 'Standardized weld joint preparation specifies precise groove bevel angles, root faces, and root gaps to guarantee complete fusion to the joint root without burn-through or excessive dilution.',
+        diagramImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+        diagramImageAlt: 'Cross section engineering diagram showing Single-V, Double-V, and fillet weld geometric terms',
+        diagramCaption: 'Figure: Geometric anatomy of groove and fillet welds (bevel angle, root face, root gap, effective throat, reinforcement).'
+      },
+      stepsTitle: 'Preparing & Fit-Up of a CJP Butt Joint in 4 Steps',
+      steps: [
+        {
+          stepNumber: 1,
+          title: 'Bevel Machining / Track Torch Cutting',
+          description: 'Machine plate edge with 30° bevel angle on each plate (60° total included angle). De-burr.',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Bevel preparation'
+        },
+        {
+          stepNumber: 2,
+          title: 'Grind Root Face (Land)',
+          description: 'Establish uniform 2.0mm root land along the entire seam length to prevent arc melt-through.',
+          image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Grinding root face'
+        },
+        {
+          stepNumber: 3,
+          title: 'Set Root Gap & Tack Weld',
+          description: 'Use spacer wire to set 2.5mm root gap. Place bridge tacks outside groove or feather tacks inside.',
+          image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Root gap fit-up'
+        },
+        {
+          stepNumber: 4,
+          title: 'Deposit Root Pass & Back-Gouge',
+          description: 'Weld root run. For double-sided welds, back-gouge reverse side to sound metal before second side welding.',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Back gouging and welding'
+        }
+      ],
+      practicalExample: {
+        title: 'High-Rise Steel Column Splice Joint (ISMB/ISHB Heavy Flanges)',
+        description: 'Complete Joint Penetration (CJP) weld joining 40mm thick column flanges with 45° single bevel and continuous steel backing bar.',
+        image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+        imageAlt: 'Column flange welded splice',
+        specifications: {
+          'Joint Designation': 'AWS D1.1 B-U2a (Single-V with backing)',
+          'Plate Thickness': '40mm (IS 2062 E350)',
+          'Bevel Angle': '45° with 6mm root opening',
+          'Backing Bar': '25mm × 10mm thick E250 steel flat'
+        },
+        keyTakeaway: 'Always install runoff tabs (minimum 50mm extension) at plate ends to ensure starting and ending crater defects are outside the active structural joint.'
+      },
+      problemSolution: {
+        problemTitle: 'Lack of Root Penetration & Excessive Root Gap Sag',
+        problemDescription: 'Weld bead failing to fuse through both plate roots, leaving an unfused notch acting as a severe stress riser.',
+        problemImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+        possibleCauses: [
+          'Root opening too narrow (< 1.5mm) or included bevel angle too steep (< 40°)',
+          'Root face too thick (> 3.5mm) absorbing arc heat before penetration',
+          'Welder using excessive electrode diameter on narrow root pass'
+        ],
+        solutionTitle: 'Back-Gouging to Sound Metal & Calibrated Fit-Up',
+        solutionDescription: 'Back-gouge from root side using carbon arc torch down to sound bright weld metal, inspect with MT, and weld seal pass.',
+        solutionImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+        bestPracticeTip: 'Use a bridge cam welding gauge to verify throat thickness, leg lengths, and bevel angles before sign-off.'
+      },
+      engineeringTips: [
+        'IS 800:2007 limits maximum fillet weld leg size along rolled edges to: plate thickness minus 1.5mm.',
+        'Fillet weld minimum leg size: 3mm for plates up to 10mm, 5mm for 10-20mm, 6mm for 20-32mm, 8mm for 32-50mm.'
+      ],
+      relevantCodesAndStandards: ['AWS D1.1 Figure 3.4', 'IS 800:2007 Clause 10.5', 'ISO 9692-1', 'AISC 360 Chapter J'],
+      relatedTopicIds: ['metal-welding-processes-guide', 'steel-defect-lack-of-fusion', 'steel-defect-undercut']
+    },
+
+    // 9. CNC THERMAL CUTTING & FABRICATION
+    {
+      id: 'metal-cnc-cutting-and-forming',
+      slug: 'cnc-thermal-cutting-laser-plasma-oxy-fuel-forming',
+      title: 'CNC Thermal Cutting & Plate Rolling: Laser, High-Definition Plasma & Oxy-Fuel',
+      category: 'Metal Intelligence & Machine Learning',
+      subCategory: 'Fabrication',
+      oneLineSummary: 'Cutting method selection matrix by plate thickness: fiber laser (up to 25mm), HD plasma (up to 50mm), oxy-fuel (up to 300mm), edge taper, dross removal, and 4-roll plate bending tolerances.',
+      author: 'Fabrication & Automation Guild',
+      readTime: '8 min read',
+      publishDate: '2026-03-03',
+      tags: ['Fabrication', 'Laser Cutting', 'Plasma Cutting', 'Oxy-Fuel', 'Plate Rolling', 'HAZ', 'Kerf Width'],
+      heroImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+      heroImageAlt: 'CNC fiber laser cutting complex structural sheet metal profiles with bright sparks',
+      heroBadge: 'Thermal Fabrication',
+      quickOverview: [
+        'Fiber Laser: Highest precision (±0.1mm), narrow kerf (0.2-0.4mm), minimal HAZ, ideal for sheets up to 20mm.',
+        'High-Definition Plasma: Optimal productivity for 6mm to 40mm structural steel plates; bevel cutting capability.',
+        'Oxy-Fuel Cutting: Economical choice for heavy steel plates (25mm up to 300mm); relies on exothermic iron oxidation.',
+        'Heat-Affected Zone (HAZ): Laser produces smallest HAZ (<0.3mm); Oxy-fuel produces largest HAZ (2-4mm).',
+        'Plate Rolling: 4-roll hydraulic machines allow pre-bending of both leading and trailing edges without unbent flats.'
+      ],
+      whatIsIt: {
+        description: 'Industrial thermal cutting processes sever metals via concentrated thermal energy, molten metal expulsion, or rapid chemical oxidation, followed by mechanical forming operations like press brake bending and pyramid plate rolling.',
+        diagramImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+        diagramImageAlt: 'Comparison diagram of kerf geometry and cut edge squareness across Laser, Plasma, and Oxy-Fuel',
+        diagramCaption: 'Figure: Kerf width, cut edge squareness (ISO 9013 quality ranges), and HAZ depth across thermal cutting methods.'
+      },
+      stepsTitle: 'CNC Plate Processing Workflow in 4 Steps',
+      steps: [
+        {
+          stepNumber: 1,
+          title: 'CAD Nesting & Kerf Offset Setup',
+          description: 'Import DXF profiles into nesting software. Apply lead-in paths, common-line cutting, and Kerf offset (e.g. +0.2mm).',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'CAD nesting software'
+        },
+        {
+          stepNumber: 2,
+          title: 'Pierce Cycle & Motion Execution',
+          description: 'Execute controlled ramped piercing to prevent slag blowout on laser/plasma optics before commencing path cut.',
+          image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Laser piercing plate'
+        },
+        {
+          stepNumber: 3,
+          title: 'Slag De-burring & Edge Radiusing',
+          description: 'De-dross parts with tumbling or wide-belt grinding machine. Radius edges to R >= 2mm for coating adhesion.',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Edge deburring and grinding'
+        },
+        {
+          stepNumber: 4,
+          title: '4-Roll Cylindrical Plate Rolling',
+          description: 'Pinch plate between top and bottom rolls, pre-bend edge to zero-flatness, and roll to required cylinder radius.',
+          image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Hydraulic plate rolling machine'
+        }
+      ],
+      practicalExample: {
+        title: 'Pressure Vessel Shell & Flange Plate Processing',
+        description: '32mm thick SA516 Gr. 70 plate cut with HD Plasma with 30° weld bevel, followed by rolling into 2400mm ID cylinder.',
+        image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+        imageAlt: 'Heavy plate rolled cylinder shell',
+        specifications: {
+          'Material': 'SA 516 Grade 70 (32mm thickness)',
+          'Cutting Method': 'High-Definition Underwater Plasma (400A)',
+          'Edge Squareness': 'ISO 9013 Range 3 (<= 1.2° bevel error)',
+          'Rolling Tolerance': 'Out-of-roundness <= 0.5% of diameter'
+        },
+        keyTakeaway: 'Always grind thermally cut edges by minimum 1.0mm in cyclically loaded fatigue members to remove micro-hardened martensite layers.'
+      },
+      problemSolution: {
+        problemTitle: 'Bottom Edge Dross Adhesion & Excessive Cut Face Taper',
+        problemDescription: 'Tenacious molten iron dross solidified on bottom of cut edges and angled cut face deviating from 90 degrees.',
+        problemImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+        possibleCauses: [
+          'Cutting speed too fast or too slow outside optimal parameter envelope',
+          'Worn cutting nozzle / torch standoff height incorrect',
+          'Incorrect assist gas pressure (Nitrogen vs Oxygen)'
+        ],
+        solutionTitle: 'Nozzle Calibration & Standoff Height Tuning',
+        solutionDescription: 'Replace nozzle, calibrate torch capacitive height sensor, and tune gas pressure per manufacturer cut charts.',
+        solutionImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+        bestPracticeTip: 'Use Nitrogen assist gas for stainless steel and aluminium laser cutting to obtain 100% oxide-free weld-ready edges.'
+      },
+      engineeringTips: [
+        'Minimum hole diameter for laser cutting should be at least 1.0 × plate thickness; for plasma cutting, 1.5 × thickness.',
+        'Edge chamfering of thermally cut holes is essential prior to HSFG bolt installation per AISC specification.'
+      ],
+      relevantCodesAndStandards: ['ISO 9013 (Thermal Cutting Tolerances)', 'AWS C4.1 (Oxygen Cutting Surface Roughness)', 'EN 1090-2 (Execution of Steel Structures)'],
+      relatedTopicIds: ['metal-sheet-metal-gauges', 'metal-welding-processes-guide', 'metal-fasteners-hsfg-bolts']
+    },
+
+    // 10. STRUCTURAL CORROSION MECHANISMS
+    {
+      id: 'metal-corrosion-mechanisms',
+      slug: 'structural-corrosion-mechanisms-pitting-and-section-loss',
+      title: 'Structural Corrosion Mechanisms: Pitting, Galvanic Coupling & Section Loss',
+      category: 'Metal Intelligence & Machine Learning',
+      subCategory: 'Corrosion',
+      oneLineSummary: 'Metallurgical mechanisms of uniform oxidation, localized pitting, galvanic series isolation, crevice corrosion at gusset interfaces, and residual strength assessment per ISO 12944 corrosivity categories C1 to CX.',
+      author: 'Corrosion Engineering Society',
+      readTime: '8 min read',
+      publishDate: '2026-03-03',
+      tags: ['Corrosion', 'Pitting', 'Galvanic', 'Rust', 'Section Loss', 'ISO 12944', 'Cathodic Protection'],
+      heroImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+      heroImageAlt: 'Corroded structural steel flange with flaking rust scale and localized pitting section loss',
+      heroBadge: 'Corrosion & Durability',
+      quickOverview: [
+        'Uniform atmospheric rust: Thin oxidized patina, depletion rate ~0.02 - 0.05 mm/year in inland rural climates (C2).',
+        'Pitting corrosion: Localized electrochemical attack creating deep stress-concentrating cavities (Pitting Factor > 3).',
+        'Galvanic corrosion: Direct contact between dissimilar metals (e.g. Copper/Brass touching Steel or Aluminium).',
+        'Crevice corrosion: Occurs in sheltered stagnant gaps between unsealed bolted gusset plates and flange angles.',
+        'Section Loss assessment: Depletion > 10% of flange/web requires structural re-analysis; > 20% mandates reinforcement plating.'
+      ],
+      whatIsIt: {
+        description: 'Corrosion is the electrochemical degradation of metal reacting with moisture, oxygen, and atmospheric pollutants (chlorides, SO2), returning refined steel to its thermodynamic natural state (iron oxides Fe2O3 and FeOOH).',
+        diagramImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80',
+        diagramImageAlt: 'Electrochemical corrosion cell diagram showing anode, cathode, electrolyte, and electron flow path',
+        diagramCaption: 'Figure: Micro-galvanic corrosion cell mechanics (Fe -> Fe²⁺ + 2e⁻ anode reaction and O2 reduction cathode reaction).'
+      },
+      stepsTitle: 'Structural Section Loss Audit in 4 Steps',
+      steps: [
+        {
+          stepNumber: 1,
+          title: 'Scrape Delaminating Scale (Sa 1 / Wire Brush)',
+          description: 'Remove brittle, swollen rust flakes using scraper or needle scaler to uncover the underlying sound metal surface.',
+          image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Scraping rust flakes'
+        },
+        {
+          stepNumber: 2,
+          title: 'Ultrasonic Thickness (UT) Grid Measurement',
+          description: 'Take 9-point ultrasonic thickness readings across web and flange to determine average and minimum remaining wall (t_rem).',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Ultrasonic thickness gauge measurement'
+        },
+        {
+          stepNumber: 3,
+          title: 'Calculate Percentage Section Loss',
+          description: 'Formula: Section Loss (%) = ((t_nominal - t_remaining) / t_nominal) × 100%. Re-check capacity per IS 800.',
+          image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Section loss calculations'
+        },
+        {
+          stepNumber: 4,
+          title: 'Remediate or Install Doubler Reinforcement',
+          description: 'If loss < 10%: blast Sa 2.5 and coat. If loss >= 15%: weld sister doubler plate sized to restore original section modulus.',
+          image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+          imageAlt: 'Structural reinforcement plate welding'
+        }
+      ],
+      practicalExample: {
+        title: 'Coastal Industrial Plant Pipe Rack Column Base',
+        description: 'ISMB 350 column base in marine coastal environment (ISO 12944 Category C5-M) with 22% web section loss from standing water.',
+        image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80',
+        imageAlt: 'Corroded pipe rack column base',
+        specifications: {
+          'Original Web Thickness': '8.1mm nominal',
+          'Remaining Thickness': '6.3mm (22.2% loss)',
+          'Corrosivity Environment': 'ISO 12944 Category C5-M (Marine coastal)',
+          'Remediation': 'Weld 10mm IS 2062 E250 doubler web plates both sides'
+        },
+        keyTakeaway: 'Rust expands to 6 to 10 times the volume of the original steel it consumes, creating massive pack-rust jacking forces that can deform 20mm steel plates.'
+      },
+      problemSolution: {
+        problemTitle: 'Pack Rust Jacking & Galvanic Accelerated Piercing',
+        problemDescription: 'Rust expanding between nested angles or un-isolated stainless/carbon steel contact causing bolt shearing and plate distortion.',
+        problemImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+        possibleCauses: [
+          'Direct metal-to-metal contact between dissimilar metals in the presence of conductive rainwater',
+          'Skip-welding joints without continuous perimeter silicone/elastomeric sealing',
+          'Absence of drainage weep holes at lowest points of structural frames'
+        ],
+        solutionTitle: 'Dielectric Isolation Washers & Continuous Seal Welds',
+        solutionDescription: 'Insert neoprene/Teflon dielectric gaskets and isolating bolt sleeves. Specify continuous seal welds along all exposed plate edges.',
+        solutionImage: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
+        bestPracticeTip: 'Never allow aluminium cladding to directly touch bare structural carbon steel; always install an inert dielectric barrier.'
+      },
+      engineeringTips: [
+        'ISO 12944-5 High Durability system (>15 years) typically requires 240-320 µm Total Dry Film Thickness (TDFT) of zinc-rich epoxy + MIO intermediate + polyurethane topcoat.',
+        'Galvanic Series Rule: The metal higher on the galvanic list corrodes sacrificially to protect the metal lower on the list.'
+      ],
+      relevantCodesAndStandards: ['ISO 12944 (Corrosion Protection of Steel)', 'SSPC / NACE SP0198', 'IS 800:2007 Section 15 (Durability)', 'ASTM G46 (Pitting)'],
+      relatedTopicIds: ['metal-galvanizing-and-coating', 'steel-defect-corrosion-pitting', 'metal-ms-is2062-e250']
     }
   ];
 }
@@ -1410,6 +2724,7 @@ export function getAllKnowledgeArticles(): VisualKnowledgeArticle[] {
 
   // Add in priority order
   [
+    ...ALL_METAL_CATALOG_ARTICLES,
     ...existingVisual,
     ...dedicatedMetalArticles,
     ...metalArticles,

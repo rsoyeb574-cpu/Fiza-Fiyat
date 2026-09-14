@@ -385,7 +385,7 @@ export default function App() {
                   />
                 )}
 
-                {activePage === 'blog' && (
+                {(activePage === 'blog' || activePage === 'knowledge') && (
                   <BlogPage blogs={blogs} onSelectBlog={handleSelectBlog} />
                 )}
 

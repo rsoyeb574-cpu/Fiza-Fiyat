@@ -3,10 +3,11 @@ export type KnowledgeCategory =
   | 'Civil Engineering'
   | 'Structural Engineering'
   | 'Interior Design'
-  | 'MEP'
-  | 'Mechanical'
-  | 'METALS & SHEET METAL'
-  | 'CAD'
+  | 'MEP Engineering'
+  | 'Mechanical Engineering'
+  | 'Metal Intelligence & Machine Learning'
+  | 'Welding & Fabrication'
+  | 'CAD & Drafting'
   | 'BIM'
   | '3D Visualization'
   | 'Construction'
@@ -17,8 +18,12 @@ export type KnowledgeCategory =
   | 'Calculators'
   | 'Project Guides'
   // Backwards compatibility aliases
+  | 'METALS & SHEET METAL'
+  | 'MEP'
   | 'MEP Systems'
+  | 'Mechanical'
   | 'Mechanical & Fabrication'
+  | 'CAD'
   | 'CAD & Software'
   | 'MS & Sheet Metal'
   | 'Welding & Defects'
@@ -29,6 +34,7 @@ export interface CategoryDefinition {
   id: KnowledgeCategory;
   label: string;
   shortLabel?: string;
+  subtitle?: string;
   description: string;
   iconName: string;
   subcategories: string[];

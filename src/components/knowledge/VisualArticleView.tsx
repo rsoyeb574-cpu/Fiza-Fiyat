@@ -14,7 +14,8 @@ import {
   Printer,
   Share2,
   Copy,
-  Check
+  Check,
+  Zap
 } from 'lucide-react';
 import { VisualKnowledgeArticle } from '../../types/visualKnowledge';
 import { BeforeAfterVisual } from './BeforeAfterVisual';
@@ -27,12 +28,14 @@ interface VisualArticleViewProps {
   article: VisualKnowledgeArticle;
   onBack: () => void;
   onSelectArticle: (article: VisualKnowledgeArticle) => void;
+  onLaunchInspector?: () => void;
 }
 
 export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
   article,
   onBack,
-  onSelectArticle
+  onSelectArticle,
+  onLaunchInspector
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -475,7 +478,30 @@ export const VisualArticleView: React.FC<VisualArticleViewProps> = ({
         </section>
       )}
 
-      {/* 11. PROFESSIONAL ENGINEERING SAFETY DISCLAIMER */}
+      {/* 11. AI DEFECT & METAL INSPECTOR QUICK TRIGGER */}
+      {onLaunchInspector && (
+        <section className="p-6 rounded-3xl bg-gradient-to-r from-amber-950/40 via-neutral-900 to-neutral-950 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+              Machine Learning Metal Inspection
+            </span>
+            <h4 className="text-base font-bold text-white">Have a photo of this metal, joint, or defect?</h4>
+            <p className="text-xs text-neutral-400">
+              Upload a site photograph to run real-time automated visual inspection against AWS D1.1 and IS 800 standards.
+            </p>
+          </div>
+          <button
+            onClick={onLaunchInspector}
+            className="shrink-0 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-neutral-950 text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>Launch AI Inspector</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </section>
+      )}
+
+      {/* 12. PROFESSIONAL ENGINEERING SAFETY DISCLAIMER */}
       <section className="p-5 sm:p-6 rounded-3xl bg-amber-950/20 border border-amber-500/30 space-y-2 text-xs text-amber-200/90 backdrop-blur-md">
         <div className="flex items-center gap-2 text-amber-400 font-bold uppercase tracking-wider">
           <ShieldCheck className="w-4 h-4" />
