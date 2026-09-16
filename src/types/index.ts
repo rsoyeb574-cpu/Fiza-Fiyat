@@ -50,6 +50,7 @@ export interface Project {
   };
   resourceAllocation?: ProjectResourceAllocation;
   siteMap?: import('./siteMap').ProjectSiteMapData;
+  milestones?: ProjectMilestoneProgress;
 }
 
 export * from './siteMap';
@@ -83,6 +84,46 @@ export interface ProjectResourceAllocation {
   materials: ProjectMaterialRequirement[];
   totalTeamHours: number;
   totalMaterialsBudget: number;
+}
+
+export interface ProjectMilestoneDeliverable {
+  id: string;
+  title: string;
+  completed: boolean;
+  dueDate?: string;
+  deliverableType?: 'Drawing' | 'BIM Model' | 'Permit' | 'Report' | 'Site Inspection' | 'Specification';
+}
+
+export interface ProjectMilestonePhase {
+  id: string;
+  phaseNumber: number;
+  name: string;
+  shortCode: string; // e.g. "PH-01"
+  category: 'Concept' | 'Schematic' | 'Detailed Engineering' | 'Statutory Approvals' | 'Procurement' | 'Execution' | 'Handover';
+  completionPercentage: number; // 0 to 100
+  status: 'completed' | 'in_progress' | 'upcoming' | 'delayed';
+  startDate: string;
+  targetEndDate: string;
+  actualEndDate?: string;
+  leadOwner: string;
+  budgetAllocated?: string;
+  keyDeliverables: ProjectMilestoneDeliverable[];
+  criticalPath?: boolean;
+  riskLevel?: 'low' | 'medium' | 'high';
+  description?: string;
+}
+
+export interface ProjectMilestoneProgress {
+  overallCompletionPercentage: number;
+  currentPhaseName: string;
+  currentPhaseNumber: number;
+  projectStatus: 'on_track' | 'ahead' | 'delayed' | 'completed';
+  targetHandoverDate: string;
+  startDate: string;
+  totalPhasesCount: number;
+  completedPhasesCount: number;
+  phases: ProjectMilestonePhase[];
+  lastInspectionDate?: string;
 }
 
 export interface Category {

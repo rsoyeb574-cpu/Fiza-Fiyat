@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   ArrowLeft, 
   Download, 
@@ -28,13 +28,16 @@ import {
   Loader2,
   Wand2,
   MessageSquare,
-  QrCode
+  QrCode,
+  Flag,
+  TrendingUp
 } from 'lucide-react';
 import { Project } from '../types';
 import { BeforeAfterSlider } from '../components/common/BeforeAfterSlider';
 import { ArchitecturalModelViewer } from '../components/common/ArchitecturalModelViewer';
 import { Bim3DViewer } from '../components/bim/Bim3DViewer';
 import { ProjectResourceAllocationView } from '../components/project/ProjectResourceAllocationView';
+import { ProjectMilestoneTracker } from '../components/project/ProjectMilestoneTracker';
 import { AIDesignVariationModal } from '../components/project/AIDesignVariationModal';
 import { AIDesignIterationModal } from '../components/project/AIDesignIterationModal';
 import { BeforeAfter, BeforeAfterScheme } from '../components/project/BeforeAfter';
@@ -42,6 +45,7 @@ import { InteractiveSiteMap } from '../components/project/InteractiveSiteMap';
 import { ProjectRevisionChat } from '../components/project/ProjectRevisionChat';
 import { ArchitecturalDesignConcept } from '../types/designIteration';
 import { getProjectSpecs } from '../utils/projectComparison';
+import { getProjectMilestones } from '../utils/projectMilestones';
 import { downloadProjectSummaryPdf, openProjectSummaryPrintView } from '../utils/projectPdfGenerator';
 
 interface ProjectDetailPageProps {
@@ -81,6 +85,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
   const [adoptNotification, setAdoptNotification] = useState<string | null>(null);
 
   const specs = getProjectSpecs(project);
+  const milestones = useMemo(() => getProjectMilestones(project), [project]);
   const comparing = isComparing(project.id);
 
   const handleDownloadSummary = async () => {
@@ -332,6 +337,24 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               </span>
             </button>
 
+            {/* Project Milestone Progress Tracker Quick Nav Button */}
+            <button
+              onClick={() => {
+                const el = document.getElementById('project-milestones-tracker');
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              className="px-4 py-2 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all text-neutral-400 hover:text-white hover:bg-white/5"
+              title="Inspect Project Milestone Progress & Phase Delivery Tracker"
+            >
+              <Flag className="w-4 h-4 text-blue-400" />
+              <span>Milestones</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-extrabold border border-blue-500/30">
+                {milestones.overallCompletionPercentage}%
+              </span>
+            </button>
+
             {/* AI Design Iteration Modal Trigger */}
             <button
               onClick={() => setIsIterationModalOpen(true)}
@@ -547,6 +570,20 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
                 <span className="text-neutral-400">BIM Level</span>
                 <span className="text-blue-300 font-medium">{specs.bimLevel}</span>
               </div>
+              <div className="py-2 flex justify-between items-center">
+                <span className="text-neutral-400">Milestone Progress</span>
+                <button
+                  onClick={() => {
+                    const el = document.getElementById('project-milestones-tracker');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Scroll down to Milestone Progress Tracker"
+                >
+                  <span>{milestones.overallCompletionPercentage}% ({milestones.currentPhaseNumber}/{milestones.totalPhasesCount})</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             {/* Key Materials */}
@@ -751,6 +788,9 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
           <InteractiveSiteMap project={project} />
         </div>
       )}
+
+      {/* Project Milestone Progress Tracker (Phase Completion Percentages & Roadmap) */}
+      <ProjectMilestoneTracker project={project} />
 
       {/* Resource Allocation Breakdown (Staffing & Materials Schedule) */}
       <ProjectResourceAllocationView project={project} />
