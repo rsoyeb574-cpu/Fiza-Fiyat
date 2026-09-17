@@ -19,7 +19,8 @@ import {
   Check,
   FileDown,
   Printer,
-  Flame
+  Flame,
+  Target
 } from 'lucide-react';
 import { Project } from '../../types';
 import { getProjectSpecs, calculateComparisonDelta, parseCostNumber } from '../../utils/projectComparison';
@@ -28,6 +29,7 @@ import { downloadProjectSummaryPdf } from '../../utils/projectPdfGenerator';
 import { downloadProjectComparisonPdf } from '../../utils/comparisonPdfGenerator';
 import { ProjectComparisonHeatmap } from './ProjectComparisonHeatmap';
 import { ProjectComparisonAIAdvisor } from './ProjectComparisonAIAdvisor';
+import { ProjectInsightsSection } from './ProjectInsightsSection';
 
 interface ProjectComparisonModalProps {
   isOpen: boolean;
@@ -58,7 +60,7 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [downloadingSummaryId, setDownloadingSummaryId] = useState<string | null>(null);
-  const [comparisonTab, setComparisonTab] = useState<'all' | 'heatmap' | 'matrix' | 'ai'>('all');
+  const [comparisonTab, setComparisonTab] = useState<'all' | 'insights' | 'heatmap' | 'matrix' | 'ai'>('all');
 
   if (!isOpen || !project1 || !project2) return null;
 
@@ -495,6 +497,22 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
               </button>
 
               <button
+                onClick={() => setComparisonTab('insights')}
+                id="tab-comparison-insights"
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  comparisonTab === 'insights'
+                    ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
+                    : 'text-slate-400 hover:text-purple-300'
+                }`}
+              >
+                <Target className="w-3.5 h-3.5 text-purple-400" />
+                <span>Project Insights</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 text-[9px] font-extrabold uppercase border border-purple-500/30">
+                  Gemini
+                </span>
+              </button>
+
+              <button
                 onClick={() => setComparisonTab('heatmap')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   comparisonTab === 'heatmap'
@@ -540,6 +558,18 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
               Color indicators & AI synthesis evaluate comparative trade-offs
             </span>
           </div>
+
+          {/* PROJECT INSIGHTS SECTION (GOAL-DRIVEN GEMINI ANALYSIS) */}
+          {(comparisonTab === 'all' || comparisonTab === 'insights') && (
+            <ProjectInsightsSection
+              project1={project1}
+              project2={project2}
+              specs1={specs1}
+              specs2={specs2}
+              onInquireProject={onInquireProject ? (proj, note) => onInquireProject(proj) : undefined}
+              onViewProjectDetails={onViewProjectDetails}
+            />
+          )}
 
           {/* AI ARCHITECTURAL ADVISOR COMPONENT */}
           {(comparisonTab === 'all' || comparisonTab === 'ai') && (

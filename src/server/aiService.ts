@@ -340,17 +340,24 @@ export interface ProjectComparisonAIRequest {
   };
   focusArea?: string;
   customQuestion?: string;
+  userGoals?: string[];
+  customGoalText?: string;
 }
 
 export async function handleProjectComparisonAIRequest(body: ProjectComparisonAIRequest): Promise<any> {
-  const { project1, project2, focusArea, customQuestion } = body || {};
+  const { project1, project2, focusArea, customQuestion, userGoals, customGoalText } = body || {};
   const p1Title = project1?.title || 'Project A';
   const p2Title = project2?.title || 'Project B';
   const s1 = project1?.specs || {};
   const s2 = project2?.specs || {};
 
-  const promptText = `You are the Principal Architectural Partner & Lead Structural Cost Director at Fiza Fiyat Architectural & Civil Hub.
-Conduct a rigorous, authoritative comparative analysis between two major architectural engineering projects.
+  const goalsList = Array.isArray(userGoals) ? userGoals.filter(Boolean) : [];
+  if (customGoalText && customGoalText.trim()) {
+    goalsList.push(`Custom Goal: ${customGoalText.trim()}`);
+  }
+
+  const promptText = `You are the Principal Architectural Director & Senior Civil Engineering Strategist at Fiza Fiyat Architectural & Civil Hub.
+Conduct a rigorous, authoritative comparative analysis between two major architectural engineering projects, specifically evaluating how each project aligns with the user's defined architectural and business goals.
 
 Project 1: "${p1Title}"
 - Category: ${project1?.categoryName || 'General'}
@@ -376,29 +383,50 @@ Project 2: "${p2Title}"
 - Energy & Sustainability Rating: ${s2.energyRating || 'N/A'}
 - Primary Materials: ${JSON.stringify(s2.materials || [])}
 
-${focusArea ? `Focus Evaluation Area: ${focusArea}` : ''}
+${goalsList.length > 0 ? `SPECIFIC USER-DEFINED GOALS TO EVALUATE:\n${goalsList.map((g, i) => `${i + 1}. ${g}`).join('\n')}` : 'General comprehensive architectural & structural trade-off evaluation'}
+${focusArea ? `Evaluation Focus Domain: ${focusArea}` : ''}
 ${customQuestion ? `Specific Client Inquiry: "${customQuestion}"` : ''}
 
 Respond in STRICT JSON matching this exact structure:
 {
-  "recommendationTitle": "Concise, punchy verdict headline (e.g. Optimized Commercial Fast-Track vs. Luxury Monolithic Resilience)",
-  "recommendedOption": 1, // 1 for Project 1, 2 for Project 2, 0 if balanced/context-dependent
-  "executiveVerdict": "3-4 sentences synthesizing the comparative outcome, value proposition, and architectural rationale.",
-  "keyTradeoffs": [
-    "Trade-off 1 with quantified contrast",
-    "Trade-off 2 comparing structural complexity or schedule",
-    "Trade-off 3 contrasting operational lifecycle or environmental rating"
+  "recommendationTitle": "Concise, authoritative verdict headline highlighting which project best achieves the goals (e.g. Project 1 Delivers Superior Capex & Schedule Efficiency for Urban Development)",
+  "recommendedOption": 1, // 1 for Project 1, 2 for Project 2, 0 if strictly balanced/tied
+  "winnerProjectTitle": "${p1Title} or ${p2Title}",
+  "fitScores": {
+    "project1Score": 88, // 0 to 100 percentage alignment with user goals
+    "project2Score": 72  // 0 to 100 percentage alignment with user goals
+  },
+  "executiveVerdict": "3-4 sentences synthesizing the comparative outcome, why the winning project aligns better with the user's defined goals, and the structural/economic rationale.",
+  "userGoalsEvaluated": [
+    {
+      "goal": "Goal description from the user's goals",
+      "project1Assessment": "Concise evaluation of Project 1 against this goal",
+      "project1Rating": "superior", // "superior" | "adequate" | "compromised"
+      "project2Assessment": "Concise evaluation of Project 2 against this goal",
+      "project2Rating": "adequate", // "superior" | "adequate" | "compromised"
+      "winningProject": 1 // 1 for Project 1, 2 for Project 2, 0 for equal
+    }
   ],
+  "keyTradeoffs": [
+    "Trade-off 1 contrasting structural complexity, capex, or schedule",
+    "Trade-off 2 contrasting spatial volume or long-term operational costs",
+    "Trade-off 3 contrasting environmental footprint or construction risk"
+  ],
+  "strategicRationale": "Deep architectural explanation of the primary strategic driver determining this selection.",
   "costBenefitAnalysis": "Detailed financial breakdown contrasting unit rate, capex, and long-term maintenance impact.",
   "structuralAndBimAssessment": "Engineering synthesis comparing load systems, BIM coordination risk, and site sequencing.",
   "sustainabilityVerdict": "Comparative environmental assessment evaluating embodied carbon, LEED/BREEAM metrics, and thermal envelope performance.",
+  "actionableNextSteps": [
+    "First concrete action (e.g. Conduct geotechnical soil-bearing test for chosen structural grid)",
+    "Second concrete action (e.g. Lock BIM LOD 350 clash-detection milestone)"
+  ],
   "hybridRecommendations": [
     "Concrete actionable recommendation to merge the best features of both schemes",
     "Material or MEP optimization borrowed from one to the other"
   ],
   "clientSuitability": {
-    "project1BestFor": "Clear description of ideal client profile, site condition, or financial goal for Project 1",
-    "project2BestFor": "Clear description of ideal client profile, site condition, or financial goal for Project 2"
+    "project1BestFor": "Clear description of ideal client profile or site condition for Project 1",
+    "project2BestFor": "Clear description of ideal client profile or site condition for Project 2"
   }
 }`;
 
@@ -416,6 +444,9 @@ Respond in STRICT JSON matching this exact structure:
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       if (parsed.recommendationTitle && parsed.executiveVerdict) {
+        if (!parsed.winnerProjectTitle) {
+          parsed.winnerProjectTitle = parsed.recommendedOption === 2 ? p2Title : p1Title;
+        }
         return parsed;
       }
     }
@@ -428,24 +459,92 @@ Respond in STRICT JSON matching this exact structure:
   const rate2 = parseFloat(String(s2.ratePerSqFt || '').replace(/[^0-9.]/g, '')) || 0;
   const area1 = parseFloat(String(s1.area || '').replace(/[^0-9.]/g, '')) || 0;
   const area2 = parseFloat(String(s2.area || '').replace(/[^0-9.]/g, '')) || 0;
+  const dur1 = parseFloat(String(s1.duration || '').replace(/[^0-9.]/g, '')) || 0;
+  const dur2 = parseFloat(String(s2.duration || '').replace(/[^0-9.]/g, '')) || 0;
 
-  const costAdvantageP1 = rate1 > 0 && rate2 > 0 ? rate1 < rate2 : area1 < area2;
-  const winner = costAdvantageP1 ? 1 : 2;
+  // Evaluate based on user goals if present
+  let p1Points = 0;
+  let p2Points = 0;
+
+  const evaluatedGoals = (goalsList.length > 0 ? goalsList : [
+    'Budget & Capex Efficiency',
+    'Construction Speed & Delivery Schedule',
+    'Spatial Footprint & Functional Program',
+    'BIM Maturity & Structural Resilience'
+  ]).map((goal) => {
+    const lower = goal.toLowerCase();
+    let p1Win = true;
+    let p1Note = '';
+    let p2Note = '';
+
+    if (lower.includes('budget') || lower.includes('cost') || lower.includes('capex') || lower.includes('financial')) {
+      p1Win = rate1 <= rate2;
+      p1Note = `${s1.estimatedCost || 'Optimized Capex'} at ${s1.ratePerSqFt || 'competitive rate'}`;
+      p2Note = `${s2.estimatedCost || 'Higher Capex'} at ${s2.ratePerSqFt || 'higher rate'}`;
+    } else if (lower.includes('speed') || lower.includes('time') || lower.includes('schedule') || lower.includes('fast') || lower.includes('delivery')) {
+      p1Win = dur1 > 0 && dur2 > 0 ? dur1 <= dur2 : true;
+      p1Note = `Estimated ${s1.duration || 'Standard'} delivery schedule`;
+      p2Note = `Estimated ${s2.duration || 'Extended'} delivery schedule`;
+    } else if (lower.includes('sustain') || lower.includes('green') || lower.includes('leed') || lower.includes('carbon') || lower.includes('energy')) {
+      const sus2 = (s2.energyRating || '').toLowerCase().includes('platinum') || (s2.energyRating || '').toLowerCase().includes('net-zero');
+      p1Win = !sus2;
+      p1Note = `Rated ${s1.energyRating || 'Standard LEED Target'}`;
+      p2Note = `Rated ${s2.energyRating || 'High Efficiency Target'}`;
+    } else if (lower.includes('area') || lower.includes('scale') || lower.includes('volume') || lower.includes('density') || lower.includes('space')) {
+      p1Win = area1 >= area2;
+      p1Note = `${s1.area || 'Optimized scale'} gross area`;
+      p2Note = `${s2.area || 'Expansive scale'} gross area`;
+    } else {
+      p1Win = rate1 < rate2;
+      p1Note = `High structural alignment via ${s1.structuralType || 'Engineered Framework'}`;
+      p2Note = `High architectural presence via ${s2.structuralType || 'Integrated Structural System'}`;
+    }
+
+    if (p1Win) p1Points++;
+    else p2Points++;
+
+    return {
+      goal,
+      project1Assessment: p1Note,
+      project1Rating: p1Win ? ('superior' as const) : ('adequate' as const),
+      project2Assessment: p2Note,
+      project2Rating: !p1Win ? ('superior' as const) : ('adequate' as const),
+      winningProject: (p1Win ? 1 : 2) as (1 | 2 | 0)
+    };
+  });
+
+  const totalGoals = Math.max(1, evaluatedGoals.length);
+  const p1Score = Math.min(96, Math.max(58, Math.round((p1Points / totalGoals) * 35 + 60)));
+  const p2Score = Math.min(96, Math.max(58, Math.round((p2Points / totalGoals) * 35 + 60)));
+
+  const winner = p1Points >= p2Points ? 1 : 2;
+  const winnerTitle = winner === 1 ? p1Title : p2Title;
 
   return {
-    recommendationTitle: costAdvantageP1 
-      ? `${p1Title} Delivers Superior Commercial Efficiency & Feasibility`
-      : `${p2Title} Provides Higher Architectural Capital & Spatial Scale`,
+    recommendationTitle: winner === 1
+      ? `${p1Title} Demonstrates Superior Alignment with Your Project Goals`
+      : `${p2Title} Demonstrates Superior Alignment with Your Project Goals`,
     recommendedOption: winner,
-    executiveVerdict: `${costAdvantageP1 ? p1Title : p2Title} presents a compelling architectural equation. While ${p1Title} emphasizes disciplined capital expenditure and streamlined delivery, ${p2Title} offers expansive volumetric scale and elevated structural engineering specifications suitable for institutional or premier luxury assets.`,
+    winnerProjectTitle: winnerTitle,
+    fitScores: {
+      project1Score: p1Score,
+      project2Score: p2Score
+    },
+    executiveVerdict: `Based on your targeted requirements, ${winnerTitle} emerges as the optimal choice. It provides greater alignment with your prioritization of ${goalsList[0] || 'efficiency and schedule'} while maintaining robust architectural discipline. In contrast, ${winner === 1 ? p2Title : p1Title} remains viable for configurations requiring alternative volumetric or structural emphases.`,
+    userGoalsEvaluated: evaluatedGoals,
     keyTradeoffs: [
       `Capex vs Scale: ${p1Title} (${s1.estimatedCost || 'Optimized'}) offers a tighter procurement window vs ${p2Title} (${s2.estimatedCost || 'Expansive'}) which maximizes long-term gross floor area.`,
       `Structural Complexity: ${s1.structuralType || 'Standard Framework'} facilitates faster local permitting than ${s2.structuralType || 'Heavy Integrated Structural System'}.`,
       `BIM & Operational LOD: ${s1.bimLevel || 'LOD 350'} ensures standard fabrication detailing, whereas ${s2.bimLevel || 'LOD 400'} supports direct digital prefabrication.`
     ],
+    strategicRationale: `The primary determinant is the balance between upfront capital/timeline velocity versus long-term asset prestige and volumetric capacity.`,
     costBenefitAnalysis: `Unit rates average ${s1.ratePerSqFt || 'market rate'} for ${p1Title} compared to ${s2.ratePerSqFt || 'market rate'} for ${p2Title}. Projects requiring immediate capitalization will benefit from the optimized schedule of ${p1Title}.`,
     structuralAndBimAssessment: `Both projects conform to rigorous engineering standards. ${p1Title} leverages ${s1.structuralType || 'robust framing'}, requiring lower crane footprint, while ${p2Title} incorporates heavier load-bearing assemblies for expansive column-free spans.`,
     sustainabilityVerdict: `${p1Title} holds ${s1.energyRating || 'Standard LEED Target'} credentials, while ${p2Title} implements ${s2.energyRating || 'High-Efficiency Target'} thermal envelope strategies for superior lifecycle operational carbon reduction.`,
+    actionableNextSteps: [
+      `Confirm structural soil-bearing requirements and geotechnical profile for ${winnerTitle}`,
+      `Commission a targeted MEP clash-detection review to lock procurement schedule`
+    ],
     hybridRecommendations: [
       `Adopt the high-performance building envelope from ${p2Title} with the optimized structural grid of ${p1Title} to capture 12-15% cost savings without compromising thermal efficiency.`,
       `Standardize on ${s2.bimLevel || 'LOD 400'} detailing across MEP penetrations to reduce on-site change orders regardless of chosen typology.`
