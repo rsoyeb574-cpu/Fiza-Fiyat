@@ -18,12 +18,16 @@ import {
   Share2,
   Check,
   FileDown,
-  Printer
+  Printer,
+  Flame
 } from 'lucide-react';
 import { Project } from '../../types';
-import { getProjectSpecs, calculateComparisonDelta } from '../../utils/projectComparison';
+import { getProjectSpecs, calculateComparisonDelta, parseCostNumber } from '../../utils/projectComparison';
 import { downloadProposalReport } from '../../utils/proposalPdfGenerator';
 import { downloadProjectSummaryPdf } from '../../utils/projectPdfGenerator';
+import { downloadProjectComparisonPdf } from '../../utils/comparisonPdfGenerator';
+import { ProjectComparisonHeatmap } from './ProjectComparisonHeatmap';
+import { ProjectComparisonAIAdvisor } from './ProjectComparisonAIAdvisor';
 
 interface ProjectComparisonModalProps {
   isOpen: boolean;
@@ -52,13 +56,66 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [downloadingSummaryId, setDownloadingSummaryId] = useState<string | null>(null);
+  const [comparisonTab, setComparisonTab] = useState<'all' | 'heatmap' | 'matrix' | 'ai'>('all');
 
   if (!isOpen || !project1 || !project2) return null;
 
   const specs1 = getProjectSpecs(project1);
   const specs2 = getProjectSpecs(project2);
   const delta = calculateComparisonDelta(project1, project2);
+
+  // Metric winner calculations for high-contrast matrix color indicators
+  const cost1Num = specs1.costNumeric || parseCostNumber(specs1.estimatedCost);
+  const cost2Num = specs2.costNumeric || parseCostNumber(specs2.estimatedCost);
+  const costWinner = cost1Num < cost2Num ? 1 : cost2Num < cost1Num ? 2 : 0;
+
+  const rate1Num = parseFloat(specs1.costPerSqFt.replace(/[^0-9.]/g, '')) || 0;
+  const rate2Num = parseFloat(specs2.costPerSqFt.replace(/[^0-9.]/g, '')) || 0;
+  const rateWinner = rate1Num > 0 && rate2Num > 0 ? (rate1Num < rate2Num ? 1 : rate2Num < rate1Num ? 2 : 0) : 0;
+
+  const area1Num = parseFloat(specs1.area.replace(/[^0-9.]/g, '')) || 0;
+  const area2Num = parseFloat(specs2.area.replace(/[^0-9.]/g, '')) || 0;
+  const areaWinner = area1Num > area2Num ? 1 : area2Num > area1Num ? 2 : 0;
+
+  const dur1Num = parseFloat(specs1.duration.replace(/[^0-9.]/g, '')) || 0;
+  const dur2Num = parseFloat(specs2.duration.replace(/[^0-9.]/g, '')) || 0;
+  const durWinner = dur1Num > 0 && dur2Num > 0 ? (dur1Num < dur2Num ? 1 : dur2Num < dur1Num ? 2 : 0) : 0;
+
+  const getLodNum = (s: string) => {
+    const m = s.match(/LOD\s*(\d+)/i);
+    return m ? parseInt(m[1], 10) : 300;
+  };
+  const lod1 = getLodNum(specs1.bimLevel);
+  const lod2 = getLodNum(specs2.bimLevel);
+  const lodWinner = lod1 > lod2 ? 1 : lod2 > lod1 ? 2 : 0;
+
+  const scoreSus = (s: string) => {
+    const l = (s || '').toLowerCase();
+    if (l.includes('platinum') || l.includes('net-zero')) return 95;
+    if (l.includes('gold') || l.includes('excellent')) return 85;
+    if (l.includes('silver') || l.includes('very good')) return 75;
+    return 60;
+  };
+  const susWinner = scoreSus(specs1.energyRating) > scoreSus(specs2.energyRating) ? 1 : scoreSus(specs2.energyRating) > scoreSus(specs1.energyRating) ? 2 : 0;
+
+  const handleDownloadComparisonReport = async () => {
+    if (isGeneratingReport) return;
+    setIsGeneratingReport(true);
+    try {
+      await downloadProjectComparisonPdf({
+        project1,
+        project2,
+        specs1,
+        specs2
+      });
+    } catch (err) {
+      console.error('Failed to generate PDF comparison report:', err);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
 
   const handleDownloadSingleSummary = async (p: Project) => {
     if (downloadingSummaryId) return;
@@ -130,13 +187,24 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
-              onClick={handleDownloadProposalPdf}
-              disabled={isGeneratingPdf}
-              title="Download comparison proposal report as PDF"
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs font-bold text-white flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer border border-emerald-400/30"
+              onClick={handleDownloadComparisonReport}
+              disabled={isGeneratingReport}
+              id="btn-download-comparison-report"
+              title="Download Side-by-Side Comparison Summary as PDF (jsPDF)"
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs font-bold text-white flex items-center gap-1.5 shadow-md shadow-emerald-600/25 transition-all cursor-pointer border border-emerald-400/30 disabled:opacity-50"
             >
               <FileDown className="w-3.5 h-3.5" />
-              <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download Proposal as PDF'}</span>
+              <span>{isGeneratingReport ? 'Generating Report...' : 'Download Report'}</span>
+            </button>
+
+            <button
+              onClick={handleDownloadProposalPdf}
+              disabled={isGeneratingPdf}
+              title="Print or save proposal document"
+              className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer hidden sm:flex"
+            >
+              <Printer className="w-3.5 h-3.5 text-violet-400" />
+              <span>{isGeneratingPdf ? 'Opening...' : 'Proposal View'}</span>
             </button>
 
             <button
@@ -412,114 +480,280 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
             )}
           </div>
 
+          {/* VIEW MODE SELECTOR TABS */}
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#0F172A] border border-slate-800">
+              <button
+                onClick={() => setComparisonTab('all')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  comparisonTab === 'all'
+                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>Full Comparison</span>
+              </button>
+
+              <button
+                onClick={() => setComparisonTab('heatmap')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  comparisonTab === 'heatmap'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/30'
+                    : 'text-slate-400 hover:text-emerald-300'
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Performance Heatmap</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              </button>
+
+              <button
+                onClick={() => setComparisonTab('matrix')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  comparisonTab === 'matrix'
+                    ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Detailed Matrix</span>
+              </button>
+
+              <button
+                onClick={() => setComparisonTab('ai')}
+                id="tab-comparison-ai"
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  comparisonTab === 'ai'
+                    ? 'bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
+                    : 'text-slate-400 hover:text-purple-300'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
+                <span>AI Architectural Advisor</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 text-[9px] font-extrabold uppercase border border-purple-500/30">
+                  AI
+                </span>
+              </button>
+            </div>
+
+            <span className="text-[11px] text-slate-400 hidden sm:inline">
+              Color indicators & AI synthesis evaluate comparative trade-offs
+            </span>
+          </div>
+
+          {/* AI ARCHITECTURAL ADVISOR COMPONENT */}
+          {(comparisonTab === 'all' || comparisonTab === 'ai') && (
+            <ProjectComparisonAIAdvisor
+              project1={project1}
+              project2={project2}
+              specs1={specs1}
+              specs2={specs2}
+            />
+          )}
+
+          {/* VISUAL HEATMAP COMPONENT */}
+          {(comparisonTab === 'all' || comparisonTab === 'heatmap') && (
+            <ProjectComparisonHeatmap
+              project1={project1}
+              project2={project2}
+              specs1={specs1}
+              specs2={specs2}
+            />
+          )}
+
           {/* DETAILED SPECIFICATIONS & COSTS MATRIX */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4 text-violet-400" />
-              Detailed Specifications Matrix
-            </h4>
+          {(comparisonTab === 'all' || comparisonTab === 'matrix') && (
+            <div className="space-y-4">
+              <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4 text-violet-400" />
+                Detailed Specifications Matrix
+              </h4>
 
-            <div className="bg-[#111A2E] rounded-2xl border border-indigo-500/20 overflow-hidden text-xs">
-              
-              {/* SECTION: FINANCIALS & COST BREAKDOWN */}
-              <div className="bg-indigo-950/40 px-4 py-2 font-bold text-indigo-300 text-xs border-b border-indigo-500/20 flex items-center gap-1.5">
-                <DollarSign className="w-3.5 h-3.5" />
-                Cost Breakdown & Budgeting
-              </div>
-
-              <div className="divide-y divide-slate-800">
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Total Project Estimate</div>
-                  <div className="col-span-4 font-bold text-emerald-400">{specs1.estimatedCost}</div>
-                  <div className="col-span-4 font-bold text-emerald-400">{specs2.estimatedCost}</div>
+              <div className="bg-[#111A2E] rounded-2xl border border-indigo-500/20 overflow-hidden text-xs">
+                
+                {/* SECTION: FINANCIALS & COST BREAKDOWN */}
+                <div className="bg-indigo-950/40 px-4 py-2 font-bold text-indigo-300 text-xs border-b border-indigo-500/20 flex items-center gap-1.5">
+                  <DollarSign className="w-3.5 h-3.5" />
+                  Cost Breakdown & Budgeting
                 </div>
 
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Cost Rate / Unit</div>
-                  <div className="col-span-4 text-slate-200">{specs1.costPerSqFt}</div>
-                  <div className="col-span-4 text-slate-200">{specs2.costPerSqFt}</div>
+                <div className="divide-y divide-slate-800">
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Total Project Estimate</div>
+                    <div className={`col-span-4 font-bold flex items-center gap-2 ${costWinner === 1 ? 'text-emerald-300' : 'text-slate-200'}`}>
+                      <span>{specs1.estimatedCost}</span>
+                      {costWinner === 1 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Best Value
+                        </span>
+                      )}
+                    </div>
+                    <div className={`col-span-4 font-bold flex items-center gap-2 ${costWinner === 2 ? 'text-emerald-300' : 'text-slate-200'}`}>
+                      <span>{specs2.estimatedCost}</span>
+                      {costWinner === 2 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Best Value
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Cost Rate / Unit</div>
+                    <div className={`col-span-4 flex items-center gap-2 ${rateWinner === 1 ? 'text-emerald-300 font-bold' : 'text-slate-200'}`}>
+                      <span>{specs1.costPerSqFt}</span>
+                      {rateWinner === 1 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Economical Rate
+                        </span>
+                      )}
+                    </div>
+                    <div className={`col-span-4 flex items-center gap-2 ${rateWinner === 2 ? 'text-emerald-300 font-bold' : 'text-slate-200'}`}>
+                      <span>{specs2.costPerSqFt}</span>
+                      {rateWinner === 2 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Economical Rate
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Architectural & Blueprints</div>
+                    <div className="col-span-4 text-slate-300">{specs1.costBreakdown.architectural}</div>
+                    <div className="col-span-4 text-slate-300">{specs2.costBreakdown.architectural}</div>
+                  </div>
+
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">3D Renders & BIM Modeling</div>
+                    <div className="col-span-4 text-slate-300">{specs1.costBreakdown.bimAnd3d}</div>
+                    <div className="col-span-4 text-slate-300">{specs2.costBreakdown.bimAnd3d}</div>
+                  </div>
+
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Structural & MEP Engineering</div>
+                    <div className="col-span-4 text-slate-300">{specs1.costBreakdown.engineering}</div>
+                    <div className="col-span-4 text-slate-300">{specs2.costBreakdown.engineering}</div>
+                  </div>
+
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Execution / Fit-out Estimate</div>
+                    <div className="col-span-4 text-slate-300">{specs1.costBreakdown.constructionEst}</div>
+                    <div className="col-span-4 text-slate-300">{specs2.costBreakdown.constructionEst}</div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Architectural & Blueprints</div>
-                  <div className="col-span-4 text-slate-300">{specs1.costBreakdown.architectural}</div>
-                  <div className="col-span-4 text-slate-300">{specs2.costBreakdown.architectural}</div>
+                {/* SECTION: ARCHITECTURAL & PHYSICAL SPECIFICATIONS */}
+                <div className="bg-indigo-950/40 px-4 py-2 font-bold text-indigo-300 text-xs border-y border-indigo-500/20 flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5" />
+                  Physical & Architectural Parameters
                 </div>
 
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">3D Renders & BIM Modeling</div>
-                  <div className="col-span-4 text-slate-300">{specs1.costBreakdown.bimAnd3d}</div>
-                  <div className="col-span-4 text-slate-300">{specs2.costBreakdown.bimAnd3d}</div>
-                </div>
+                <div className="divide-y divide-slate-800">
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Category & Typology</div>
+                    <div className="col-span-4 text-violet-300 font-medium">{project1.categoryName}</div>
+                    <div className="col-span-4 text-blue-300 font-medium">{project2.categoryName}</div>
+                  </div>
 
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Structural & MEP Engineering</div>
-                  <div className="col-span-4 text-slate-300">{specs1.costBreakdown.engineering}</div>
-                  <div className="col-span-4 text-slate-300">{specs2.costBreakdown.engineering}</div>
-                </div>
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Location</div>
+                    <div className="col-span-4 text-slate-200">{project1.location || 'International'}</div>
+                    <div className="col-span-4 text-slate-200">{project2.location || 'International'}</div>
+                  </div>
 
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Execution / Fit-out Estimate</div>
-                  <div className="col-span-4 text-slate-300">{specs1.costBreakdown.constructionEst}</div>
-                  <div className="col-span-4 text-slate-300">{specs2.costBreakdown.constructionEst}</div>
-                </div>
-              </div>
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Built-Up Area / Scale</div>
+                    <div className={`col-span-4 font-semibold flex items-center gap-2 ${areaWinner === 1 ? 'text-emerald-300' : 'text-white'}`}>
+                      <span>{specs1.area}</span>
+                      {areaWinner === 1 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Greater Scale
+                        </span>
+                      )}
+                    </div>
+                    <div className={`col-span-4 font-semibold flex items-center gap-2 ${areaWinner === 2 ? 'text-emerald-300' : 'text-white'}`}>
+                      <span>{specs2.area}</span>
+                      {areaWinner === 2 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Greater Scale
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-              {/* SECTION: ARCHITECTURAL & PHYSICAL SPECIFICATIONS */}
-              <div className="bg-indigo-950/40 px-4 py-2 font-bold text-indigo-300 text-xs border-y border-indigo-500/20 flex items-center gap-1.5">
-                <Building className="w-3.5 h-3.5" />
-                Physical & Architectural Parameters
-              </div>
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Duration / Project Cycle</div>
+                    <div className={`col-span-4 flex items-center gap-2 ${durWinner === 1 ? 'text-emerald-300 font-bold' : 'text-slate-200'}`}>
+                      <span>{specs1.duration}</span>
+                      {durWinner === 1 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Faster Turnaround
+                        </span>
+                      )}
+                    </div>
+                    <div className={`col-span-4 flex items-center gap-2 ${durWinner === 2 ? 'text-emerald-300 font-bold' : 'text-slate-200'}`}>
+                      <span>{specs2.duration}</span>
+                      {durWinner === 2 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Faster Turnaround
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-              <div className="divide-y divide-slate-800">
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Category & Typology</div>
-                  <div className="col-span-4 text-violet-300 font-medium">{project1.categoryName}</div>
-                  <div className="col-span-4 text-blue-300 font-medium">{project2.categoryName}</div>
-                </div>
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Structural System</div>
+                    <div className="col-span-4 text-slate-200 leading-relaxed">{specs1.structuralType}</div>
+                    <div className="col-span-4 text-slate-200 leading-relaxed">{specs2.structuralType}</div>
+                  </div>
 
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Location</div>
-                  <div className="col-span-4 text-slate-200">{project1.location || 'International'}</div>
-                  <div className="col-span-4 text-slate-200">{project2.location || 'International'}</div>
-                </div>
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Levels / Floors</div>
+                    <div className="col-span-4 text-slate-300">{specs1.floors}</div>
+                    <div className="col-span-4 text-slate-300">{specs2.floors}</div>
+                  </div>
 
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Built-Up Area / Scale</div>
-                  <div className="col-span-4 font-semibold text-white">{specs1.area}</div>
-                  <div className="col-span-4 font-semibold text-white">{specs2.area}</div>
-                </div>
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">Energy & Sustainability</div>
+                    <div className={`col-span-4 font-medium flex items-center gap-2 ${susWinner === 1 ? 'text-emerald-300 font-bold' : 'text-emerald-400'}`}>
+                      <span>{specs1.energyRating}</span>
+                      {susWinner === 1 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Eco Leader
+                        </span>
+                      )}
+                    </div>
+                    <div className={`col-span-4 font-medium flex items-center gap-2 ${susWinner === 2 ? 'text-emerald-300 font-bold' : 'text-emerald-400'}`}>
+                      <span>{specs2.energyRating}</span>
+                      {susWinner === 2 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Eco Leader
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Duration / Project Cycle</div>
-                  <div className="col-span-4 text-slate-200">{specs1.duration}</div>
-                  <div className="col-span-4 text-slate-200">{specs2.duration}</div>
+                  <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
+                    <div className="col-span-4 font-semibold text-slate-400">BIM Level of Development</div>
+                    <div className={`col-span-4 flex items-center gap-2 ${lodWinner === 1 ? 'text-emerald-300 font-bold' : 'text-slate-300'}`}>
+                      <span>{specs1.bimLevel}</span>
+                      {lodWinner === 1 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Higher LOD
+                        </span>
+                      )}
+                    </div>
+                    <div className={`col-span-4 flex items-center gap-2 ${lodWinner === 2 ? 'text-emerald-300 font-bold' : 'text-slate-300'}`}>
+                      <span>{specs2.bimLevel}</span>
+                      {lodWinner === 2 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold">
+                          Higher LOD
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Structural System</div>
-                  <div className="col-span-4 text-slate-200 leading-relaxed">{specs1.structuralType}</div>
-                  <div className="col-span-4 text-slate-200 leading-relaxed">{specs2.structuralType}</div>
-                </div>
-
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Levels / Floors</div>
-                  <div className="col-span-4 text-slate-300">{specs1.floors}</div>
-                  <div className="col-span-4 text-slate-300">{specs2.floors}</div>
-                </div>
-
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">Energy & Sustainability</div>
-                  <div className="col-span-4 text-emerald-400 font-medium">{specs1.energyRating}</div>
-                  <div className="col-span-4 text-emerald-400 font-medium">{specs2.energyRating}</div>
-                </div>
-
-                <div className="grid grid-cols-12 p-3 hover:bg-white/5 transition-colors">
-                  <div className="col-span-4 font-semibold text-slate-400">BIM Level of Development</div>
-                  <div className="col-span-4 text-slate-300">{specs1.bimLevel}</div>
-                  <div className="col-span-4 text-slate-300">{specs2.bimLevel}</div>
-                </div>
-              </div>
 
               {/* SECTION: MATERIALS & FINISHES */}
               <div className="bg-indigo-950/40 px-4 py-2 font-bold text-indigo-300 text-xs border-y border-indigo-500/20 flex items-center gap-1.5">
@@ -605,6 +839,7 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
 
             </div>
           </div>
+          )}
 
         </div>
 
@@ -615,12 +850,14 @@ export const ProjectComparisonModal: React.FC<ProjectComparisonModalProps> = ({
           </span>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
-              onClick={handleDownloadProposalPdf}
-              disabled={isGeneratingPdf}
-              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 hover:text-emerald-200 font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              onClick={handleDownloadComparisonReport}
+              disabled={isGeneratingReport}
+              id="btn-footer-download-comparison-report"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 border border-emerald-400/30 text-white font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-emerald-600/20 disabled:opacity-50"
+              title="Download architectural comparison summary report as PDF using jsPDF"
             >
-              <FileDown className="w-4 h-4 text-emerald-400" />
-              <span>{isGeneratingPdf ? 'Generating...' : 'Download Proposal PDF'}</span>
+              <FileDown className="w-4 h-4 text-white" />
+              <span>{isGeneratingReport ? 'Generating Report...' : 'Download Report'}</span>
             </button>
             <button
               onClick={onClose}

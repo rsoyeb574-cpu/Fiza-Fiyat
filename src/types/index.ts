@@ -105,6 +105,7 @@ export interface ProjectMilestonePhase {
   startDate: string;
   targetEndDate: string;
   actualEndDate?: string;
+  projectedEndDate?: string;
   leadOwner: string;
   budgetAllocated?: string;
   keyDeliverables: ProjectMilestoneDeliverable[];

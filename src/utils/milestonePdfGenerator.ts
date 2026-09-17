@@ -239,7 +239,9 @@ export async function downloadMilestoneProgressPdf(
     doc.setFontSize(7);
     doc.setTextColor(71, 85, 105);
     const ownerText = `Lead: ${phase.leadOwner.split('(')[0].trim()}`;
-    const windowText = `Window: ${phase.startDate} to ${phase.targetEndDate}`;
+    const windowText = phase.actualEndDate 
+      ? `Expected: ${phase.targetEndDate} | Actual: ${phase.actualEndDate}` 
+      : `Expected Delivery: ${phase.targetEndDate}`;
     const budgetText = phase.budgetAllocated ? `Budget: ${phase.budgetAllocated}` : '';
     const riskText = phase.riskLevel ? `Risk: ${phase.riskLevel.toUpperCase()}` : '';
     doc.text(`${ownerText}   |   ${windowText}   |   ${budgetText}   |   ${riskText}`, margin + 6, metaY);

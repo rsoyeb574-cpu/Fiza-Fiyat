@@ -716,6 +716,24 @@ async function startServer() {
     }
   });
 
+  // AI Project Comparison Synthesis & Strategic Recommendation Endpoint
+  app.post('/api/project/compare-ai', async (req, res) => {
+    try {
+      const { handleProjectComparisonAIRequest } = await import('./src/server/aiService');
+      const result = await handleProjectComparisonAIRequest(req.body);
+      return res.json({
+        status: 'success',
+        ...result
+      });
+    } catch (error: any) {
+      console.error('API /api/project/compare-ai error:', error);
+      return res.status(500).json({
+        status: 'error',
+        error: sanitizeErrorMessage(error) || 'Failed to synthesize comparative AI analysis.'
+      });
+    }
+  });
+
   // AI Image Generation Endpoint
   app.post('/api/ai/generate-image', async (req, res) => {
     try {

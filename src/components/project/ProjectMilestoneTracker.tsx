@@ -40,6 +40,7 @@ import {
 import { Project, ProjectMilestonePhase, ProjectMilestoneProgress } from '../../types';
 import { getProjectMilestones, getPhaseStatusBadge } from '../../utils/projectMilestones';
 import { downloadMilestoneProgressPdf } from '../../utils/milestonePdfGenerator';
+import { ProjectChronologicalTimeline } from './ProjectChronologicalTimeline';
 
 interface ProjectMilestoneTrackerProps {
   project: Project;
@@ -55,7 +56,7 @@ export const ProjectMilestoneTracker: React.FC<ProjectMilestoneTrackerProps> = (
   
   // Interactive state allowing live client simulation of deliverable completions
   const [phases, setPhases] = useState<ProjectMilestonePhase[]>(initialMilestones.phases);
-  const [activeViewMode, setActiveViewMode] = useState<'stepper' | 'cards' | 'analytics'>('stepper');
+  const [activeViewMode, setActiveViewMode] = useState<'stepper' | 'chronological' | 'cards' | 'analytics'>('stepper');
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'in_progress' | 'upcoming'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPhaseId, setSelectedPhaseId] = useState<string>(
@@ -126,8 +127,12 @@ export const ProjectMilestoneTracker: React.FC<ProjectMilestoneTrackerProps> = (
         const newPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
         let newStatus: ProjectMilestonePhase['status'] = phase.status;
+        let newActualEndDate = phase.actualEndDate;
         if (newPercentage === 100) {
           newStatus = 'completed';
+          if (!newActualEndDate) {
+            newActualEndDate = new Date().toISOString().split('T')[0];
+          }
           if (phase.completionPercentage < 100) {
             completedPhaseName = phase.name;
           }
@@ -141,7 +146,8 @@ export const ProjectMilestoneTracker: React.FC<ProjectMilestoneTrackerProps> = (
           ...phase,
           keyDeliverables: updatedDeliverables,
           completionPercentage: newPercentage,
-          status: newStatus
+          status: newStatus,
+          actualEndDate: newActualEndDate
         };
       });
     });
@@ -290,9 +296,26 @@ export const ProjectMilestoneTracker: React.FC<ProjectMilestoneTrackerProps> = (
                   ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'
                   : 'text-neutral-400 hover:text-white'
               }`}
+              title="Interactive Roadmap Stepper"
             >
               <TrendingUp className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Timeline</span>
+              <span>Roadmap</span>
+            </button>
+
+            <button
+              onClick={() => setActiveViewMode('chronological')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeViewMode === 'chronological'
+                  ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+              title="Chronological timeline visualization: Expected vs. Actual delivery dates & schedule variance"
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              <span className="flex items-center gap-1.5">
+                <span>Expected vs Actual</span>
+                <span className="hidden sm:inline text-[9px] px-1.5 py-0.2 rounded bg-white/15 text-white font-bold uppercase">Timeline</span>
+              </span>
             </button>
 
             <button
@@ -416,7 +439,7 @@ export const ProjectMilestoneTracker: React.FC<ProjectMilestoneTrackerProps> = (
       {/* 3. VIEW 1: INTERACTIVE TIMELINE STEPPER (ROADMAP) */}
       {activeViewMode === 'stepper' && (
         <div className="p-6 rounded-3xl bg-gradient-to-b from-[#0F172A]/90 to-neutral-950 border border-white/10 shadow-xl space-y-8 backdrop-blur-md">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <h4 className="text-white font-bold text-sm flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-blue-400" />
@@ -426,9 +449,19 @@ export const ProjectMilestoneTracker: React.FC<ProjectMilestoneTrackerProps> = (
                 Click any milestone node to view phase-specific specifications, owners, and active deliverables.
               </p>
             </div>
-            <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20">
-              Interactive Roadmap
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveViewMode('chronological')}
+                className="text-xs font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1 rounded-xl border border-blue-500/20 flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="View chronological expected vs actual delivery timeline"
+              >
+                <CalendarDays className="w-3.5 h-3.5" />
+                <span>Expected vs Actual</span>
+              </button>
+              <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20 hidden sm:inline">
+                Interactive Roadmap
+              </span>
+            </div>
           </div>
 
           {/* Stepper Horizontal Scroll Container */}
@@ -661,7 +694,17 @@ export const ProjectMilestoneTracker: React.FC<ProjectMilestoneTrackerProps> = (
         </div>
       )}
 
-      {/* 4. VIEW 2: PHASE CARDS LIST & FILTERABLE BREAKDOWN */}
+      {/* 4. VIEW: CHRONOLOGICAL TIMELINE (EXPECTED VS. ACTUAL DELIVERY DATES) */}
+      {activeViewMode === 'chronological' && (
+        <ProjectChronologicalTimeline
+          project={project}
+          phases={phases}
+          selectedPhaseId={selectedPhaseId}
+          onSelectPhase={(id) => setSelectedPhaseId(id)}
+        />
+      )}
+
+      {/* 5. VIEW 2: PHASE CARDS LIST & FILTERABLE BREAKDOWN */}
       {activeViewMode === 'cards' && (
         <div className="space-y-6">
           {/* Search & Status Filters */}

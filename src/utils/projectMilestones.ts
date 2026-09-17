@@ -575,3 +575,195 @@ export function getPhaseStatusBadge(status: ProjectMilestonePhase['status']) {
       };
   }
 }
+
+export interface ScheduleVarianceResult {
+  varianceDays: number;
+  status: 'ahead' | 'on_track' | 'delayed' | 'pending';
+  label: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  effectiveDeliveryDate: string;
+  isProjected: boolean;
+}
+
+/**
+ * Calculates schedule variance between expected target delivery date and actual/projected completion date.
+ */
+export function calculateScheduleVariance(phase: ProjectMilestonePhase): ScheduleVarianceResult {
+  const targetTime = new Date(phase.targetEndDate).getTime();
+  
+  // If actualEndDate is present (typically for completed phases)
+  if (phase.actualEndDate) {
+    const actualTime = new Date(phase.actualEndDate).getTime();
+    const diffDays = Math.round((actualTime - targetTime) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      const daysAhead = Math.abs(diffDays);
+      return {
+        varianceDays: diffDays,
+        status: 'ahead',
+        label: `${daysAhead}d Ahead of Schedule`,
+        badgeBg: 'bg-emerald-500/10',
+        badgeText: 'text-emerald-400',
+        badgeBorder: 'border-emerald-500/30',
+        effectiveDeliveryDate: phase.actualEndDate,
+        isProjected: false
+      };
+    } else if (diffDays > 0) {
+      return {
+        varianceDays: diffDays,
+        status: 'delayed',
+        label: `${diffDays}d Schedule Slip`,
+        badgeBg: 'bg-rose-500/10',
+        badgeText: 'text-rose-400',
+        badgeBorder: 'border-rose-500/30',
+        effectiveDeliveryDate: phase.actualEndDate,
+        isProjected: false
+      };
+    } else {
+      return {
+        varianceDays: 0,
+        status: 'on_track',
+        label: 'Delivered On Schedule',
+        badgeBg: 'bg-emerald-500/10',
+        badgeText: 'text-emerald-400',
+        badgeBorder: 'border-emerald-500/30',
+        effectiveDeliveryDate: phase.actualEndDate,
+        isProjected: false
+      };
+    }
+  }
+
+  // If in progress or projected
+  if (phase.status === 'in_progress') {
+    const projectedDate = phase.projectedEndDate || phase.targetEndDate;
+    const projectedTime = new Date(projectedDate).getTime();
+    const diffDays = Math.round((projectedTime - targetTime) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      const daysAhead = Math.abs(diffDays);
+      return {
+        varianceDays: diffDays,
+        status: 'ahead',
+        label: `Forecast: ${daysAhead}d Early`,
+        badgeBg: 'bg-blue-500/10',
+        badgeText: 'text-blue-400',
+        badgeBorder: 'border-blue-500/30',
+        effectiveDeliveryDate: projectedDate,
+        isProjected: true
+      };
+    } else if (diffDays > 0) {
+      return {
+        varianceDays: diffDays,
+        status: 'delayed',
+        label: `Forecast: +${diffDays}d Drift`,
+        badgeBg: 'bg-amber-500/10',
+        badgeText: 'text-amber-400',
+        badgeBorder: 'border-amber-500/30',
+        effectiveDeliveryDate: projectedDate,
+        isProjected: true
+      };
+    } else {
+      return {
+        varianceDays: 0,
+        status: 'on_track',
+        label: 'Tracking On Schedule',
+        badgeBg: 'bg-blue-500/10',
+        badgeText: 'text-blue-400',
+        badgeBorder: 'border-blue-500/30',
+        effectiveDeliveryDate: projectedDate,
+        isProjected: true
+      };
+    }
+  }
+
+  // Upcoming phase with no actual date yet
+  return {
+    varianceDays: 0,
+    status: 'pending',
+    label: 'Target Baseline',
+    badgeBg: 'bg-neutral-800',
+    badgeText: 'text-neutral-400',
+    badgeBorder: 'border-white/10',
+    effectiveDeliveryDate: phase.targetEndDate,
+    isProjected: true
+  };
+}
+
+export interface TimelineBounds {
+  minDateMs: number;
+  maxDateMs: number;
+  totalDays: number;
+  startDateFormatted: string;
+  endDateFormatted: string;
+  monthMarkers: { label: string; percent: number }[];
+}
+
+/**
+ * Computes min/max chronological timeline boundaries across all project phases.
+ */
+export function getTimelineBounds(phases: ProjectMilestonePhase[]): TimelineBounds {
+  if (!phases || phases.length === 0) {
+    const now = Date.now();
+    return {
+      minDateMs: now,
+      maxDateMs: now + 86400000 * 30,
+      totalDays: 30,
+      startDateFormatted: '',
+      endDateFormatted: '',
+      monthMarkers: []
+    };
+  }
+
+  let minMs = Infinity;
+  let maxMs = -Infinity;
+
+  phases.forEach((p) => {
+    const sMs = new Date(p.startDate).getTime();
+    const tMs = new Date(p.targetEndDate).getTime();
+    if (!isNaN(sMs) && sMs < minMs) minMs = sMs;
+    if (!isNaN(tMs) && tMs > maxMs) maxMs = tMs;
+
+    if (p.actualEndDate) {
+      const aMs = new Date(p.actualEndDate).getTime();
+      if (!isNaN(aMs) && aMs > maxMs) maxMs = aMs;
+    }
+    if (p.projectedEndDate) {
+      const pMs = new Date(p.projectedEndDate).getTime();
+      if (!isNaN(pMs) && pMs > maxMs) maxMs = pMs;
+    }
+  });
+
+  // Add 15 days padding at the start and end for optimal visual breathing room
+  const padMs = 86400000 * 15;
+  const paddedMin = minMs - padMs;
+  const paddedMax = maxMs + padMs;
+  const totalDurationMs = paddedMax - paddedMin;
+  const totalDays = Math.max(1, Math.round(totalDurationMs / (86400000)));
+
+  // Generate monthly interval markers
+  const monthMarkers: { label: string; percent: number }[] = [];
+  const cur = new Date(paddedMin);
+  cur.setDate(1); // align to month start
+  cur.setMonth(cur.getMonth() + 1);
+
+  while (cur.getTime() < paddedMax) {
+    const percent = Math.max(0, Math.min(100, ((cur.getTime() - paddedMin) / totalDurationMs) * 100));
+    monthMarkers.push({
+      label: cur.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+      percent
+    });
+    cur.setMonth(cur.getMonth() + 1);
+  }
+
+  return {
+    minDateMs: paddedMin,
+    maxDateMs: paddedMax,
+    totalDays,
+    startDateFormatted: new Date(minMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    endDateFormatted: new Date(maxMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    monthMarkers
+  };
+}
+

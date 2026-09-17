@@ -15,7 +15,11 @@ export function isGeminiConfigured(): boolean {
 }
 
 export function getConfiguredModel(): string {
-  return process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash';
+  const configured = process.env.GEMINI_MODEL?.trim();
+  if (!configured || configured.includes('gemini-2.') || configured.includes('gemini-1.') || configured.includes('pro')) {
+    return 'gemini-3.8-flash';
+  }
+  return configured;
 }
 
 export function getAIClient(): GoogleGenAI {
@@ -35,13 +39,15 @@ export function getAIClient(): GoogleGenAI {
 
 function getModelCandidates(): string[] {
   const configured = process.env.GEMINI_MODEL?.trim();
+  const validConfigured = (configured && !configured.includes('gemini-2.') && !configured.includes('gemini-1.') && !configured.includes('pro'))
+    ? configured
+    : null;
+
   const models = [
-    ...(configured ? [configured] : []),
+    ...(validConfigured ? [validConfigured] : []),
     'gemini-3.8-flash',
     'gemini-3.1-flash-lite',
-    'gemini-2.5-flash',
-    'gemini-flash-latest',
-    'gemini-3.1-pro-preview'
+    'gemini-flash-latest'
   ];
   return Array.from(new Set(models.filter(Boolean)));
 }
@@ -318,6 +324,138 @@ Return a valid, well-structured JSON object matching this schema:
       'Position master bedroom on the southern or south-western corner for optimal ventilation.'
     ],
     estimatedCostImpact: 'Optimizes raw material procurement and reduces structural wastage by 10-14%.'
+  };
+}
+
+export interface ProjectComparisonAIRequest {
+  project1: {
+    title: string;
+    categoryName?: string;
+    location?: string;
+    specs: any;
+  };
+  project2: {
+    title: string;
+    categoryName?: string;
+    location?: string;
+    specs: any;
+  };
+  focusArea?: string;
+  customQuestion?: string;
+}
+
+export async function handleProjectComparisonAIRequest(body: ProjectComparisonAIRequest): Promise<any> {
+  const { project1, project2, focusArea, customQuestion } = body || {};
+  const p1Title = project1?.title || 'Project A';
+  const p2Title = project2?.title || 'Project B';
+  const s1 = project1?.specs || {};
+  const s2 = project2?.specs || {};
+
+  const promptText = `You are the Principal Architectural Partner & Lead Structural Cost Director at Fiza Fiyat Architectural & Civil Hub.
+Conduct a rigorous, authoritative comparative analysis between two major architectural engineering projects.
+
+Project 1: "${p1Title}"
+- Category: ${project1?.categoryName || 'General'}
+- Location: ${project1?.location || 'Site A'}
+- Estimated Cost: ${s1.estimatedCost || 'N/A'}
+- Area / Scale: ${s1.area || 'N/A'}
+- Cost per Sq.Ft: ${s1.ratePerSqFt || 'N/A'}
+- Structural System: ${s1.structuralType || 'N/A'}
+- BIM Maturity: ${s1.bimLevel || 'N/A'}
+- Construction Duration: ${s1.duration || 'N/A'}
+- Energy & Sustainability Rating: ${s1.energyRating || 'N/A'}
+- Primary Materials: ${JSON.stringify(s1.materials || [])}
+
+Project 2: "${p2Title}"
+- Category: ${project2?.categoryName || 'General'}
+- Location: ${project2?.location || 'Site B'}
+- Estimated Cost: ${s2.estimatedCost || 'N/A'}
+- Area / Scale: ${s2.area || 'N/A'}
+- Cost per Sq.Ft: ${s2.ratePerSqFt || 'N/A'}
+- Structural System: ${s2.structuralType || 'N/A'}
+- BIM Maturity: ${s2.bimLevel || 'N/A'}
+- Construction Duration: ${s2.duration || 'N/A'}
+- Energy & Sustainability Rating: ${s2.energyRating || 'N/A'}
+- Primary Materials: ${JSON.stringify(s2.materials || [])}
+
+${focusArea ? `Focus Evaluation Area: ${focusArea}` : ''}
+${customQuestion ? `Specific Client Inquiry: "${customQuestion}"` : ''}
+
+Respond in STRICT JSON matching this exact structure:
+{
+  "recommendationTitle": "Concise, punchy verdict headline (e.g. Optimized Commercial Fast-Track vs. Luxury Monolithic Resilience)",
+  "recommendedOption": 1, // 1 for Project 1, 2 for Project 2, 0 if balanced/context-dependent
+  "executiveVerdict": "3-4 sentences synthesizing the comparative outcome, value proposition, and architectural rationale.",
+  "keyTradeoffs": [
+    "Trade-off 1 with quantified contrast",
+    "Trade-off 2 comparing structural complexity or schedule",
+    "Trade-off 3 contrasting operational lifecycle or environmental rating"
+  ],
+  "costBenefitAnalysis": "Detailed financial breakdown contrasting unit rate, capex, and long-term maintenance impact.",
+  "structuralAndBimAssessment": "Engineering synthesis comparing load systems, BIM coordination risk, and site sequencing.",
+  "sustainabilityVerdict": "Comparative environmental assessment evaluating embodied carbon, LEED/BREEAM metrics, and thermal envelope performance.",
+  "hybridRecommendations": [
+    "Concrete actionable recommendation to merge the best features of both schemes",
+    "Material or MEP optimization borrowed from one to the other"
+  ],
+  "clientSuitability": {
+    "project1BestFor": "Clear description of ideal client profile, site condition, or financial goal for Project 1",
+    "project2BestFor": "Clear description of ideal client profile, site condition, or financial goal for Project 2"
+  }
+}`;
+
+  try {
+    const rawText = await generateWithModelFallback({
+      contents: promptText,
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.3
+      }
+    });
+
+    const cleanText = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.recommendationTitle && parsed.executiveVerdict) {
+        return parsed;
+      }
+    }
+  } catch (err: any) {
+    console.warn('Gemini Project Comparison AI error, using deterministic architectural synthesis:', err?.message || err);
+  }
+
+  // Deterministic architectural comparison synthesis
+  const rate1 = parseFloat(String(s1.ratePerSqFt || '').replace(/[^0-9.]/g, '')) || 0;
+  const rate2 = parseFloat(String(s2.ratePerSqFt || '').replace(/[^0-9.]/g, '')) || 0;
+  const area1 = parseFloat(String(s1.area || '').replace(/[^0-9.]/g, '')) || 0;
+  const area2 = parseFloat(String(s2.area || '').replace(/[^0-9.]/g, '')) || 0;
+
+  const costAdvantageP1 = rate1 > 0 && rate2 > 0 ? rate1 < rate2 : area1 < area2;
+  const winner = costAdvantageP1 ? 1 : 2;
+
+  return {
+    recommendationTitle: costAdvantageP1 
+      ? `${p1Title} Delivers Superior Commercial Efficiency & Feasibility`
+      : `${p2Title} Provides Higher Architectural Capital & Spatial Scale`,
+    recommendedOption: winner,
+    executiveVerdict: `${costAdvantageP1 ? p1Title : p2Title} presents a compelling architectural equation. While ${p1Title} emphasizes disciplined capital expenditure and streamlined delivery, ${p2Title} offers expansive volumetric scale and elevated structural engineering specifications suitable for institutional or premier luxury assets.`,
+    keyTradeoffs: [
+      `Capex vs Scale: ${p1Title} (${s1.estimatedCost || 'Optimized'}) offers a tighter procurement window vs ${p2Title} (${s2.estimatedCost || 'Expansive'}) which maximizes long-term gross floor area.`,
+      `Structural Complexity: ${s1.structuralType || 'Standard Framework'} facilitates faster local permitting than ${s2.structuralType || 'Heavy Integrated Structural System'}.`,
+      `BIM & Operational LOD: ${s1.bimLevel || 'LOD 350'} ensures standard fabrication detailing, whereas ${s2.bimLevel || 'LOD 400'} supports direct digital prefabrication.`
+    ],
+    costBenefitAnalysis: `Unit rates average ${s1.ratePerSqFt || 'market rate'} for ${p1Title} compared to ${s2.ratePerSqFt || 'market rate'} for ${p2Title}. Projects requiring immediate capitalization will benefit from the optimized schedule of ${p1Title}.`,
+    structuralAndBimAssessment: `Both projects conform to rigorous engineering standards. ${p1Title} leverages ${s1.structuralType || 'robust framing'}, requiring lower crane footprint, while ${p2Title} incorporates heavier load-bearing assemblies for expansive column-free spans.`,
+    sustainabilityVerdict: `${p1Title} holds ${s1.energyRating || 'Standard LEED Target'} credentials, while ${p2Title} implements ${s2.energyRating || 'High-Efficiency Target'} thermal envelope strategies for superior lifecycle operational carbon reduction.`,
+    hybridRecommendations: [
+      `Adopt the high-performance building envelope from ${p2Title} with the optimized structural grid of ${p1Title} to capture 12-15% cost savings without compromising thermal efficiency.`,
+      `Standardize on ${s2.bimLevel || 'LOD 400'} detailing across MEP penetrations to reduce on-site change orders regardless of chosen typology.`
+    ],
+    clientSuitability: {
+      project1BestFor: `Investors and developers seeking accelerated turnaround, agile capital allocation, and proven delivery metrics.`,
+      project2BestFor: `Private clients and institutions prioritizing architectural grandeur, expansive footprint, and benchmark sustainability.`
+    }
   };
 }
 

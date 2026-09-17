@@ -25,13 +25,14 @@ function getAIClient(): GoogleGenAI {
 
 function getCandidateModels(): string[] {
   const configured = process.env.GEMINI_MODEL?.trim();
+  const validConfigured = (configured && !configured.includes('gemini-2.') && !configured.includes('gemini-1.') && !configured.includes('pro'))
+    ? configured
+    : null;
   const models = [
-    ...(configured ? [configured] : []),
+    ...(validConfigured ? [validConfigured] : []),
     'gemini-3.8-flash',
     'gemini-3.1-flash-lite',
-    'gemini-2.5-flash',
-    'gemini-flash-latest',
-    'gemini-3.1-pro-preview'
+    'gemini-flash-latest'
   ];
   return Array.from(new Set(models.filter(Boolean)));
 }
