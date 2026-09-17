@@ -675,6 +675,12 @@ export async function deleteInquiry(id: string): Promise<void> {
 // REAL-TIME FIRESTORE SUBSCRIPTIONS
 // =========================================
 
+function isBenignStreamCancellation(error: any): boolean {
+  if (!error) return false;
+  const msg = error?.message || (typeof error === 'string' ? error : '');
+  return error?.code === 'cancelled' || msg.includes('CANCELLED') || msg.includes('idle stream');
+}
+
 export function subscribeProjects(callback: (projects: Project[]) => void) {
   try {
     const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
@@ -683,7 +689,9 @@ export function subscribeProjects(callback: (projects: Project[]) => void) {
       setLocalCache(CACHE_KEYS.PROJECTS, items);
       callback(items);
     }, (error) => {
-      console.warn('Projects onSnapshot error:', error);
+      if (!isBenignStreamCancellation(error)) {
+        console.warn('Projects onSnapshot error:', error);
+      }
       callback(getLocalCache<Project[]>(CACHE_KEYS.PROJECTS) || initialProjects);
     });
   } catch (e) {
@@ -700,7 +708,9 @@ export function subscribeCategories(callback: (categories: Category[]) => void) 
       setLocalCache(CACHE_KEYS.CATEGORIES, items);
       callback(items);
     }, (error) => {
-      console.warn('Categories onSnapshot error:', error);
+      if (!isBenignStreamCancellation(error)) {
+        console.warn('Categories onSnapshot error:', error);
+      }
       callback(getLocalCache<Category[]>(CACHE_KEYS.CATEGORIES) || initialCategories);
     });
   } catch (e) {
@@ -717,7 +727,9 @@ export function subscribeServices(callback: (services: Service[]) => void) {
       setLocalCache(CACHE_KEYS.SERVICES, items);
       callback(items);
     }, (error) => {
-      console.warn('Services onSnapshot error:', error);
+      if (!isBenignStreamCancellation(error)) {
+        console.warn('Services onSnapshot error:', error);
+      }
       callback(getLocalCache<Service[]>(CACHE_KEYS.SERVICES) || initialServices);
     });
   } catch (e) {
@@ -734,7 +746,9 @@ export function subscribeBlogs(callback: (blogs: BlogArticle[]) => void) {
       setLocalCache(CACHE_KEYS.BLOGS, items);
       callback(items);
     }, (error) => {
-      console.warn('Blogs onSnapshot error:', error);
+      if (!isBenignStreamCancellation(error)) {
+        console.warn('Blogs onSnapshot error:', error);
+      }
       callback(getLocalCache<BlogArticle[]>(CACHE_KEYS.BLOGS) || initialBlogs);
     });
   } catch (e) {

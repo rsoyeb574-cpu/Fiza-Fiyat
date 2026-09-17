@@ -26,6 +26,10 @@ enum OperationType {
 }
 
 function handleDbError(error: unknown, operationType: OperationType, path: string | null) {
+  const errMsg = error instanceof Error ? error.message : String(error);
+  if (errMsg.includes('CANCELLED') || errMsg.includes('idle stream') || (error as any)?.code === 'cancelled') {
+    return;
+  }
   console.warn(`Firestore project revision chat [${operationType}] at ${path}:`, error);
 }
 

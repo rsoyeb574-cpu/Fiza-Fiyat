@@ -43,6 +43,10 @@ enum OperationType {
 }
 
 function handleDbError(error: unknown, opType: OperationType, path: string) {
+  const err = error as any;
+  if (err?.code === 'cancelled' || err?.message?.includes('CANCELLED') || err?.message?.includes('idle stream')) {
+    return;
+  }
   console.warn(`Firestore Enterprise DB (${opType} @ ${path}):`, error);
 }
 
@@ -524,12 +528,18 @@ export function subscribeToClientFileRequests(
  */
 export function subscribeToEnterpriseProjects(
   onUpdate: (projects: EnterpriseProject[]) => void,
+  clientUid?: string,
+  clientEmail?: string,
   onError?: (error: Error) => void
 ): Unsubscribe {
   try {
     const colRef = collection(db, 'enterprise_projects');
+    let q = query(colRef);
+    if (clientUid) {
+      q = query(colRef, where('clientUid', '==', clientUid));
+    }
     const unsubscribe = onSnapshot(
-      colRef,
+      q,
       (snapshot) => {
         const items: EnterpriseProject[] = [];
         snapshot.forEach((docSnap) => {

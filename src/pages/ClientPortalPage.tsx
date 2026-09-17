@@ -249,8 +249,13 @@ export const ClientPortalPage: React.FC = () => {
           setSelectedProject((prev) => prev ? updatedProjects.find(p => p.id === prev.id) || updatedProjects[0] : updatedProjects[0]);
         }
       },
+      user?.uid,
+      user?.email || undefined,
       (err) => {
-        console.warn('Firestore snapshot error for enterprise projects:', err);
+        const errMsg = err?.message || String(err);
+        if (!errMsg.includes('CANCELLED') && !errMsg.includes('idle stream')) {
+          console.warn('Firestore snapshot error for enterprise projects:', err);
+        }
       }
     );
 

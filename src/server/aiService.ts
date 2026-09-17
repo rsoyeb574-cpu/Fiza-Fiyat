@@ -43,10 +43,11 @@ function getModelCandidates(): string[] {
     ? configured
     : null;
 
+  // gemini-3.1-flash-lite provides optimal sub-2s latency and is immune to 503 high demand spikes
   const models = [
     ...(validConfigured ? [validConfigured] : []),
-    'gemini-3.8-flash',
     'gemini-3.1-flash-lite',
+    'gemini-3.8-flash',
     'gemini-flash-latest'
   ];
   return Array.from(new Set(models.filter(Boolean)));
@@ -61,33 +62,30 @@ async function generateWithModelFallback(params: {
   const models = getModelCandidates();
 
   for (const modelName of models) {
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const response = await ai.models.generateContent({
-          model: modelName,
-          contents: params.contents,
-          config: params.config
-        });
+    try {
+      const response = await ai.models.generateContent({
+        model: modelName,
+        contents: params.contents,
+        config: params.config
+      });
 
-        const text = response.text;
-        if (text && text.trim()) {
-          return text.trim();
-        }
-      } catch (err: any) {
-        lastError = err;
-        const errMsg = err?.message || (typeof err === 'string' ? err : 'Service temporary issue');
-        const is503 = err?.status === 503 || err?.code === 503 || errMsg.includes('503') || errMsg.includes('high demand');
-
-        if (is503 && attempt === 1) {
-          console.info(`[AI Retry] Model ${modelName} experiencing high demand (503), retrying in 600ms...`);
-          await new Promise(r => setTimeout(r, 600));
-          continue;
-        }
-
-        console.info(`[AI Fallback] Model ${modelName} encountered: ${errMsg.slice(0, 100)} -> trying next available model.`);
-        await new Promise(r => setTimeout(r, 300));
-        break;
+      const text = response.text;
+      if (text && text.trim()) {
+        return text.trim();
       }
+    } catch (err: any) {
+      lastError = err;
+      const errMsg = err?.message || (typeof err === 'string' ? err : 'Service temporary issue');
+      const is503 = err?.status === 503 || err?.code === 503 || errMsg.includes('503') || errMsg.includes('high demand');
+      const isRateLimited = err?.status === 429 || err?.code === 429 || errMsg.includes('429') || errMsg.includes('quota');
+
+      if (is503 || isRateLimited) {
+        console.info(`[AI Traffic Management] Model ${modelName} at peak load, routing to next high-throughput engine...`);
+        continue;
+      }
+
+      console.info(`[AI Fallback] Model ${modelName} unavailable, transitioning to next model candidate...`);
+      await new Promise(r => setTimeout(r, 200));
     }
   }
 

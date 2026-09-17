@@ -38,8 +38,12 @@ interface FirestoreErrorInfo {
 }
 
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errMsg = error instanceof Error ? error.message : String(error);
+  if (errMsg.includes('CANCELLED') || errMsg.includes('idle stream') || (error as any)?.code === 'cancelled') {
+    return;
+  }
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errMsg,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -169,13 +173,18 @@ export function subscribeToClientNotifications(
 
   let firestoreUnsub: Unsubscribe = () => {};
 
+  if (!clientUid) {
+    return () => {
+      if (onUpdate) {
+        const idx = listeners.indexOf(onUpdate);
+        if (idx >= 0) listeners.splice(idx, 1);
+      }
+    };
+  }
+
   try {
     const colRef = collection(db, 'client_notifications');
-    let q = query(colRef);
-
-    if (clientUid) {
-      q = query(colRef, where('clientUid', '==', clientUid));
-    }
+    const q = query(colRef, where('clientUid', '==', clientUid));
 
     firestoreUnsub = onSnapshot(
       q,

@@ -30,8 +30,8 @@ function getCandidateModels(): string[] {
     : null;
   const models = [
     ...(validConfigured ? [validConfigured] : []),
-    'gemini-3.8-flash',
     'gemini-3.1-flash-lite',
+    'gemini-3.8-flash',
     'gemini-flash-latest'
   ];
   return Array.from(new Set(models.filter(Boolean)));
@@ -258,13 +258,12 @@ Respond with a complete, valid JSON object matching the following structure:
         lastError = err;
         const errMsg = err?.message || (typeof err === 'string' ? err : 'Error');
         const is503 = err?.status === 503 || err?.code === 503 || errMsg.includes('503') || errMsg.includes('high demand');
-        if (is503 && attempt === 1) {
-          console.info(`[Structural AI] Model ${modelName} experiencing high demand (503), retrying in 600ms...`);
-          await new Promise(r => setTimeout(r, 600));
-          continue;
+        if (is503) {
+          console.info(`[Structural AI] Model ${modelName} at peak capacity, transitioning to next model candidate...`);
+          break;
         }
-        console.warn(`[Structural AI] Model ${modelName} encountered error:`, errMsg.slice(0, 100));
-        await new Promise(r => setTimeout(r, 300));
+        console.info(`[Structural AI] Model ${modelName} unavailable, trying next fallback model...`);
+        await new Promise(r => setTimeout(r, 200));
         break;
       }
     }

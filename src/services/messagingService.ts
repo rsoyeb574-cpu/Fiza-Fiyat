@@ -35,8 +35,12 @@ interface FirestoreErrorInfo {
 }
 
 function handleDbError(error: unknown, operationType: OperationType, path: string | null) {
+  const errMsg = error instanceof Error ? error.message : String(error);
+  if (errMsg.includes('CANCELLED') || errMsg.includes('idle stream') || (error as any)?.code === 'cancelled') {
+    return;
+  }
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errMsg,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,

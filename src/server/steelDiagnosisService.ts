@@ -32,8 +32,8 @@ function getCandidateModels(): string[] {
     : null;
   const models = [
     ...(validConfigured ? [validConfigured] : []),
-    'gemini-3.8-flash',
     'gemini-3.1-flash-lite',
+    'gemini-3.8-flash',
     'gemini-flash-latest'
   ];
   return Array.from(new Set(models.filter(Boolean)));
@@ -191,13 +191,12 @@ Return ONLY raw JSON, with no markdown code fences.`;
         lastError = err;
         const errMsg = err?.message || (typeof err === 'string' ? err : 'Error');
         const is503 = err?.status === 503 || err?.code === 503 || errMsg.includes('503') || errMsg.includes('high demand');
-        if (is503 && attempt === 1) {
-          console.info(`[Steel AI] Model ${model} experiencing high demand (503), retrying in 600ms...`);
-          await new Promise(r => setTimeout(r, 600));
-          continue;
+        if (is503) {
+          console.info(`[Steel AI] Model ${model} at peak load, routing to next candidate engine...`);
+          break;
         }
-        console.warn(`Model ${model} failed for analyzeSteelMedia, trying next:`, errMsg.slice(0, 100));
-        await new Promise(r => setTimeout(r, 300));
+        console.info(`[Steel AI] Model ${model} unavailable, transitioning to next model candidate...`);
+        await new Promise(r => setTimeout(r, 200));
         break;
       }
     }
